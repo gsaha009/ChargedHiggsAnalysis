@@ -1,0 +1,7 @@
+executable   = sample_index.sh
+arguments    = $(ClusterId)$(ProcId)
+output       = output/sample_INDEX.$(ClusterId).$(ProcId).out
+error        = error/sample_INDEX.$(ClusterId).$(ProcId).err
+log          = log/sample_INDEX.$(ClusterId).log
++JobFlavour  = "tomorrow"
+queue
