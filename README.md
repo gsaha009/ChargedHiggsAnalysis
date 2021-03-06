@@ -1,8 +1,28 @@
-## ChargedHiggs Analysis
+# ChargedHiggs Analysis
 
-This is a C++ based analysis framework. Basically it uses C++14 and ROOT. For the time being, a few stuffs like `unique_pointer` etc need CMSSW_9_4_9 [ToDo : check the CMSSW dependency]. So before running the package inside `Analysis`, one should get the CMSSW. \n
+This is a C++ based analysis framework. Here ROOT is used for plotting and MVA stuff.\
+###### cloning the repo:
+```
+git clone https://github.com/gsaha009/ChargedHiggsAnalysis.git
+````
+Right now, this package can be divided into 2 parts. 
 
- - cmsrel CMSSW_9_4_9
- - cd CMSSW_9_4_9/src; cmsenv; cd -
+ - Analysis
+ - JobCard production
 
-`MakeJobsAndSend` contains a python script which automatize Job Card production and HTCondor submission.
+For the Analysis part, the following instucions should be follwed.
+###### Getting CMSSW_9_4_9
+```
+cd ChargedHiggsAnalysis
+cmsrel CMSSW_9_4_9
+cd CMSSW_9_4_9/src; cmsenv; cd -
+```
+###### Compile
+```
+make clean -f *MakefileName*
+make cling -f *MakefileName*
+make -f *MakefileName*
+```
+After the compilation, one should get the executable. Now one would need the JobCards to produce plots.
+Here comes the 2nd part `MakeJobsAndSend`. It contains a python script which automatize Job Card production and HTCondor submission.\
+There is also an `yaml` with all relevant information to produce the jobs.
