@@ -192,7 +192,6 @@ bool PhysicsObjSelector::findEventInfo() {
     }
     //ev.nLHEJets = *LHEnJets->Get();
     ev.btagWeight_CSVV2 = *btagWeight_CSVV2->Get();
-    //ev.btagWeight_CMVA  = *btagWeight_CMVA->Get();
   }
   ev.nPV     = *nPV->Get();
   ev.nGoodPV = *nGoodPV->Get();
@@ -203,15 +202,55 @@ bool PhysicsObjSelector::findEventInfo() {
   ev.PVy     = *PV_yPos->Get();
   ev.PVz     = *PV_zPos->Get();
 
-  //ev.HLT_SingleMu  = *HLT_SingleMu ->Get();
-  //ev.HLT_SingleEle = *HLT_SingleEle->Get();
-  //ev.HLT_DoubleMu  = *HLT_DoubleMu ->Get();
-  //ev.HLT_DoubleEle = *HLT_DoubleEle->Get();
-  //ev.evType        = *evType->Get();
-
   eventList_.push_back(ev);
 
   return true;
+}
+
+std::vector < bool > PhysicsObjSelector::getDoubleMuonHLTscores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getDoubleMuonHLTptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
+std::vector < bool > PhysicsObjSelector::getSingleMuonHLTscores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleMuonHLTptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
+std::vector < bool > PhysicsObjSelector::getDoubleEgHLTscores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getDoubleEgHLTptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
+std::vector < bool > PhysicsObjSelector::getSingleElectronHLTscores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleElectronHLTptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
+std::vector < bool > PhysicsObjSelector::getMuonEgHLTscores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getMuonEgHLTptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
 }
 
 bool PhysicsObjSelector::findGenPartInfo() {
@@ -337,6 +376,7 @@ void PhysicsObjSelector::muonSelector() {
 
 // Electron selecton
 void PhysicsObjSelector::electronSelector() {
+  if (!searchedMu_) std::cout<<">>>Muons are not selected yet!!!\n";
   histf()->cd();
   histf()->cd("ObjectSelection");
   for (size_t i = 0; i < (*nElectron->Get()); ++i){
@@ -463,7 +503,7 @@ void PhysicsObjSelector::tauSelector() {
     if (std::fabs(Tau_dz->At(it)) > 0.2) continue;
     if (!Tau_idDecayModeNewDMs->At(it)) continue;
     if (!(Tau_decayMode->At(it) == 0 || Tau_decayMode->At(it) == 1 || Tau_decayMode->At(it) == 2 || Tau_decayMode->At(it) == 10 || Tau_decayMode->At(it) == 11)) continue;
-    if (!(Tau_idDeepTau2017v2p1VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2p1VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2p1VSmu->At(it) >> 0 & 0x1)) continue;
+    if (!(Tau_idDeepTau2017v2VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2VSmu->At(it) >> 0 & 0x1)) continue;
 
     AnaUtil::fillHist1D ("tauCutFlow", 1, 1.0);
     
@@ -516,9 +556,9 @@ void PhysicsObjSelector::fatJetSelector() {
     fj.softDropMass                = FatJet_msoftdrop->At(i);
     fj.n2b1                        = FatJet_n2b1->At(i);
     fj.n3b1                        = FatJet_n3b1->At(i);
-    fj.hadronFlavour               = FatJet_hadronFlavour->At(i);
-    fj.nBHadrons                   = FatJet_nBHadrons->At(i);
-    fj.nCHadrons                   = FatJet_nCHadrons->At(i);
+    //fj.hadronFlavour               = FatJet_hadronFlavour->At(i);
+    //fj.nBHadrons                   = FatJet_nBHadrons->At(i);
+    //fj.nCHadrons                   = FatJet_nCHadrons->At(i);
     fj.rawFactor                   = FatJet_rawFactor->At(i);
     fj.subJetIdx1                  = FatJet_subJetIdx1->At(i);
     fj.subJetIdx2                  = FatJet_subJetIdx2->At(i);
@@ -534,8 +574,8 @@ void PhysicsObjSelector::fatJetSelector() {
     fj.deepTagMD_WvsQCD            = FatJet_deepTagMD_WvsQCD->At(i);
     fj.deepTagMD_ZvsQCD            = FatJet_deepTagMD_ZvsQCD->At(i);
     fj.deepTagMD_TvsQCD            = FatJet_deepTagMD_TvsQCD->At(i);
-    fj.electronIdx3SJ              = FatJet_electronIdx3SJ->At(i);
-    fj.muonIdx3SJ                  = FatJet_muonIdx3SJ->At(i);
+    //fj.electronIdx3SJ              = FatJet_electronIdx3SJ->At(i);
+    //fj.muonIdx3SJ                  = FatJet_muonIdx3SJ->At(i);
     
     fatJetList_.push_back(fj);
 

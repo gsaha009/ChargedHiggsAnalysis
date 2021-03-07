@@ -155,19 +155,18 @@ public:
   const std::unordered_map<std::string, int>& eventIdMap() const {return eventIdMap_;}
   int bunchCrossing() const {return bunchCrossing_;}
 
-  std::vector< std::string > singleMuonHLTpaths;
-  std::vector< std::string > doubleMuonHLTpaths;
-  std::vector< std::string > singleElectronHLTpaths;
-  std::vector< std::string > doubleEgHLTpaths;
-  std::vector< std::string > muonEgHLTpaths;
+  const std::vector< std::string > getSingleMuonHLTpaths() const {return singleMuonHltPathList_;}
+  const std::vector< std::string > getDoubleMuonHLTpaths() const {return doubleMuonHltPathList_;}
+  const std::vector< std::string > getSingleElectronHLTpaths() const {return singleElectronHltPathList_;}
+  const std::vector< std::string > getDoubleEgHLTpaths() const {return doubleEgHltPathList_;}
+  const std::vector< std::string > getMuonEgHLTpaths() const {return muonEgHltPathList_;}
 
-  std::vector< bool > singleMuonHLTscores;
-  std::vector< bool > doubleMuonHLTscores;
-  std::vector< bool > singleElectronHLTscores;
-  std::vector< bool > doubleEgHLTscores;
-  std::vector< bool > muonEgHLTscores;
+  std::vector< TTreeReaderValue<bool>* > getDoubleMuonHLTptrs() {return doubleMuonHltPtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getSingleMuonHLTptrs() {return singleMuonHltPtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getDoubleEgHLTptrs() {return doubleEgHltPtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getSingleElectronHLTptrs() {return singleElectronHltPtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getMuonEgHLTptrs() {return muonEgHltPtrList_;}
 
-  std::vector< bool > HLT_Scores;
 private:
   //  std::unique_ptr<TChain> chain_;      // chain contains a list of root files containing the same tree
   std::unique_ptr<TFile> histf_;       // The output file with histograms
@@ -191,6 +190,13 @@ private:
   std::vector<std::string> doubleMuonHltPathList_;
   std::vector<std::string> doubleEgHltPathList_;
   std::vector<std::string> muonEgHltPathList_;
+
+  std::vector< TTreeReaderValue<bool>* >doubleMuonHltPtrList_;
+  std::vector< TTreeReaderValue<bool>* >singleMuonHltPtrList_;
+  std::vector< TTreeReaderValue<bool>* >doubleEgHltPtrList_;
+  std::vector< TTreeReaderValue<bool>* >singleElectronHltPtrList_;
+  std::vector< TTreeReaderValue<bool>* >muonEgHltPtrList_;
+
   int logOption_ {0};
   bool useTrigger_ {false};
   bool useLumiWt_ {false};
@@ -403,9 +409,9 @@ private:
   TTreeReaderArray< unsigned char >* Tau_idAntiMu;//Anti-muon discriminator V3: : bitmask 1 = Loose, 2 = Tight
   TTreeReaderArray< unsigned char >* Tau_idMVAoldDM;//IsolationMVArun2v1DBoldDMwLT ID working point (2015): 
                                                     //bitmask 1 = VLoose, 2 = Loose, 4 = Medium, 8 = Tight, 16 = VTight, 32 = VVTight
-  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSjet;
-  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSe;
-  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSmu;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSjet;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSe;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSmu;
 
 
 

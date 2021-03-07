@@ -54,6 +54,11 @@ AnaBase::AnaBase()
   doubleMuonHltPathList_.clear();
   doubleEgHltPathList_.clear();
   muonEgHltPathList_.clear();
+  singleMuonHltPtrList_.clear();
+  singleElectronHltPtrList_.clear();
+  doubleMuonHltPtrList_.clear();
+  doubleEgHltPtrList_.clear();
+  muonEgHltPtrList_.clear();
   brList_.clear();
 }
 // ----------
@@ -118,32 +123,29 @@ bool AnaBase::beginJob()
 bool AnaBase::init(){
   if (isMC_){
     //from TTree::Runs
-    if (branchFound(evtWtSum_.c_str())) genEventSumw_ = new TTreeReaderValue< double >(*treeReaderRun_, evtWtSum_.c_str());
-    //from TTree::Events
-    //    if (branchFound("Generator_weight")) genEvWt = new TTreeReaderValue< float >(*treeReader_, "Generator_weight");
-    if (branchFound("genWeight")) genEvWt = new TTreeReaderValue< float >(*treeReader_, "genWeight");
-    if (branchFound("puWeight")) PU_Weight = new TTreeReaderValue< float >(*treeReader_, "puWeight");
-    if (branchFound("puWeightUp")) PU_WeightUp = new TTreeReaderValue< float >(*treeReader_, "puWeightUp");
-    if (branchFound("puWeightDown")) PU_WeightDown = new TTreeReaderValue< float >(*treeReader_, "puWeightDown");
+    if (branchFound(evtWtSum_.c_str())) genEventSumw_                  = new TTreeReaderValue< double >(*treeReaderRun_, evtWtSum_.c_str());
+    //from TTree::Events 
+    if (branchFound("genWeight")) genEvWt                              = new TTreeReaderValue< float >(*treeReader_, "genWeight");
+    if (branchFound("puWeight")) PU_Weight                             = new TTreeReaderValue< float >(*treeReader_, "puWeight");
+    if (branchFound("puWeightUp")) PU_WeightUp                         = new TTreeReaderValue< float >(*treeReader_, "puWeightUp");
+    if (branchFound("puWeightDown")) PU_WeightDown                     = new TTreeReaderValue< float >(*treeReader_, "puWeightDown");
     
-    if (branchFound("btagWeight_CMVA"))  btagWeight_CMVA  = new TTreeReaderValue< float >(*treeReader_, "btagWeight_CMVA");
-    if (branchFound("btagWeight_CSVV2")) btagWeight_CSVV2 = new TTreeReaderValue< float >(*treeReader_, "btagWeight_CSVV2");
+    if (branchFound("btagWeight_CSVV2")) btagWeight_CSVV2              = new TTreeReaderValue< float >(*treeReader_, "btagWeight_CSVV2");
   }
-
   //TTree::Events
-  if (branchFound("run")) run_               = new TTreeReaderValue< unsigned int >(*treeReader_, "run");
-  if (branchFound("event")) event_           = new TTreeReaderValue< unsigned long long >(*treeReader_, "event");
-  if (branchFound("luminosityBlock")) lumis_ = new TTreeReaderValue< unsigned int >(*treeReader_, "luminosityBlock");
+  if (branchFound("run")) run_                                         = new TTreeReaderValue< unsigned int >(*treeReader_, "run");
+  if (branchFound("event")) event_                                     = new TTreeReaderValue< unsigned long long >(*treeReader_, "event");
+  if (branchFound("luminosityBlock")) lumis_                           = new TTreeReaderValue< unsigned int >(*treeReader_, "luminosityBlock");
 
   //Primary Vertices
-  if (branchFound("PV_ndof")) PV_ndf     = new TTreeReaderValue< float >(*treeReader_, "PV_ndof");
-  if (branchFound("PV_x")) PV_xPos       = new TTreeReaderValue< float >(*treeReader_, "PV_x");
-  if (branchFound("PV_y")) PV_yPos       = new TTreeReaderValue< float >(*treeReader_, "PV_y");
-  if (branchFound("PV_z")) PV_zPos       = new TTreeReaderValue< float >(*treeReader_, "PV_z");
-  if (branchFound("PV_chi2")) PV_chi2    = new TTreeReaderValue< float >(*treeReader_, "PV_chi2");
-  if (branchFound("PV_score")) PV_score  = new TTreeReaderValue< float >(*treeReader_, "PV_score");
-  if (branchFound("PV_npvs")) nPV        = new TTreeReaderValue< int >(*treeReader_, "PV_npvs");
-  if (branchFound("PV_npvsGood"))nGoodPV = new TTreeReaderValue< int >(*treeReader_, "PV_npvsGood");
+  if (branchFound("PV_ndof")) PV_ndf                                   = new TTreeReaderValue< float >(*treeReader_, "PV_ndof");
+  if (branchFound("PV_x")) PV_xPos                                     = new TTreeReaderValue< float >(*treeReader_, "PV_x");
+  if (branchFound("PV_y")) PV_yPos                                     = new TTreeReaderValue< float >(*treeReader_, "PV_y");
+  if (branchFound("PV_z")) PV_zPos                                     = new TTreeReaderValue< float >(*treeReader_, "PV_z");
+  if (branchFound("PV_chi2")) PV_chi2                                  = new TTreeReaderValue< float >(*treeReader_, "PV_chi2");
+  if (branchFound("PV_score")) PV_score                                = new TTreeReaderValue< float >(*treeReader_, "PV_score");
+  if (branchFound("PV_npvs")) nPV                                      = new TTreeReaderValue< int >(*treeReader_, "PV_npvs");
+  if (branchFound("PV_npvsGood"))nGoodPV                               = new TTreeReaderValue< int >(*treeReader_, "PV_npvsGood");
 
   //Muon
   if (branchFound("nMuon")) nMuon                                      = new TTreeReaderValue< unsigned int >(*treeReader_, "nMuon");
@@ -167,72 +169,71 @@ bool AnaBase::init(){
    if (branchFound("Muon_genPartIdx")) Muon_genPartIdx                 = new TTreeReaderArray< int >(*treeReader_, "Muon_genPartIdx");
    if (branchFound("Muon_genPartFlav")) Muon_genPartFlv                = new TTreeReaderArray< unsigned char >(*treeReader_, "Muon_genPartFlav");
   }
-  if (branchFound("Muon_isGlobal")) Muon_isGlobal                      =  new TTreeReaderArray< bool >(*treeReader_, "Muon_isGlobal");
-  if (branchFound("Muon_isPFcand")) Muon_isPFcand                      =  new TTreeReaderArray< bool >(*treeReader_, "Muon_isPFcand");
-  if (branchFound("Muon_isTracker")) Muon_isTracker                    =  new TTreeReaderArray< bool >(*treeReader_, "Muon_isTracker");
+  if (branchFound("Muon_isGlobal")) Muon_isGlobal                      = new TTreeReaderArray< bool >(*treeReader_, "Muon_isGlobal");
+  if (branchFound("Muon_isPFcand")) Muon_isPFcand                      = new TTreeReaderArray< bool >(*treeReader_, "Muon_isPFcand");
+  if (branchFound("Muon_isTracker")) Muon_isTracker                    = new TTreeReaderArray< bool >(*treeReader_, "Muon_isTracker");
   if (branchFound("Muon_dxy")) Muon_dxy                                = new TTreeReaderArray< float >(*treeReader_, "Muon_dxy");
   if (branchFound("Muon_dxy")) Muon_dz                                 = new TTreeReaderArray< float >(*treeReader_, "Muon_dz");
   if (branchFound("Muon_tightCharge")) Muon_tightCharge                = new TTreeReaderArray< int >(*treeReader_, "Muon_tightCharge");
   if (branchFound("Muon_miniPFRelIso_all")) Muon_miniPFRelIso_all      = new TTreeReaderArray< float >(*treeReader_, "Muon_miniPFRelIso_all");
 
   //Electron
-  if (branchFound("nElectron")) nElectron    = new TTreeReaderValue< unsigned int >(*treeReader_, "nElectron");
-  if (branchFound("Electron_pt")) Electron_pt  = new TTreeReaderArray< float >(*treeReader_, "Electron_pt");
-  if (branchFound("Electron_eta")) Electron_eta = new TTreeReaderArray< float >(*treeReader_, "Electron_eta");
-  if (branchFound("Electron_phi")) Electron_phi = new TTreeReaderArray< float >(*treeReader_, "Electron_phi");
-  if (branchFound("Electron_charge")) Electron_charge  = new TTreeReaderArray< int >(*treeReader_, "Electron_charge");
-  if (branchFound("Electron_mass")) Electron_mass    = new TTreeReaderArray< float >(*treeReader_, "Electron_mass");
-  if (branchFound("Electron_sip3d")) Electron_sip3d   = new TTreeReaderArray< float >(*treeReader_, "Electron_sip3d");
-  if (branchFound("Electron_jetIdx")) Electron_jetIdx  = new TTreeReaderArray< int >(*treeReader_, "Electron_jetIdx");
-  if (branchFound("Electron_photonIdx")) Electron_phoIdx  = new TTreeReaderArray< int >(*treeReader_, "Electron_photonIdx");
-  if (branchFound("Electron_pfRelIso03_all")) Electron_pfRelIso03_all = new TTreeReaderArray< float >(*treeReader_, "Electron_pfRelIso03_all");
-  if (branchFound("Electron_pfRelIso03_chg")) Electron_pfRelIso03_chg = new TTreeReaderArray< float >(*treeReader_, "Electron_pfRelIso03_chg");
+  if (branchFound("nElectron")) nElectron                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nElectron");
+  if (branchFound("Electron_pt")) Electron_pt                          = new TTreeReaderArray< float >(*treeReader_, "Electron_pt");
+  if (branchFound("Electron_eta")) Electron_eta                        = new TTreeReaderArray< float >(*treeReader_, "Electron_eta");
+  if (branchFound("Electron_phi")) Electron_phi                        = new TTreeReaderArray< float >(*treeReader_, "Electron_phi");
+  if (branchFound("Electron_charge")) Electron_charge                  = new TTreeReaderArray< int >(*treeReader_, "Electron_charge");
+  if (branchFound("Electron_mass")) Electron_mass                      = new TTreeReaderArray< float >(*treeReader_, "Electron_mass");
+  if (branchFound("Electron_sip3d")) Electron_sip3d                    = new TTreeReaderArray< float >(*treeReader_, "Electron_sip3d");
+  if (branchFound("Electron_jetIdx")) Electron_jetIdx                  = new TTreeReaderArray< int >(*treeReader_, "Electron_jetIdx");
+  if (branchFound("Electron_photonIdx")) Electron_phoIdx               = new TTreeReaderArray< int >(*treeReader_, "Electron_photonIdx");
+  if (branchFound("Electron_pfRelIso03_all")) Electron_pfRelIso03_all  = new TTreeReaderArray< float >(*treeReader_, "Electron_pfRelIso03_all");
+  if (branchFound("Electron_pfRelIso03_chg")) Electron_pfRelIso03_chg  = new TTreeReaderArray< float >(*treeReader_, "Electron_pfRelIso03_chg");
   if (branchFound("Electron_mvaFall17V2Iso_WP80")) Electron_mvaFall17V2Iso_WP80 = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2Iso_WP80");
   if (branchFound("Electron_mvaFall17V2Iso_WP90")) Electron_mvaFall17V2Iso_WP90 = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2Iso_WP90");
-  if (readGenInfo_) {
-    if (branchFound("Electron_genPartIdx")) Electron_genPartIdx = new TTreeReaderArray< int >(*treeReader_, "Electron_genPartIdx");
-    if (branchFound("Electron_genPartFlav")) Electron_genPartFlv = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_genPartFlav");
+  if (isMC_) {
+    if (branchFound("Electron_genPartIdx")) Electron_genPartIdx        = new TTreeReaderArray< int >(*treeReader_, "Electron_genPartIdx");
+    if (branchFound("Electron_genPartFlav")) Electron_genPartFlv       = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_genPartFlav");
   }
-  if (branchFound("Electron_dxy")) Electron_dxy   = new TTreeReaderArray< float >(*treeReader_, "Electron_dxy");
-  if (branchFound("Electron_dz")) Electron_dz     = new TTreeReaderArray< float >(*treeReader_, "Electron_dz");
+  if (branchFound("Electron_dxy")) Electron_dxy                        = new TTreeReaderArray< float >(*treeReader_, "Electron_dxy");
+  if (branchFound("Electron_dz")) Electron_dz                          = new TTreeReaderArray< float >(*treeReader_, "Electron_dz");
   if (branchFound("Electron_mvaFall17V2noIso_WPL")) Electron_mvaFall17V2noIso_WPL = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2noIso_WPL");
-  if (branchFound("Electron_lostHits")) Electron_lostHits     = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_lostHits");
-  if (branchFound("Electron_convVeto")) Electron_convVeto     = new TTreeReaderArray< bool >(*treeReader_, "Electron_convVeto");
+  if (branchFound("Electron_lostHits")) Electron_lostHits              = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_lostHits");
+  if (branchFound("Electron_convVeto")) Electron_convVeto              = new TTreeReaderArray< bool >(*treeReader_, "Electron_convVeto");
 
   //MET
-  if (branchFound("MET_pt")) Met_pt          = new TTreeReaderValue< float >(*treeReader_, "MET_pt");
-  if (branchFound("MET_pt_nom")) Met_nomPt   = new TTreeReaderValue< float >(*treeReader_, "MET_pt_nom");
-  if (branchFound("MET_phi")) Met_phi        = new TTreeReaderValue< float >(*treeReader_, "MET_phi");
-  if (branchFound("MET_phi_nom")) Met_nomPhi = new TTreeReaderValue< float >(*treeReader_, "MET_phi_nom");
-  if (branchFound("MET_significance")) Met_significance = new TTreeReaderValue< float >(*treeReader_, "MET_significance");
-  if (branchFound("MET_sumEt")) Met_sumEt    = new TTreeReaderValue< float >(*treeReader_, "MET_sumEt");
+  if (branchFound("MET_pt")) Met_pt                                    = new TTreeReaderValue< float >(*treeReader_, "MET_pt");
+  if (branchFound("MET_pt_nom")) Met_nomPt                             = new TTreeReaderValue< float >(*treeReader_, "MET_pt_nom");
+  if (branchFound("MET_phi")) Met_phi                                  = new TTreeReaderValue< float >(*treeReader_, "MET_phi");
+  if (branchFound("MET_phi_nom")) Met_nomPhi                           = new TTreeReaderValue< float >(*treeReader_, "MET_phi_nom");
+  if (branchFound("MET_significance")) Met_significance                = new TTreeReaderValue< float >(*treeReader_, "MET_significance");
+  if (branchFound("MET_sumEt")) Met_sumEt                              = new TTreeReaderValue< float >(*treeReader_, "MET_sumEt");
 
   //AK4Jet
-  if (branchFound("nJet")) nJet                                 = new TTreeReaderValue< unsigned int >(*treeReader_, "nJet");
-  if (branchFound("Jet_pt")) Jet_pt                             = new TTreeReaderArray< float >(*treeReader_, "Jet_pt");
-  if (branchFound("Jet_pt_nom")) Jet_nomPt                      = new TTreeReaderArray< float >(*treeReader_, "Jet_pt_nom");
-  if (branchFound("Jet_eta")) Jet_eta                           = new TTreeReaderArray< float >(*treeReader_, "Jet_eta");
-  if (branchFound("Jet_phi")) Jet_phi                           = new TTreeReaderArray< float >(*treeReader_, "Jet_phi");
-  if (branchFound("Jet_nConstituents")) Jet_nConstituents       = new TTreeReaderArray< int >(*treeReader_, "Jet_nConstituents");
-  if (branchFound("Jet_nMuons")) Jet_nMuons                     = new TTreeReaderArray< int >(*treeReader_, "Jet_nMuons");
-  if (branchFound("Jet_nElectrons")) Jet_nElectrons             = new TTreeReaderArray< int >(*treeReader_, "Jet_nElectrons");
-  if (branchFound("Jet_puId")) Jet_puId                         = new TTreeReaderArray< int >(*treeReader_, "Jet_puId");
-  if (branchFound("Jet_muonIdx1")) Jet_muIdx1                   = new TTreeReaderArray< int >(*treeReader_, "Jet_muonIdx1");
-  if (branchFound("Jet_muonIdx2")) Jet_muIdx2                   = new TTreeReaderArray< int >(*treeReader_, "Jet_muonIdx2");
-  if (branchFound("Jet_electronIdx1")) Jet_elIdx1               = new TTreeReaderArray< int >(*treeReader_, "Jet_electronIdx1");
-  if (branchFound("Jet_electronIdx2")) Jet_elIdx2               = new TTreeReaderArray< int >(*treeReader_, "Jet_electronIdx2");
-  if (branchFound("Jet_jetId")) Jet_jetId                       = new TTreeReaderArray< int >(*treeReader_, "Jet_jetId");
-  if (branchFound("Jet_qgl")) Jet_qgl                           = new TTreeReaderArray< float >(*treeReader_, "Jet_qgl");
-  if (branchFound("Jet_neHEF")) Jet_neHEF                       = new TTreeReaderArray< float >(*treeReader_, "Jet_neHEF");
-  if (branchFound("Jet_neEmEF")) Jet_neEmEF                     = new TTreeReaderArray< float >(*treeReader_, "Jet_neEmEF");
-  if (branchFound("Jet_chHEF")) Jet_chHEF                       = new TTreeReaderArray< float >(*treeReader_, "Jet_chHEF");
-  if (branchFound("Jet_chEmEF")) Jet_chEmEF                     = new TTreeReaderArray< float >(*treeReader_, "Jet_chEmEF");
-  if (branchFound("Jet_area")) Jet_area                         = new TTreeReaderArray< float >(*treeReader_, "Jet_area");
-  if (branchFound("Jet_mass")) Jet_mass                         = new TTreeReaderArray< float >(*treeReader_, "Jet_mass");
-  if (branchFound("Jet_mass_nom")) Jet_nomMass                  = new TTreeReaderArray< float >(*treeReader_, "Jet_mass_nom");
-  //if (branchFound("Jet_btagCMVA")) Jet_btagCMVA                 = new TTreeReaderArray< float >(*treeReader_, "Jet_btagCMVA");
-  if (branchFound("Jet_btagCSVV2")) Jet_btagCSVV2               = new TTreeReaderArray< float >(*treeReader_, "Jet_btagCSVV2");
-  if (branchFound("Jet_btagDeepFlavB")) Jet_btagDeepFlavB       = new TTreeReaderArray< float >(*treeReader_, "Jet_btagDeepFlavB");
+  if (branchFound("nJet")) nJet                                        = new TTreeReaderValue< unsigned int >(*treeReader_, "nJet");
+  if (branchFound("Jet_pt")) Jet_pt                                    = new TTreeReaderArray< float >(*treeReader_, "Jet_pt");
+  if (branchFound("Jet_pt_nom")) Jet_nomPt                             = new TTreeReaderArray< float >(*treeReader_, "Jet_pt_nom");
+  if (branchFound("Jet_eta")) Jet_eta                                  = new TTreeReaderArray< float >(*treeReader_, "Jet_eta");
+  if (branchFound("Jet_phi")) Jet_phi                                  = new TTreeReaderArray< float >(*treeReader_, "Jet_phi");
+  if (branchFound("Jet_nConstituents")) Jet_nConstituents              = new TTreeReaderArray< int >(*treeReader_, "Jet_nConstituents");
+  if (branchFound("Jet_nMuons")) Jet_nMuons                            = new TTreeReaderArray< int >(*treeReader_, "Jet_nMuons");
+  if (branchFound("Jet_nElectrons")) Jet_nElectrons                    = new TTreeReaderArray< int >(*treeReader_, "Jet_nElectrons");
+  if (branchFound("Jet_puId")) Jet_puId                                = new TTreeReaderArray< int >(*treeReader_, "Jet_puId");
+  if (branchFound("Jet_muonIdx1")) Jet_muIdx1                          = new TTreeReaderArray< int >(*treeReader_, "Jet_muonIdx1");
+  if (branchFound("Jet_muonIdx2")) Jet_muIdx2                          = new TTreeReaderArray< int >(*treeReader_, "Jet_muonIdx2");
+  if (branchFound("Jet_electronIdx1")) Jet_elIdx1                      = new TTreeReaderArray< int >(*treeReader_, "Jet_electronIdx1");
+  if (branchFound("Jet_electronIdx2")) Jet_elIdx2                      = new TTreeReaderArray< int >(*treeReader_, "Jet_electronIdx2");
+  if (branchFound("Jet_jetId")) Jet_jetId                              = new TTreeReaderArray< int >(*treeReader_, "Jet_jetId");
+  if (branchFound("Jet_qgl")) Jet_qgl                                  = new TTreeReaderArray< float >(*treeReader_, "Jet_qgl");
+  if (branchFound("Jet_neHEF")) Jet_neHEF                              = new TTreeReaderArray< float >(*treeReader_, "Jet_neHEF");
+  if (branchFound("Jet_neEmEF")) Jet_neEmEF                            = new TTreeReaderArray< float >(*treeReader_, "Jet_neEmEF");
+  if (branchFound("Jet_chHEF")) Jet_chHEF                              = new TTreeReaderArray< float >(*treeReader_, "Jet_chHEF");
+  if (branchFound("Jet_chEmEF")) Jet_chEmEF                            = new TTreeReaderArray< float >(*treeReader_, "Jet_chEmEF");
+  if (branchFound("Jet_area")) Jet_area                                = new TTreeReaderArray< float >(*treeReader_, "Jet_area");
+  if (branchFound("Jet_mass")) Jet_mass                                = new TTreeReaderArray< float >(*treeReader_, "Jet_mass");
+  if (branchFound("Jet_mass_nom")) Jet_nomMass                         = new TTreeReaderArray< float >(*treeReader_, "Jet_mass_nom");
+  if (branchFound("Jet_btagCSVV2")) Jet_btagCSVV2                      = new TTreeReaderArray< float >(*treeReader_, "Jet_btagCSVV2");
+  if (branchFound("Jet_btagDeepFlavB")) Jet_btagDeepFlavB              = new TTreeReaderArray< float >(*treeReader_, "Jet_btagDeepFlavB");
 
   //FatJet
   if (branchFound("nFatJet")) nFatJet                                  = new TTreeReaderValue< unsigned int >(*treeReader_, "nFatJet");
@@ -291,119 +292,67 @@ bool AnaBase::init(){
   if (branchFound("Tau_idAntiEle")) Tau_idAntiEle                      = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idAntiEle");
   if (branchFound("Tau_idAntiMu")) Tau_idAntiMu                        = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idAntiMu");
   if (branchFound("Tau_idMVAoldDM")) Tau_idMVAoldDM                    = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idMVAoldDM");
-  if (branchFound("Tau_idDeepTau2017v2p1VSjet")) Tau_idDeepTau2017v2p1VSjet = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSjet");
-  if (branchFound("Tau_idDeepTau2017v2p1VSjet")) Tau_idDeepTau2017v2p1VSmu  = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSmu");
-  if (branchFound("Tau_idDeepTau2017v2p1VSjet")) Tau_idDeepTau2017v2p1VSe   = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSe");
+  if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSjet= new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSjet");
+  if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSmu = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSmu");
+  if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSe  = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSe");
 
   if (isMC_){
     //LHE
-    if (branchFound("LHE_Njets")) LHEnJets  = new TTreeReaderValue< unsigned char >(*treeReader_, "LHE_Njets");
-    if (readGenInfo_){
-      //      if (branchFound("LHE_Njets")) LHEnJets  = new TTreeReaderValue< unsigned char >(*treeReader_, "LHE_Njets");
-      if (branchFound("nLHEPart")) nLHEPart     = new TTreeReaderValue< unsigned int >(*treeReader_, "nLHEPart");
-      if (branchFound("LHEPart_pt")) LHEPart_pt = new TTreeReaderArray< float >(*treeReader_, "LHEPart_pt");
-      if (branchFound("LHEPart_eta")) LHEPart_eta = new TTreeReaderArray< float >(*treeReader_, "LHEPart_eta");
-      if (branchFound("LHEPart_phi")) LHEPart_phi = new TTreeReaderArray< float >(*treeReader_, "LHEPart_phi");
-      if (branchFound("LHEPart_mass")) LHEPart_mass  = new TTreeReaderArray< float >(*treeReader_, "LHEPart_mass");
-      
-      if (branchFound("LHEPart_pdgId")) LHEPart_pdgId = new TTreeReaderArray< int >(*treeReader_, "LHEPart_pdgId");
-      //GenParticle
-      if (branchFound("nGenPart")) nGenPart     = new TTreeReaderValue< unsigned int >(*treeReader_, "nGenPart");
-      if (branchFound("GenPart_pt")) GenPart_pt = new TTreeReaderArray< float >(*treeReader_, "GenPart_pt");
-      if (branchFound("GenPart_eta")) GenPart_eta = new TTreeReaderArray< float >(*treeReader_, "GenPart_eta");
-      if (branchFound("GenPart_phi")) GenPart_phi = new TTreeReaderArray< float >(*treeReader_, "GenPart_phi");
-      if (branchFound("GenPart_mass")) GenPart_mass  = new TTreeReaderArray< float >(*treeReader_, "GenPart_mass");
-      if (branchFound("GenPart_genPartIdxMother")) GenPart_motherIdx  = new TTreeReaderArray< int >(*treeReader_, "GenPart_genPartIdxMother");
-      if (branchFound("GenPart_pdgId")) GenPart_pdgId  = new TTreeReaderArray< int >(*treeReader_, "GenPart_pdgId");
-      if (branchFound("GenPart_status")) GenPart_status  = new TTreeReaderArray< int >(*treeReader_, "GenPart_status");
-      if (branchFound("GenPart_statusFlags")) GenPart_statusFlags  = new TTreeReaderArray< int >(*treeReader_, "GenPart_statusFlags");
-    }
+    if (branchFound("LHE_Njets")) LHEnJets                             = new TTreeReaderValue< unsigned char >(*treeReader_, "LHE_Njets");
+    if (branchFound("nLHEPart")) nLHEPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nLHEPart");
+    if (branchFound("LHEPart_pt")) LHEPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "LHEPart_pt");
+    if (branchFound("LHEPart_eta")) LHEPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_eta");
+    if (branchFound("LHEPart_phi")) LHEPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_phi");
+    if (branchFound("LHEPart_mass")) LHEPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "LHEPart_mass");
+    if (branchFound("LHEPart_pdgId")) LHEPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "LHEPart_pdgId");
+    //GenParticle
+    if (branchFound("nGenPart")) nGenPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nGenPart");
+    if (branchFound("GenPart_pt")) GenPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "GenPart_pt");
+    if (branchFound("GenPart_eta")) GenPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_eta");
+    if (branchFound("GenPart_phi")) GenPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_phi");
+    if (branchFound("GenPart_mass")) GenPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "GenPart_mass");
+    if (branchFound("GenPart_genPartIdxMother")) GenPart_motherIdx     = new TTreeReaderArray< int >(*treeReader_, "GenPart_genPartIdxMother");
+    if (branchFound("GenPart_pdgId")) GenPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "GenPart_pdgId");
+    if (branchFound("GenPart_status")) GenPart_status                  = new TTreeReaderArray< int >(*treeReader_, "GenPart_status");
+    if (branchFound("GenPart_statusFlags")) GenPart_statusFlags        = new TTreeReaderArray< int >(*treeReader_, "GenPart_statusFlags");
   }
-  // HLTs
-  doubleMuonHLTpaths.clear();
-  doubleMuonHLTscores.clear();
-  doubleEgHLTpaths.clear();
-  doubleEgHLTscores.clear();
-  muonEgHLTpaths.clear();
-  muonEgHLTscores.clear();
-  singleMuonHLTpaths.clear();
-  singleMuonHLTscores.clear();
-  singleElectronHLTpaths.clear();
-  singleElectronHLTscores.clear();
-  HLT_Scores.clear();
-
+  // Getting the HLT branch pointers
   for (auto& hlt : doubleMuonHltPathList_) {
-    TTreeReaderValue< bool >* HLT = NULL;
-    if (branchFound(hlt.c_str())) HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
-    bool hlt_val = *HLT->Get();
-    doubleMuonHLTpaths.push_back(hlt.c_str());
-    doubleMuonHLTscores.push_back(hlt_val);
-    delete HLT;
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      doubleMuonHltPtrList_.push_back(HLT);
+    }
   }
   for (auto& hlt : singleMuonHltPathList_) {
-    TTreeReaderValue< bool >* HLT = NULL;
-    if (branchFound(hlt.c_str())) HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
-    bool hlt_val = *HLT->Get();
-    singleMuonHLTpaths.push_back(hlt.c_str());
-    singleMuonHLTscores.push_back(hlt_val);
-    delete HLT;
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      singleMuonHltPtrList_.push_back(HLT);
+    }
   }
   for (auto& hlt : doubleEgHltPathList_) {
-    TTreeReaderValue< bool >* HLT = NULL;
-    if (branchFound(hlt.c_str())) HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
-    bool hlt_val = *HLT->Get();
-    doubleEgHLTpaths.push_back(hlt.c_str());
-    doubleEgHLTscores.push_back(hlt_val);
-    delete HLT;
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      doubleEgHltPtrList_.push_back(HLT);
+    }
   }
   for (auto& hlt : singleElectronHltPathList_) {
-    TTreeReaderValue< bool >* HLT = NULL;
-    if (branchFound(hlt.c_str())) HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
-    bool hlt_val = *HLT->Get();
-    singleElectronHLTpaths.push_back(hlt.c_str());
-    singleElectronHLTscores.push_back(hlt_val);
-    delete HLT;
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      singleElectronHltPtrList_.push_back(HLT);
+    }
   }
   for (auto& hlt : muonEgHltPathList_) {
-    TTreeReaderValue< bool >* HLT = NULL;
-    if (branchFound(hlt.c_str())) HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
-    bool hlt_val = *HLT->Get();
-    muonEgHLTpaths.push_back(hlt.c_str());
-    muonEgHLTscores.push_back(hlt_val);
-    delete HLT;
-  }
-  // maintain the correct order
-  // doubleMuon, doubleEG, muonEG, singleMuon, singleElectron
-  for (auto&& i : doubleMuonHLTscores){
-    if (i) {
-      HLT_Scores.push_back(i);
-      break;
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      muonEgHltPtrList_.push_back(HLT);
     }
   }
-  for (auto&& i : doubleEgHLTscores){
-    if (i) {
-      HLT_Scores.push_back(i);
-      break;
-    }
-  }
-  for (auto&& i : muonEgHLTscores){
-    if (i) {
-      HLT_Scores.push_back(i);
-      break;
-    }
-  }
-  for (auto&& i : singleMuonHLTscores){
-    if (i) {
-      HLT_Scores.push_back(i);
-      break;
-    }
-  }
-  for (auto&& i : singleElectronHLTscores){
-    if (i) {
-      HLT_Scores.push_back(i);
-      break;
-    }
-  }
+  
   return true;
 }
 

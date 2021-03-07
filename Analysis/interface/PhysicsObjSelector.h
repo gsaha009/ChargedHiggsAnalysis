@@ -109,6 +109,8 @@ class PhysicsObjSelector: public AnaBase {
   //Jet Collections
   const std::vector<vhtm::Jet>& getPreSelJetList() const {return preSelJetList_;}
   const std::vector<vhtm::Jet>& getCleanJetList() const {return leptonCleanJetList_;}  
+  const std::vector<vhtm::Jet>& getLooseBJetList() const {return looseBJetList_;}  
+  const std::vector<vhtm::Jet>& getBJetList() const {return bJetList_;}  
 
   //FatJet Collections
   const std::vector<vhtm::FatJet>& getFatJetList() const {return fatJetList_;}
@@ -139,6 +141,12 @@ class PhysicsObjSelector: public AnaBase {
   const std::vector<vhtm::LHEParticle>& getLHEList() const {return lheParticleList_;}
   //---------------------------------------------------------
   
+  std::vector< bool >getDoubleMuonHLTscores();
+  std::vector< bool >getSingleMuonHLTscores();
+  std::vector< bool >getDoubleEgHLTscores();
+  std::vector< bool >getSingleElectronHLTscores();
+  std::vector< bool >getMuonEgHLTscores();
+
   bool findEventInfo();
   bool findGenPartInfo();
   bool findLHEPartInfo();
@@ -160,9 +168,7 @@ class PhysicsObjSelector: public AnaBase {
  private:
   //  bool dumpEvent_;
   std::vector<vhtm::Event> eventList_;
-
   std::vector<vhtm::MET> metList_;
-
   std::vector<vhtm::Jet> preSelJetList_, leptonCleanJetList_, looseBJetList_, bJetList_; 
   std::vector<vhtm::FatJet> fatJetList_, cleanFatJetList_, bTaggedFatJetList_;
   std::vector<vhtm::SubJet> subJetList_;

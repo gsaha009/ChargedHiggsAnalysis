@@ -69,14 +69,14 @@ def main():
 
     jobDir  = os.path.join(pwd,'JobCards_'+str(era)+'_'+args.suffix) 
     if os.path.isdir(jobDir):
-        logging.info('job directory exists .')
+        logging.info('{} : job directory exists'.format(jobDir))
     else:
         os.mkdir(jobDir)
         logging.info('{} : job directory created'.format(jobDir))
 
     histDir = os.path.join(outdir,'JobOutput_'+str(era)+'_'+args.suffix)
     if os.path.isdir(histDir):
-        logging.info('out directory exists .')
+        logging.info('{} : out directory exists'.format(histDir))
     else:
         os.mkdir(histDir)
         logging.info('{} : out directory created'.format(histDir))
