@@ -34,9 +34,10 @@ make -f *MakefileName*
 ```
 If the codes get compiled successfully, an executable will be produced. Now one would need the JobCards to run the executable i.e. the analysis.
 Here comes the 2nd part `MakeJobsAndSend`. It contains a python script which automatize Job Card production and HTCondor submission.
-There is also an `yaml` with all relevant information to produce the jobs.
+There is also an `yaml` with all relevant information to produce the jobs. Be careful with the names of the directories i.e. jobDir, outDir etc.
 One can produce the job files and the condor scripts by using the following command :
 ```
 cd MakeJobsAndSend/
 python runAnalysis.py --configName analysisBLA.yml --suffix Foo [--send]
 ```
+N.B. `--send` is used to send jobs to condor directly.
