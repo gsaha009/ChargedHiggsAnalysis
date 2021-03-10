@@ -65,6 +65,8 @@ bool MultiLeptonMVAna::beginJob()
 
   histf()->cd();
   histf()->mkdir("TMVAnalysis");
+  fakehistf()->cd();
+  fakehistf()->mkdir("TMVAnalysis");
 
   bookHistograms();
 
@@ -123,6 +125,14 @@ void MultiLeptonMVAna::bookHistograms()
 
   histf()->cd();
   histf()->ls();
+
+  fakehistf()->cd();
+  fakehistf()->cd("TMVAnalysis");
+  new TH1D("nMuons", "nTightIsoMuons", 10, -0.5, 9.5);
+  new TH1D("nElectrons", "nTightIsoElectrons", 10, -0.5, 9.5);
+
+  fakehistf()->cd();
+  fakehistf()->ls();
 }
 
 // -------------------------------

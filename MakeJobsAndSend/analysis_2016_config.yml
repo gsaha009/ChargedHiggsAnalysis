@@ -89,5 +89,5 @@ samplesDict:
     Signal_PPAP_v1:
       filedirs: ['/eos/user/p/ppalit3/Exotic/Signal_PPAP_BP1/']
       xsec: 0.001929282841388
-      genEvtWtSum: 'genEventSumw_'
+      genEvtWtSum: 'genEventSumw'
       filesPerJob: 4

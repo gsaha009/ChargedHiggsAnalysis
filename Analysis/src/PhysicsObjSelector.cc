@@ -70,56 +70,58 @@ void PhysicsObjSelector::objectEfficiency() {
   histf()->cd();
   histf()->cd("ObjectSelection");
 
+  // $  : objects are saved at these levels
+  // -- : to show the cutflow
   // Muon
   vector<string> muLabels {
     "nRawMuons",
-    "afterPreSel cuts",
-    "pT > 10 & jet cleaning",
-    "isFakeable",
-    "isIsoFakeable",
-    "isTight",
-    "isTightIso"  
+    " --$afterPreSel cuts",
+    "   --pT>10 & jet cleaning [NA]",
+    "     --$isFakeable",
+    "       --$isIsoFakeable",
+    "     --$isTight",
+    "       --$isTightIso"  
   };
   AnaUtil::showEfficiency("muCutFlow", muLabels, "Muon Selection", "Muons");  
 
   // Electron
   vector<string> eleLabels {
     "nRawElectrons",
-      "preSelElectrons",
-      "mucleaning",
-      "tighterCond",
-      "fakeable",
-      "tight",
-      "mCleaning"
+    " --preSelElectrons",
+    "   --$mucleaning",
+    " --pT>10,ConvVeto,NoLostHits",
+    "   --$fakeable",
+    "   --tight",
+    "     --$mCleaning"
   };
   AnaUtil::showEfficiency("eleCutFlow", eleLabels, "Electron Selection", "Electrons");  
 
   // Jet
   vector<string> jetLabels {
     "nRawJets",
-    "looseSelection",
-    "puId cut",
-    "lepton cleaning"
+    " --looseSelection",
+    "   --$puId cut",
+    "     --$lepton cleaning"
   };
   AnaUtil::showEfficiency("jetCutFlow", jetLabels, "Jet Selection", "Jets");  
 
   // Tau
   vector<string> tauLabels {
     "nRawTaus",
-    "tauSelCuts",
-    "lepClean"
+    " --$tauSelCuts",
+    "   --$lepClean"
   };
   AnaUtil::showEfficiency("tauCutFlow", tauLabels, "Tau Selection", "Taus");  
 
   // FatJet
   vector<string> fatJetLabels {
     "nRawFatJets",
-    "after jetId, pT & eta cuts",
-    "hasValidSubJets",
-    "30 < mSoftDrop < 210",
-    "tau21 < 0.75",
-    "leptonCleaning",
-    "isBTagged"  
+    " --after jetId, pT & eta cuts",
+    "   --hasValidSubJets",
+    "     --30 < mSoftDrop < 210",
+    "       --tau21 < 0.75",
+    "         --leptonCleaning",
+    "           --isBTagged"  
   };
   AnaUtil::showEfficiency("fatJetCutFlow", fatJetLabels, "FatJet Selection", "FatJets");  
 
@@ -186,7 +188,7 @@ bool PhysicsObjSelector::findEventInfo() {
   if (isMC()){
     ev.genEvWt = *genEvWt->Get();
     ev.PUWeight = *PU_Weight->Get();
-    if (readGenInfo()){
+    if (readGenInfo()) {
       ev.nGenParticles = *nGenPart->Get();
       ev.nLHEParticles = *nLHEPart->Get();
     }
@@ -348,7 +350,7 @@ void PhysicsObjSelector::muonSelector() {
 
     // Fakeable Muon Selection
     if (Muon_corrpt->At(i) < 10.0) continue;
-    if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
+    //if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
     AnaUtil::fillHist1D ("muCutFlow", 2, 1.0);
 
     if (!Muon_TightId->At(i)) {
@@ -694,7 +696,7 @@ bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLo
       if (isMuon) return true;
     }
   }
-  if (VsTightMuons) {
+  else if (VsTightMuons) {
     for (const auto& mu: tightMuList_){
       if (elep4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) {
 	isMuon  = true;
@@ -703,7 +705,7 @@ bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLo
       if (isMuon) return true;
     }
   }
-  return true;
+  return false;
 }
 /*
 bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {

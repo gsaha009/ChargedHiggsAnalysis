@@ -113,6 +113,7 @@ public:
   int getEntry(int lflag) const;
 
   std::unique_ptr<TFile>& histf() {return histf_;}
+  std::unique_ptr<TFile>& fakehistf() {return fakehistf_;}
   TTreeReader* treeReader() {return treeReader_;}
   TTreeReader* treeReaderRun() {return treeReaderRun_;}
   TChain* chain() {return chain_;}
@@ -170,6 +171,7 @@ public:
 private:
   //  std::unique_ptr<TChain> chain_;      // chain contains a list of root files containing the same tree
   std::unique_ptr<TFile> histf_;       // The output file with histograms
+  std::unique_ptr<TFile> fakehistf_;       // The output file with histograms
   TChain* chain_; 
   TChain* chainRun_;  
   std::vector<std::string> brList_;
@@ -209,6 +211,7 @@ private:
   std::string evtWtSum_;
   std::string dataset_ {"bla"};
   std::string histFile_ {"default.root"};
+  std::string fakehistFile_ {"fakedefault.root"};
   std::string logFile_ {"default.out"};
   std::string evFile_ {"events.out"};
   std::string selEvFile_ {"selected_events.out"};

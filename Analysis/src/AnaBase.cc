@@ -85,6 +85,10 @@ bool AnaBase::beginJob()
   // Open the output ROOT file
   TFile* f = TFile::Open(histFile_.c_str(), "RECREATE");
   histf_.reset(std::move(f));
+  // Open the output FakeExtrapolated ROOT file
+  TFile* fakef = TFile::Open(fakehistFile_.c_str(), "RECREATE");
+  fakehistf_.reset(std::move(fakef));
+
   nEvents_ = static_cast<int>(chain_->GetEntries()); 
   if (nEvents_ <= 0) {
     cerr << "******* nEvents = " << nEvents_ << ", returning!" << endl;
@@ -299,22 +303,24 @@ bool AnaBase::init(){
   if (isMC_){
     //LHE
     if (branchFound("LHE_Njets")) LHEnJets                             = new TTreeReaderValue< unsigned char >(*treeReader_, "LHE_Njets");
-    if (branchFound("nLHEPart")) nLHEPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nLHEPart");
-    if (branchFound("LHEPart_pt")) LHEPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "LHEPart_pt");
-    if (branchFound("LHEPart_eta")) LHEPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_eta");
-    if (branchFound("LHEPart_phi")) LHEPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_phi");
-    if (branchFound("LHEPart_mass")) LHEPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "LHEPart_mass");
-    if (branchFound("LHEPart_pdgId")) LHEPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "LHEPart_pdgId");
-    //GenParticle
-    if (branchFound("nGenPart")) nGenPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nGenPart");
-    if (branchFound("GenPart_pt")) GenPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "GenPart_pt");
-    if (branchFound("GenPart_eta")) GenPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_eta");
-    if (branchFound("GenPart_phi")) GenPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_phi");
-    if (branchFound("GenPart_mass")) GenPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "GenPart_mass");
-    if (branchFound("GenPart_genPartIdxMother")) GenPart_motherIdx     = new TTreeReaderArray< int >(*treeReader_, "GenPart_genPartIdxMother");
-    if (branchFound("GenPart_pdgId")) GenPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "GenPart_pdgId");
-    if (branchFound("GenPart_status")) GenPart_status                  = new TTreeReaderArray< int >(*treeReader_, "GenPart_status");
-    if (branchFound("GenPart_statusFlags")) GenPart_statusFlags        = new TTreeReaderArray< int >(*treeReader_, "GenPart_statusFlags");
+    if (readGenInfo_){
+      if (branchFound("nLHEPart")) nLHEPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nLHEPart");
+      if (branchFound("LHEPart_pt")) LHEPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "LHEPart_pt");
+      if (branchFound("LHEPart_eta")) LHEPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_eta");
+      if (branchFound("LHEPart_phi")) LHEPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "LHEPart_phi");
+      if (branchFound("LHEPart_mass")) LHEPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "LHEPart_mass");
+      if (branchFound("LHEPart_pdgId")) LHEPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "LHEPart_pdgId");
+      //GenParticle
+      if (branchFound("nGenPart")) nGenPart                              = new TTreeReaderValue< unsigned int >(*treeReader_, "nGenPart");
+      if (branchFound("GenPart_pt")) GenPart_pt                          = new TTreeReaderArray< float >(*treeReader_, "GenPart_pt");
+      if (branchFound("GenPart_eta")) GenPart_eta                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_eta");
+      if (branchFound("GenPart_phi")) GenPart_phi                        = new TTreeReaderArray< float >(*treeReader_, "GenPart_phi");
+      if (branchFound("GenPart_mass")) GenPart_mass                      = new TTreeReaderArray< float >(*treeReader_, "GenPart_mass");
+      if (branchFound("GenPart_genPartIdxMother")) GenPart_motherIdx     = new TTreeReaderArray< int >(*treeReader_, "GenPart_genPartIdxMother");
+      if (branchFound("GenPart_pdgId")) GenPart_pdgId                    = new TTreeReaderArray< int >(*treeReader_, "GenPart_pdgId");
+      if (branchFound("GenPart_status")) GenPart_status                  = new TTreeReaderArray< int >(*treeReader_, "GenPart_status");
+      if (branchFound("GenPart_statusFlags")) GenPart_statusFlags        = new TTreeReaderArray< int >(*treeReader_, "GenPart_statusFlags");
+    }
   }
   // Getting the HLT branch pointers
   for (auto& hlt : doubleMuonHltPathList_) {
@@ -367,6 +373,9 @@ void AnaBase::closeHistFile() //Called by closeFiles
   histf_->cd();
   histf_->Write();
   histf_->Close();
+  fakehistf_->cd();
+  fakehistf_->Write();
+  fakehistf_->Close();
 }
 double AnaBase::lumiWt(double evtWeightSum, bool verbose) const 
 {
@@ -561,6 +570,8 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       bunchCrossing_ = std::stoi(value.c_str());
     else if (key == "histFile") 
       histFile_ = value;
+    else if (key == "fakehistFile") 
+      fakehistFile_ = value;
     else if (key == "puHistFile") 
       puHistFile_ = value;
     else if (key == "puHistogram") 
