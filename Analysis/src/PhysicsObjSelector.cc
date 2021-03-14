@@ -75,53 +75,51 @@ void PhysicsObjSelector::objectEfficiency() {
   // Muon
   vector<string> muLabels {
     "nRawMuons",
-    " --$afterPreSel cuts",
-    "   --pT>10 & jet cleaning [NA]",
-    "     --$isFakeable",
-    "       --$isIsoFakeable",
-    "     --$isTight",
-    "       --$isTightIso"  
+    "preSel cuts",
+    "pT>10",
+    "pass TightId",
+    "pfRelIso <= 0.15"  
   };
   AnaUtil::showEfficiency("muCutFlow", muLabels, "Muon Selection", "Muons");  
 
   // Electron
   vector<string> eleLabels {
     "nRawElectrons",
-    " --preSelElectrons",
-    "   --$mucleaning",
-    " --pT>10,ConvVeto,NoLostHits",
-    "   --$fakeable",
-    "   --tight",
-    "     --$mCleaning"
+    "preSel cuts",
+    "cleaning against tight muons",
+    "pT>10,ConvVeto,NoLostHits",
+    "pass mvaFall17V2Iso_WP90"
   };
   AnaUtil::showEfficiency("eleCutFlow", eleLabels, "Electron Selection", "Electrons");  
 
   // Jet
   vector<string> jetLabels {
     "nRawJets",
-    " --looseSelection",
-    "   --$puId cut",
-    "     --$lepton cleaning"
+    "tight JetId",
+    "jet_pt > 25 & eta < 2.5"
+    "puId cut",
+    "lepton cleaning",
+    "is bTagged"
   };
   AnaUtil::showEfficiency("jetCutFlow", jetLabels, "Jet Selection", "Jets");  
 
   // Tau
   vector<string> tauLabels {
     "nRawTaus",
-    " --$tauSelCuts",
-    "   --$lepClean"
+    "tauSelCuts",
+    "lepClean"
   };
   AnaUtil::showEfficiency("tauCutFlow", tauLabels, "Tau Selection", "Taus");  
 
   // FatJet
   vector<string> fatJetLabels {
     "nRawFatJets",
-    " --after jetId, pT & eta cuts",
-    "   --hasValidSubJets",
-    "     --30 < mSoftDrop < 210",
-    "       --tau21 < 0.75",
-    "         --leptonCleaning",
-    "           --isBTagged"  
+    "after jetId, pT & eta cuts",
+    "hasValidSubJets",
+    "30 < mSoftDrop < 210",
+    "tau21 < 0.75",
+    "leptonCleaning",
+    "isBTagged"  
   };
   AnaUtil::showEfficiency("fatJetCutFlow", fatJetLabels, "FatJet Selection", "FatJets");  
 
@@ -131,8 +129,8 @@ void PhysicsObjSelector::bookHistograms() {
   histf()->cd();
   histf()->cd("ObjectSelection");
 
-  new TH1D("muCutFlow", "Muon CutFlow", 7, -0.5, 6.5);
-  new TH1D("eleCutFlow", "Electron CutFlow", 7, -0.5, 6.5);
+  new TH1D("muCutFlow", "Muon CutFlow", 5, -0.5, 4.5);
+  new TH1D("eleCutFlow", "Electron CutFlow", 5, -0.5, 4.5);
   new TH1D("jetCutFlow", "Jet CutFlow", 4, -0.5, 3.5);
   new TH1D("tauCutFlow", "Tau CutFlow", 3, -0.5, 2.5);
   new TH1D("fatJetCutFlow", "FatJet CutFlow", 7, -0.5, 6.5);
@@ -145,13 +143,11 @@ void PhysicsObjSelector::clear() {
 
   preSelMuList_.clear();
   fakeableMuList_.clear();
-  fakeableIsoMuList_.clear();
   tightMuList_.clear();
-  tightIsoMuList_.clear();
 
   preSelEleList_.clear();
-  fakeableIsoEleList_.clear();
-  tightIsoEleList_.clear();
+  fakeableEleList_.clear();
+  tightEleList_.clear();
 
   preSelJetList_.clear();
   leptonCleanJetList_.clear();
@@ -320,9 +316,9 @@ void PhysicsObjSelector::muonSelector() {
     // Loose muon selection
     if (Muon_corrpt->At(i) < 5.0) continue;
     if (std::fabs(Muon_eta->At(i)) > 2.4) continue;
-    if (std::fabs(Muon_dxy->At(i)) > 0.05) continue;
-    if (std::fabs(Muon_dz->At(i))  > 0.1) continue;
-    if (Muon_miniPFRelIso_all->At(i) > 0.4) continue;
+    if (std::fabs(Muon_dxy->At(i)) > 0.2) continue;
+    if (std::fabs(Muon_dz->At(i))  > 0.5) continue;
+    //if (Muon_miniPFRelIso_all->At(i) > 0.4) continue;
     if (std::fabs(Muon_sip3d->At(i)) > 8) continue;
     if (!Muon_LooseId->At(i)) continue;
 
@@ -352,25 +348,15 @@ void PhysicsObjSelector::muonSelector() {
     if (Muon_corrpt->At(i) < 10.0) continue;
     //if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
     AnaUtil::fillHist1D ("muCutFlow", 2, 1.0);
+    fakeableMuList_.push_back(mu);
 
-    if (!Muon_TightId->At(i)) {
-      AnaUtil::fillHist1D ("muCutFlow", 3, 1.0);
-      fakeableMuList_.push_back(mu);
-      if (Muon_pfRelIso04_all->At(i) <= 0.15) {
-	AnaUtil::fillHist1D ("muCutFlow", 4, 1.0);
-	fakeableIsoMuList_.push_back(mu);
-      }
-    }
-    
     // Tight Muon selection
-    else if (Muon_TightId->At(i)) {
-      AnaUtil::fillHist1D ("muCutFlow", 5, 1.0);
-      tightMuList_.push_back(mu);
-      if (Muon_pfRelIso04_all->At(i) <= 0.15) {
-	AnaUtil::fillHist1D ("muCutFlow", 6, 1.0);
-	tightIsoMuList_.push_back(mu);
-      }
-    }
+    if (!Muon_TightId->At(i)) continue;
+    AnaUtil::fillHist1D ("muCutFlow", 3, 1.0);
+    // PF Isolation
+    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
+    AnaUtil::fillHist1D ("muCutFlow", 4, 1.0);
+    tightMuList_.push_back(mu);
   }
   searchedMu_ = true;
 }
@@ -386,8 +372,8 @@ void PhysicsObjSelector::electronSelector() {
 
     if (Electron_pt->At(i) < 7) continue;
     if (std::fabs(Electron_eta->At(i)) > 2.5) continue;
-    if (std::fabs(Electron_dxy->At(i)) > 0.05) continue;
-    if (std::fabs(Electron_dz->At(i)) > 0.1) continue;
+    if (std::fabs(Electron_dxy->At(i)) > 0.1) continue;
+    if (std::fabs(Electron_dz->At(i)) > 0.2) continue;
     if (Electron_sip3d->At(i) > 8) continue;
     if (!Electron_mvaFall17V2noIso_WPL->At(i)) continue;
     if (Electron_lostHits->At(i) > 1) continue;
@@ -408,26 +394,19 @@ void PhysicsObjSelector::electronSelector() {
       el.genFlv = Electron_genPartFlv->At(i);
     }
 
-    if (!thisElectronIsMuon(el, true, false)) {
-      preSelEleList_.push_back(el);
-      AnaUtil::fillHist1D ("eleCutFlow", 2, 1.0); 
-    }
+    if (thisElectronIsMuon(el, false, true)) continue;
+    preSelEleList_.push_back(el);
+    AnaUtil::fillHist1D ("eleCutFlow", 2, 1.0); 
+
     if (Electron_pt->At(i) < 10) continue;
     if (!Electron_convVeto->At(i)) continue;;
     if (Electron_lostHits->At(i) != 0) continue;
     AnaUtil::fillHist1D ("eleCutFlow", 3, 1.0); 
+    fakeableEleList_.push_back(el);
 
-    if (!Electron_mvaFall17V2Iso_WP90->At(i)) {
-      AnaUtil::fillHist1D ("eleCutFlow", 4, 1.0);
-      fakeableIsoEleList_.push_back(el);
-    }
-    if (Electron_mvaFall17V2Iso_WP90->At(i)) {
-      AnaUtil::fillHist1D ("eleCutFlow", 5, 1.0);
-      if (!thisElectronIsMuon(el, false, true)) {
-	tightIsoEleList_.push_back(el);
-	AnaUtil::fillHist1D ("eleCutFlow", 6, 1.0);
-      }
-    }
+    if (!Electron_mvaFall17V2Iso_WP90->At(i)) continue;
+    AnaUtil::fillHist1D ("eleCutFlow", 4, 1.0);
+    tightEleList_.push_back(el);
   }
   searchedEle_ = true;
 }
@@ -439,15 +418,15 @@ void PhysicsObjSelector::jetSelector() {
   histf()->cd("ObjectSelection");
   for (size_t i = 0; i < (*nJet->Get()); ++i){
     AnaUtil::fillHist1D ("jetCutFlow", 0, 1.0);
-    if (!(Jet_jetId->At(i) & 2 
-	  && Jet_nomPt->At(i) >= 25
-	  && std::fabs(Jet_eta->At(i)) <= 2.5)
-	) continue;
+    
+    if (!(Jet_jetId->At(i) & 2)) continue;
     AnaUtil::fillHist1D ("jetCutFlow", 1, 1.0);
+    if (!(Jet_nomPt->At(i) >= 25 && std::fabs(Jet_eta->At(i)) <= 2.5)) continue;
+    AnaUtil::fillHist1D ("jetCutFlow", 2, 1.0);
 
     //Apply PuID on Jets with pT < 50 GeV (Need to be discussed!!!)
     if (Jet_nomPt->At(i) <= 50 && !((Jet_puId->At(i) >> 2) & 1))  continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 2, 1.0);
+    AnaUtil::fillHist1D ("jetCutFlow", 3, 1.0);
 
     vhtm::Jet jet;
     jet.index   = i;
@@ -465,12 +444,15 @@ void PhysicsObjSelector::jetSelector() {
     preSelJetList_.push_back(jet);
 
     if (!jetLeptonCleaning(jet)) continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 3, 1.0);
+    AnaUtil::fillHist1D ("jetCutFlow", 4, 1.0);
     leptonCleanJetList_.push_back(jet);
 
     //making b_jet collection
     if (Jet_btagDeepFlavB->At(i) >= 0.0521) looseBJetList_.push_back(jet);
-    if (Jet_btagDeepFlavB->At(i) >= 0.3033) bJetList_.push_back(jet); 
+    if (Jet_btagDeepFlavB->At(i) >= 0.3033) {
+      bJetList_.push_back(jet); 
+      AnaUtil::fillHist1D ("jetCutFlow", 5, 1.0);
+    }
   }
   searchedJet_ = true;
 }
@@ -620,7 +602,7 @@ bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
   bool isElectron {false};
   TLorentzVector jp4(AnaUtil::getP4(jet));
   // Medium Isolated muons
-  for (const auto& mu: tightIsoMuList_){
+  for (const auto& mu: tightMuList_){
     if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.4) {
       isMuon = true;
       break;
@@ -628,7 +610,7 @@ bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
     if (isMuon) return false;
   }
   // LooseMVA Isolated electrons
-  for (const auto& el: tightIsoEleList_){
+  for (const auto& el: tightEleList_){
     if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) {
       isElectron = true;
       break;
@@ -643,7 +625,7 @@ bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet) const {
   bool isElectron {false};
   TLorentzVector jp4(AnaUtil::getP4(jet));
   // Medium Isolated muons
-  for (const auto& mu: tightIsoMuList_){
+  for (const auto& mu: tightMuList_){
     if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.8) {
       isMuon = true;
       break;
@@ -651,7 +633,7 @@ bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet) const {
     if (isMuon) return false;
   }
   // LooseMVA Isolated electrons
-  for (const auto& el: tightIsoEleList_){
+  for (const auto& el: tightEleList_){
     if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.8) {
       isElectron = true;
       break;
@@ -666,7 +648,7 @@ bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau) const {
   bool isElectron {false};
   TLorentzVector tp4(AnaUtil::getP4(tau));
   // Medium Isolated muons
-  for (const auto& mu: tightIsoMuList_){
+  for (const auto& mu: tightMuList_){
     if (tp4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) {
       isMuon = true;
       break;
@@ -674,7 +656,7 @@ bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau) const {
     if (isMuon) return false;
   }
   // LooseMVA Isolated electrons
-  for (const auto& el: tightIsoEleList_){
+  for (const auto& el: tightEleList_){
     if (tp4.DeltaR(AnaUtil::getP4(el)) <= 0.3) {
       isElectron = true;
       break;

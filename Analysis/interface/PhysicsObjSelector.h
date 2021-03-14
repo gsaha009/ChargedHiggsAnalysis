@@ -127,14 +127,12 @@ class PhysicsObjSelector: public AnaBase {
   //Muon Collections
   const std::vector<vhtm::Muon>& getPreSelMuList() const {return preSelMuList_;}
   const std::vector<vhtm::Muon>& getFakeableMuList() const {return fakeableMuList_;}
-  const std::vector<vhtm::Muon>& getFakeableIsoMuList() const {return fakeableIsoMuList_;}
   const std::vector<vhtm::Muon>& getTightMuList() const {return tightMuList_;}
-  const std::vector<vhtm::Muon>& getTightIsoMuList() const {return tightIsoMuList_;}
 
   //Electron Collection
   const std::vector<vhtm::Electron>& getPreSelEleList() const {return preSelEleList_;}
-  const std::vector<vhtm::Electron>& getFakeableIsoEleList() const {return fakeableIsoEleList_;}
-  const std::vector<vhtm::Electron>& getTightIsoEleList() const {return tightIsoEleList_;}
+  const std::vector<vhtm::Electron>& getFakeableEleList() const {return fakeableEleList_;}
+  const std::vector<vhtm::Electron>& getTightEleList() const {return tightEleList_;}
 
   //GenParticle Collections
   const std::vector<vhtm::GenParticle>& getGenList() const {return genParticleList_;}
@@ -173,8 +171,8 @@ class PhysicsObjSelector: public AnaBase {
   std::vector<vhtm::FatJet> fatJetList_, cleanFatJetList_, bTaggedFatJetList_;
   std::vector<vhtm::SubJet> subJetList_;
   std::vector<vhtm::Tau> tauList_, leptonCleanTauList_;
-  std::vector<vhtm::Muon> preSelMuList_, fakeableMuList_, fakeableIsoMuList_, tightMuList_, tightIsoMuList_;
-  std::vector<vhtm::Electron> preSelEleList_, fakeableIsoEleList_, tightIsoEleList_; 
+  std::vector<vhtm::Muon> preSelMuList_, fakeableMuList_, tightMuList_;
+  std::vector<vhtm::Electron> preSelEleList_, fakeableEleList_, tightEleList_; 
   std::vector<vhtm::GenParticle> genParticleList_;
   std::vector<vhtm::LHEParticle> lheParticleList_;
 
