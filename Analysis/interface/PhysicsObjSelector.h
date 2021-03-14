@@ -24,12 +24,12 @@ void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candLis
   for (unsigned int i = 0; i < lepList.size(); ++i) {
     const auto& ip = lepList[i];
     LeptonCand lc;
-    lc.index = ip.index;
-    lc.pt    = ip.pt;
-    lc.eta   = ip.eta;
-    lc.phi   = ip.phi;
-    lc.mass  = ip.mass;
-    lc.charge= ip.charge;
+    lc.index   = ip.index;
+    lc.pt      = ip.pt;
+    lc.eta     = ip.eta;
+    lc.phi     = ip.phi;
+    lc.mass    = ip.mass;
+    lc.charge  = ip.charge;
     lc.flavour = (typeid(ip) == typeid(vhtm::Muon)) ? 1 : 2;
 
     candList.push_back(lc);

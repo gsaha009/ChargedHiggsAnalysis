@@ -117,8 +117,8 @@ void MultiLeptonMVAna::bookHistograms()
   new TH1D("bTagWt", "CSSV2", 100, 0., 10.);
   new TH1D("evType", "0,1,2=Same Charged Leptons :: -1=Opposite charged Leptons", 7, -1.5, 5.5);
   
-  new TH1D("evtCutFlow", "Event CutFlow", 10, -0.5, 9.5);
-  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 10, -0.5, 9.5);
+  new TH1D("evtCutFlow", "Event CutFlow", 12, -0.5, 11.5);
+  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 12, -0.5, 11.5);
   new TH1D("nMuons", "nTightIsoMuons", 10, -0.5, 9.5);
   new TH1D("nElectrons", "nTightIsoElectrons", 10, -0.5, 9.5);
 
@@ -361,14 +361,14 @@ void MultiLeptonMVAna::eventLoop()
     bool passElTrig {false};
     bool passEgTrig {false};
 
-    if (fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 1)  
-      if (trigDoubleMuonHLT || trigSingleMuonHLT) passMuTrig = true;
+    if (fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 1) { 
+      if (trigDoubleMuonHLT || trigSingleMuonHLT) passMuTrig = true;}
     
-    if (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 2)  
-      if (trigDoubleEgHLT || trigSingleEleHLT) passElTrig = true;
+    else if (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 2) {  
+      if (trigDoubleEgHLT || trigSingleEleHLT) passElTrig = true;}
 
-    if ((fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 2) || (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 1))  
-      if (trigSingleMuonHLT || trigSingleEleHLT || trigMuonEgHLT) passEgTrig = true;
+    if ((fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 2) || (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 1)) { 
+      if (trigSingleMuonHLT || trigSingleEleHLT || trigMuonEgHLT) passEgTrig = true;}
 
     if (!(passMuTrig || passElTrig || passEgTrig)) continue;
     AnaUtil::fillHist1D("evtCutFlow", 4);
@@ -386,13 +386,42 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1D("evtCutFlow", 7);
     if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 7, allWt);
 
-    if (tightLepColl.size() != 2) continue;
+    if (tightLepColl.size() > 2) continue;
     AnaUtil::fillHist1D("evtCutFlow", 8);
     if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 8, allWt);
 
     if (tauColl.size() > 0) continue;
     AnaUtil::fillHist1D("evtCutFlow", 9);
     if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 9, allWt);
+
+    bool isSR {false};
+    bool isFake {false};
+    size_t tlep = 0;
+      
+    for (size_t i = 0; i < 2; ++i) {
+      auto indx = fakeableLepColl[i].index;
+      auto flav = fakeableLepColl[i].flavour;
+      if (flav == 1) {
+	for (auto& mu : tightMuColl) 
+	  if (indx == mu.index) tlep++;
+      }
+      else if (flav == 2) {
+	for (auto& el : tightElColl)
+	  if (indx == el.index) tlep++;
+      }
+    }
+
+    isSR = (tlep == 2) ? true : false;
+    isFake = (isSR) ? false : true;
+
+    if (isSR) {
+      AnaUtil::fillHist1D("evtCutFlow", 10);
+      if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 10, allWt);
+    }
+    else if (isFake) {
+      AnaUtil::fillHist1D("evtCutFlow", 11);
+      if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 11, allWt);
+    }
 
     bool isResolved = (jetColl.size() >= 3 && fatJetColl.size() == 0) ? true : false;
     bool isBoosted  = (fatJetColl.size() >= 1) ? true : false;
@@ -461,8 +490,10 @@ void MultiLeptonMVAna::endJob() {
       "OS fakeable leptons                 : ",
       "low mass resonance veto             : ",
       "Z mass resonance veto               : ",
-      "has 2 tight leptons                 : ",
-      "tau veto                            : "
+      "has max 2 tight leptons             : ",
+      "tau veto                            : ",
+      "is SR                               : ",
+      "is Fake                             : "
       };
   AnaUtil::showEfficiency("evtCutFlow", evLabels, "Event Selection");  
   if (isMC()) {

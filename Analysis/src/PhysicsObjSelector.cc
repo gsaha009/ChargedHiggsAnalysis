@@ -77,8 +77,8 @@ void PhysicsObjSelector::objectEfficiency() {
     "nRawMuons",
     "preSel cuts",
     "pT>10",
-    "pass TightId",
-    "pfRelIso <= 0.15"  
+    "pfRelIso <= 0.15",  
+    "pass TightId"
   };
   AnaUtil::showEfficiency("muCutFlow", muLabels, "Muon Selection", "Muons");  
 
@@ -348,13 +348,14 @@ void PhysicsObjSelector::muonSelector() {
     if (Muon_corrpt->At(i) < 10.0) continue;
     //if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
     AnaUtil::fillHist1D ("muCutFlow", 2, 1.0);
+    // PF Isolation
+    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
+    AnaUtil::fillHist1D ("muCutFlow", 3, 1.0);
+
     fakeableMuList_.push_back(mu);
 
     // Tight Muon selection
     if (!Muon_TightId->At(i)) continue;
-    AnaUtil::fillHist1D ("muCutFlow", 3, 1.0);
-    // PF Isolation
-    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
     AnaUtil::fillHist1D ("muCutFlow", 4, 1.0);
     tightMuList_.push_back(mu);
   }
