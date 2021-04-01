@@ -48,6 +48,7 @@ def main():
     HLT_MuonEG     = configDict.get('HLT_MuonEG')
     HLT_SingleMuon = configDict.get('HLT_SingleMuon')
     HLT_SingleElectron  = configDict.get('HLT_SingleElectron')
+    SFInfo         = configDict.get('ScaleFactorsInfo')
 
     logging.info('era  : {}'.format(era))
     logging.info('lumi : {} pb-1'.format(lumi))
@@ -121,6 +122,9 @@ def main():
                 jfile.write('DoubleEG '+'HLT_'+item+'\n')
             for item in HLT_MuonEG:
                 jfile.write('MuonEG '+'HLT_'+item+'\n')
+            jfile.write('################ SF ###################'+'\n')
+            for item in SFInfo:
+                jfile.write(item+'\n')
             jfile.write('############ Input Files ##############'+'\n')
             for item in files:
                 jfile.write('inputFile '+item+'\n')
@@ -184,6 +188,9 @@ def main():
                     tmpl.write('DoubleEG '+'HLT_'+item+'\n')
                 for item in HLT_MuonEG:
                     tmpl.write('MuonEG '+'HLT_'+item+'\n')
+                tmpl.write('################ SF ###################'+'\n')
+                for item in SFInfo:
+                    tmpl.write(item+'\n')
                 tmpl.write('############ Input Files ##############'+'\n')
                 for item in filesList:
                     tmpl.write('inputFile '+item+'\n')
@@ -196,17 +203,15 @@ def main():
             shutil.copy(tmplsubFile, subkey)
             shutil.copy(tmplshFile, shkey)
             # edit the sub.tmpl file
-            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey.split('/')[-1])
-            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = output/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
-            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err', 'error        = error/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
-            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log', 'log          = log/'+str(key)+'_'+str(i)+'.$(ClusterId).log')
+            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey)
+            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = '+os.path.join(conDir,'output',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
+            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err',  'error        = '+os.path.join(conDir,'error',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
+            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log',              'log          = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
             # edit the sh.tmpl file
             replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
             replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
-            #replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd $JOBDIR/'+pwd.split('/')[-1]+'/'+conDir+'/'+'runlogs')
             replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
             replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
-            #replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1','$JOBDIR/'+exeToRun+' $JOBDIR/'+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
             replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
 
             # All job files, sub and sh files are ready
@@ -215,7 +220,8 @@ def main():
                 condorJobCommandList = ['condor_submit',subkey]
                 st = os.stat(shkey)
                 os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                process = Popen(condorJobCommandList, stdout=PIPE, stderr=PIPE)
+                process = Popen(condorJobCommandList, stdout=PIPE)
+                print process.communicate()[0]
 
     # data samples
     logging.info('Start making job cards for data ===>')
@@ -257,6 +263,9 @@ def main():
                 jfile.write('DoubleEG '+'HLT_'+item+'\n')
             for item in HLT_MuonEG:
                 jfile.write('MuonEG '+'HLT_'+item+'\n')
+            jfile.write('################ SF ###################'+'\n')
+            for item in SFInfo:
+                jfile.write(item+'\n')
             jfile.write('############ Input Files ##############'+'\n')
             jfile.write('dataset '+dataset+'\n')
             for item in files:
@@ -320,6 +329,9 @@ def main():
                     tmpl.write('DoubleEG '+'HLT_'+item+'\n')
                 for item in HLT_MuonEG:
                     tmpl.write('MuonEG '+'HLT_'+item+'\n')
+                tmpl.write('################ SF ###################'+'\n')
+                for item in SFInfo:
+                    tmpl.write(item+'\n')
                 tmpl.write('############ Input Files ##############'+'\n')
                 tmpl.write('dataset '+dataset+'\n')
                 for item in filesList:
@@ -332,17 +344,15 @@ def main():
             shutil.copy(tmplsubFile, subkey)
             shutil.copy(tmplshFile, shkey)
             # edit the sub.tmpl file
-            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey.split('/')[-1])
-            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = output/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
-            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err', 'error        = error/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
-            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log', 'log          = log/'+str(key)+'_'+str(i)+'.$(ClusterId).log')
+            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey)
+            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = '+os.path.join(conDir,'output',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
+            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err',  'error        = '+os.path.join(conDir,'error',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
+            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log',              'log          = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
             # edit the sh.tmpl file
             replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
             replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
-            #replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd $JOBDIR/'+pwd.split('/')[-1]+'/'+conDir+'/'+'runlogs')
             replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
             replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
-            #replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1','$JOBDIR/'+exeToRun+' $JOBDIR/'+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
             replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
 
             # All job files, sub and sh files are ready
@@ -351,8 +361,8 @@ def main():
                 condorJobCommandList = ['condor_submit',subkey]
                 st = os.stat(shkey)
                 os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                process = Popen(condorJobCommandList, stdout=PIPE, stderr=PIPE)
-
+                process = Popen(condorJobCommandList, stdout=PIPE)
+                print process.communicate()[0]
 
 
     # signal samples
@@ -381,6 +391,9 @@ def main():
             jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
             jfile.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
             jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
+            jfile.write('############ Cut lists ###############'+'\n')
+            for item in cutLists:
+                jfile.write(item+'\n')
             jfile.write('############ HLT lists ###############'+'\n')
             for item in HLT_SingleMuon:
                 jfile.write('SingleMuon '+'HLT_'+item+'\n')
@@ -392,8 +405,8 @@ def main():
                 jfile.write('DoubleEG '+'HLT_'+item+'\n')
             for item in HLT_MuonEG:
                 jfile.write('MuonEG '+'HLT_'+item+'\n')
-            jfile.write('############ Cut lists ###############'+'\n')
-            for item in cutLists:
+            jfile.write('################ SF ###################'+'\n')
+            for item in SFInfo:
                 jfile.write(item+'\n')
             jfile.write('############ Input Files ##############'+'\n')
             for item in files:
@@ -444,6 +457,9 @@ def main():
                 tmpl.write('histFile '+histDir+'/'+str(key)+'_'+str(i)+'_hist.root'+'\n')
                 tmpl.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
                 tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
+                tmpl.write('############ Cut lists ###############'+'\n')
+                for item in cutLists:
+                    tmpl.write(item+'\n')
                 tmpl.write('############ HLT lists ###############'+'\n')
                 for item in HLT_SingleMuon:
                     tmpl.write('SingleMuon '+'HLT_'+item+'\n')
@@ -455,8 +471,8 @@ def main():
                     tmpl.write('DoubleEG '+'HLT_'+item+'\n')
                 for item in HLT_MuonEG:
                     tmpl.write('MuonEG '+'HLT_'+item+'\n')
-                tmpl.write('############ Cut lists ###############'+'\n')
-                for item in cutLists:
+                tmpl.write('################ SF ###################'+'\n')
+                for item in SFInfo:
                     tmpl.write(item+'\n')
                 tmpl.write('############ Input Files ##############'+'\n')
                 for item in filesList:
@@ -470,17 +486,15 @@ def main():
             shutil.copy(tmplsubFile, subkey)
             shutil.copy(tmplshFile, shkey)
             # edit the sub.tmpl file
-            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey.split('/')[-1])
-            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = output/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
-            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err', 'error        = error/'+str(key)+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
-            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log', 'log          = log/'+str(key)+'_'+str(i)+'.$(ClusterId).log')
+            replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey)
+            replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 'output       = '+os.path.join(conDir,'output',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
+            replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err',  'error        = '+os.path.join(conDir,'error',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
+            replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log',              'log          = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
             # edit the sh.tmpl file
             replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
             replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
-            #replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd $JOBDIR/'+pwd.split('/')[-1]+'/'+conDir+'/'+'runlogs')
             replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
             replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
-            #replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1','$JOBDIR/'+exeToRun+' $JOBDIR/'+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
             replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
 
             # All job files, sub and sh files are ready
@@ -489,7 +503,8 @@ def main():
                 condorJobCommandList = ['condor_submit',subkey]
                 st = os.stat(shkey)
                 os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                process = Popen(condorJobCommandList, stdout=PIPE, stderr=PIPE)
+                process = Popen(condorJobCommandList, stdout=PIPE)
+                print process.communicate()[0]
 
 
 if __name__ == "__main__":

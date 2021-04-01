@@ -21,6 +21,10 @@ int main(int argc, char* argv[]) {
   string jobFile(argv[1]);
 
   gROOT->SetBatch(kTRUE);
+
+  //ROOT::EnableThreadSafety();
+  //int nthreads = 10;
+  //ROOT::EnableImplicitMT(nthreads);
   
   // Create analysis object 
   cout << "=== Start of Analysis === " << endl;

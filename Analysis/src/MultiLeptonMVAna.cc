@@ -63,10 +63,10 @@ bool MultiLeptonMVAna::beginJob()
 { 
   if (!PhysicsObjSelector::beginJob()) return false;
 
-  histf()->cd();
-  histf()->mkdir("TMVAnalysis");
-  fakehistf()->cd();
-  fakehistf()->mkdir("TMVAnalysis");
+  //histf()->cd();
+  //histf()->mkdir("Analysis");
+  //fakehistf()->cd();
+  //fakehistf()->mkdir("Analysis");
 
   bookHistograms();
 
@@ -102,52 +102,10 @@ void MultiLeptonMVAna::bookHistograms()
 {
   PhysicsObjSelector::bookHistograms();
   histf()->cd();
-  histf()->cd("TMVAnalysis");
-
   // book histograms to be filled at different stages
-  new TH1D("nPV", "Number of vertices", 60, 0, 60);
-  new TH1D("nGoodPV", "Number of Good vertices", 60, 0, 60);
-  if (isMC()) {
-    new TH1D("puWeight", "PU wight", 100, -20., 20.);
-    new TH1D("evWeight", "Evt Wt", 100, -20., 20.);
-    new TH1D("TotWt", "Total Wt", 100, -20., 20.);
-    new TH1D("pu_evtWt", "PU*Event weight factor (MC events)", 20, -10., 10.);
-    new TH1D("nLHEJets", "nJets in ME level", 10, -0.5, 9.5);
-  }
-  new TH1D("bTagWt", "CSSV2", 100, 0., 10.);
-  new TH1D("evType", "0,1,2=Same Charged Leptons :: -1=Opposite charged Leptons", 7, -1.5, 5.5);
-  
   new TH1D("evtCutFlow", "Event CutFlow", 11, -0.5, 10.5);
   if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 11, -0.5, 10.5);
-  new TH1D("nMuons", "nTightIsoMuons", 10, -0.5, 9.5);
-  new TH1D("nElectrons", "nTightIsoElectrons", 10, -0.5, 9.5);
-
-  new TH1D("nAk4Jets_Resolved_WZ", "nAk4Jets_Resolved_WZ", 10, -0.5, 9.5);
-  new TH1D("ak4Jet1Pt_Resolved_WZ", "ak4Jet1Pt_Resolved_WZ", 50, 0, 300);
-  new TH1D("ak4Jet2Pt_Resolved_WZ", "ak4Jet2Pt_Resolved_WZ", 50, 0, 300);
-  new TH1D("ak4Jet3Pt_Resolved_WZ", "ak4Jet3Pt_Resolved_WZ", 50, 0, 300);
-  new TH1D("ak4Jet4Pt_Resolved_WZ", "ak4Jet4Pt_Resolved_WZ", 50, 0, 300);
-  
-  new TH1D("nAk4Jets_Boosted_WZ", "nJets_Boosted_WZ", 10, -0.5, 9.5);
-  new TH1D("ak4Jet1Pt_Boosted_WZ", "ak4Jet1Pt_Boosted_WZ", 50, 0, 300);
-  new TH1D("ak4Jet2Pt_Boosted_WZ", "ak4Jet2Pt_Boosted_WZ", 50, 0, 300);
-  new TH1D("ak4Jet3Pt_Boosted_WZ", "ak4Jet3Pt_Boosted_WZ", 50, 0, 300);
-  new TH1D("ak4Jet4Pt_Boosted_WZ", "ak4Jet4Pt_Boosted_WZ", 50, 0, 300);
-
-  new TH1D("nAk4Jets_has1FatJet_Boosted_WZ", "nAk4Jets_has1FatJet_Boosted_WZ", 10, -0.5, 9.5);
-  new TH1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "nAk4Jets_has2OrMoreFatJet_Boosted_WZ", 10, -0.5, 9.5);
-  new TH1D("dR_leadFatJet_ak4Jets_has1FatJet_Boosted_WZ", "dR_leadFatJet_ak4Jets_has1FatJet_Boosted_WZ", 50, 0, 5);
-
-  histf()->cd();
   histf()->ls();
-
-  fakehistf()->cd();
-  fakehistf()->cd("TMVAnalysis");
-  new TH1D("nMuons", "nTightIsoMuons", 10, -0.5, 9.5);
-  new TH1D("nElectrons", "nTightIsoElectrons", 10, -0.5, 9.5);
-
-  fakehistf()->cd();
-  fakehistf()->ls();
 }
 
 // -------------------------------
@@ -234,27 +192,20 @@ void MultiLeptonMVAna::eventLoop()
     }
 
     histf()->cd(); //required
-    histf()->cd("TMVAnalysis");
+    //histf()->cd("Analysis");
     
-    //if (isMC()) AnaUtil::fillHist1D ("nLHEJets", evt.nLHEJets, 1.0);
     // For data or for MC without pileup
     float puWt   = 1.0; //for Data
     float evWt   = 1.0; //for Data
     float allWt  = 1.0; //for Data
-    float luWt   = 1.0;
-
-    AnaUtil::fillHist1D("bTagWt", evt.btagWeight_CSVV2);
 
     if (isMC()) {
       evWt = evt.genEvWt;
-      AnaUtil::fillHist1D ("evWeight", evWt, 1.0);
-      if (usePUWt()) {
-	puWt = evt.PUWeight;
-	AnaUtil::fillHist1D("puWeight", puWt);      
-      }
+      //AnaUtil::fillHist1D ("evWeight", evWt, 1.0);
+      puWt = evt.PUWeight;
+      //AnaUtil::fillHist1D("puWeight", puWt, 1.0);      
       allWt = evWt * puWt;
-      luWt  = allWt * lumiFac;
-      AnaUtil::fillHist1D ("TotWt", allWt, 1.0);
+      //AnaUtil::fillHist1D ("TotWt", allWt, 1.0);
     }
     if (op.verbose && ev == 1) 
       cout << " <<<eventNo# " << setw(8) << ev <<"\n"
@@ -265,25 +216,20 @@ void MultiLeptonMVAna::eventLoop()
 	   << " totalWt# " << setw(8) << allWt << " >>> "
 	   << endl;
 
-    //    else evtWeightSum_ += evWt;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 0);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 0, allWt*lumiFac);
 
-    AnaUtil::fillHist1D("evType", evt.evType, allWt);
-
-    AnaUtil::fillHist1D("evtCutFlow", 0);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 0, luWt);
-
-    AnaUtil::fillHist1D("nPV", evt.nPV, allWt);
-    AnaUtil::fillHist1D("nGoodPV", evt.nGoodPV, allWt);
+    //AnaUtil::fillHist1D("nPV", evt.nPV, allWt);
+    //AnaUtil::fillHist1D("nGoodPV", evt.nGoodPV, allWt);
     if (evt.nGoodPV < 1) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 1);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 1, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 1);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 1, allWt*lumiFac);
 
     bool trigDoubleMuonHLT {false};
     bool trigSingleMuonHLT {false};
     bool trigDoubleEgHLT {false};
     bool trigSingleEleHLT {false};
     bool trigMuonEgHLT {false};
-
     // HLT Selection
     auto doubleMuHLTpaths  = AnaBase::getDoubleMuonHLTpaths();
     auto doubleMuHLTscores = PhysicsObjSelector::getDoubleMuonHLTscores();
@@ -325,166 +271,232 @@ void MultiLeptonMVAna::eventLoop()
 	break;
       }
     }
-    
+    // Duplicate Event removal [FOR DATA]
+    // array if 5 HLT Scores
+    if (!isMC()) {
+      bool HLT_Scores[5] = {trigDoubleMuonHLT, trigDoubleEgHLT, trigMuonEgHLT, trigSingleMuonHLT, trigSingleEleHLT};
+      std::string dataset = getDatasetName();
+      if (dataset == "DoubleMuon" && !HLT_Scores[0]) continue;
+      else if (dataset == "DoubleEG" && (!HLT_Scores[1] || HLT_Scores[0])) continue;
+      else if (dataset == "MuonEG" && (!HLT_Scores[2] || (HLT_Scores[0] || HLT_Scores[1]))) continue;
+      else if (dataset == "SingleMuon" && (!HLT_Scores[3] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2]))) continue;
+      else if (dataset == "SingleElectron" && (!HLT_Scores[4] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2] || HLT_Scores[3]))) continue;
+    }  
     //Making the object collections ready!!!
     findObjects();
 
     //if (ev < 100) dumpEverything (ev, fLog());
-
     histf()->cd(); //required
-    histf()->cd("TMVAnalysis");
 
     //Access Selected Objects
-    const auto& preselElColl   = getPreSelEleList();
-    const auto& preselMuColl   = getPreSelMuList();
-    const auto& fakeableElColl = getFakeableEleList();
-    const auto& fakeableMuColl = getFakeableMuList();
-    const auto& tightElColl    = getTightEleList();
-    const auto& tightMuColl    = getTightMuList();
-    const auto& jetColl        = getCleanJetList();
-    const auto& bJetColl       = getBJetList();
-    const auto& fatJetColl     = getCleanFatJetList();
-    const auto& fatbJetColl    = getBTaggedFatJetList();
-    const auto& tauColl        = getLepCleanTauList();
-    const vhtm::MET& met       = getMETList().at(0);
-    std::vector<vhtm::Jet> jetColl_ak8Cleaned;
-    
-    for (auto& jet : jetColl) {
-      TLorentzVector jetp4 = AnaUtil::getP4(jet);
-      if (fatJetColl.size() == 1) { 
-	if (jetp4.DeltaR(AnaUtil::getP4(fatJetColl[0])) > 0.8)   jetColl_ak8Cleaned.push_back(jet);
-      }
-      else if (fatJetColl.size() >= 2) {
-	if (jetp4.DeltaR(AnaUtil::getP4(fatJetColl[0])) > 0.8 && jetp4.DeltaR(AnaUtil::getP4(fatJetColl[1])) > 0.8) jetColl_ak8Cleaned.push_back(jet);
-      }
-    }
-    
+    const auto& preselElColl       = getPreSelEleList();
+    const auto& preselMuColl       = getPreSelMuList();
+    const auto& fakeableElColl     = getFakeableEleList();
+    const auto& fakeableMuColl     = getFakeableMuList();
+    const auto& tightElColl        = getTightEleList();
+    const auto& tightMuColl        = getTightMuList();
+    const auto& jetColl            = getCleanJetList();
+    const auto& bJetColl           = getBJetList();
+    const auto& fatJetColl         = getCleanFatJetList();
+    const auto& fatbJetColl        = getBTaggedFatJetList();
+    const auto& tauColl            = getLepCleanTauList();
+    const vhtm::MET& met           = getMETList().at(0);
+    const auto& jetColl_ak8Cleaned = getAk8CleanJetList();
+
     //P A C K I N G  L E P T O N S
     std::vector<LeptonCand>preselLepColl;
     if (preselMuColl.size() > 0) packLeptons <vhtm::Muon> (preselMuColl, preselLepColl);
     if (preselElColl.size() > 0) packLeptons <vhtm::Electron> (preselElColl, preselLepColl);
-    AnaUtil::fillHist1D("nPreselLeptons", preselLepColl.size(), allWt);
+    //AnaUtil::fillHist1D("nPreselLeptons", preselLepColl.size(), allWt);
 
     std::vector<LeptonCand>fakeableLepColl;
     if (fakeableMuColl.size() > 0) packLeptons <vhtm::Muon> (fakeableMuColl, fakeableLepColl);
     if (fakeableElColl.size() > 0) packLeptons <vhtm::Electron> (fakeableElColl, fakeableLepColl);
-    AnaUtil::fillHist1D("nFakeableLeptons", fakeableLepColl.size(), allWt);
+    //AnaUtil::fillHist1D("nFakeableLeptons", fakeableLepColl.size(), allWt);
     std::sort(std::begin(fakeableLepColl), std::end(fakeableLepColl), PtComparator<LeptonCand>()); //sorting fakeable lepton candidates
 
     std::vector<LeptonCand>tightLepColl;
     if (tightMuColl.size() > 0) packLeptons <vhtm::Muon> (tightMuColl, tightLepColl);
     if (tightElColl.size() > 0) packLeptons <vhtm::Electron> (tightElColl, tightLepColl);
-    AnaUtil::fillHist1D("nTightLeptons", tightLepColl.size(), allWt);
+    //AnaUtil::fillHist1D("nTightLeptons", tightLepColl.size(), allWt);
     std::sort(std::begin(tightLepColl), std::end(tightLepColl), PtComparator<LeptonCand>()); //sorting fakeable lepton candidates
 
     if (fakeableLepColl.size() < 2) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 2);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 2, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 2);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 2, allWt*lumiFac);
 
     if (!(fakeableLepColl[0].pt > 25 && fakeableLepColl[1].pt > 15)) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 3);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 3, luWt);
-
-    bool passMuTrig {false}; 
-    bool passElTrig {false};
-    bool passEgTrig {false};
-
+    AnaUtil::fillHist1DBasic("evtCutFlow", 3);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 3, allWt*lumiFac);
+    
+    bool ismumu {false}; 
+    bool iselel {false};
+    bool iselmu {false};
+    
     if (fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 1) { 
-      if (trigDoubleMuonHLT || trigSingleMuonHLT) passMuTrig = true;}
+      if (trigDoubleMuonHLT || trigSingleMuonHLT) ismumu = true;}
     
     else if (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 2) {  
-      if (trigDoubleEgHLT || trigSingleEleHLT) passElTrig = true;}
+      if (trigDoubleEgHLT || trigSingleEleHLT) iselel = true;}
 
     if ((fakeableLepColl[0].flavour == 1 && fakeableLepColl[1].flavour == 2) || (fakeableLepColl[0].flavour == 2 && fakeableLepColl[1].flavour == 1)) { 
-      if (trigSingleMuonHLT || trigSingleEleHLT || trigMuonEgHLT) passEgTrig = true;}
+      if (trigSingleMuonHLT || trigSingleEleHLT || trigMuonEgHLT) iselmu = true;}
 
-    if (!(passMuTrig || passElTrig || passEgTrig)) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 4);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 4, luWt);
+    if (!(ismumu || iselel || iselmu)) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 4);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 4, allWt*lumiFac);
 
     if (fakeableLepColl[0].charge * fakeableLepColl[1].charge < 0) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 5);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 5, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 5);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 5, allWt*lumiFac);
     
     if (hasLowMassResonance(preselLepColl)) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 6);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 6, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 6);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 6, allWt*lumiFac);
 
     if (hasZcandidate(preselLepColl)) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 7);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 7, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 7);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 7, allWt*lumiFac);
 
     if (tightLepColl.size() > 2) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 8);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 8, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 8);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 8, allWt*lumiFac);
 
     if (tauColl.size() > 0) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 9);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 9, luWt);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 9);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 9, allWt*lumiFac);
 
-    bool isSR {false};
-    bool isFake {false};
-    size_t tlep = 0;
+    // -------------------------------------------------------------------- //
+    // To select the SR and Fake Region. Two leading leptons must be tight.
+    // If both of the fakeable leptons are electron and both pass the tight
+    // Id, tightEleIDSF*tightEleIdSF will be applied. If one of the loose 
+    // leptons is Muon & the other is Electron passing the tight Id, the SF
+    // would be tightEleIDSF*tightMuIdSF.
+    // For fake region, both of the leptons can fail the tight condition or
+    // one of them fails. Thats why several bools have been taken to define
+    // correct weight for events of every possible category.
+    // -------------------------------------------------------------------- //
+
+    bool isSR {false}; // to define main SR, where both of the fakeable leptons are tight
+    bool isFake {false}; // to define FR, opposite of main SR
+    size_t tmu = 0, fmu = 0;
+    size_t tel = 0, fel = 0;
+    bool leadIsTightMuon {false}, leadIsTightEle {false};
       
     for (size_t i = 0; i < 2; ++i) {
       auto indx = fakeableLepColl[i].index;
       auto flav = fakeableLepColl[i].flavour;
       if (flav == 1) {
+	fmu++;
 	for (auto& mu : tightMuColl) 
-	  if (indx == mu.index) tlep++;
+	  if (indx == mu.index) {
+	    tmu++;
+	    leadIsTightMuon = (i == 0) ? true : false;
+	  }
       }
       else if (flav == 2) {
+	fel++;
 	for (auto& el : tightElColl)
-	  if (indx == el.index) tlep++;
+	  if (indx == el.index) {
+	    tel++;
+	    leadIsTightEle = (i == 0) ? true : false;
+	  }
       }
     }
-
-    isSR = (tlep == 2) ? true : false;
+    
+    isSR = ((tmu + tel) == 2) ? true : false;
     isFake = (isSR) ? false : true;
 
-    if (!isSR) continue;
-    AnaUtil::fillHist1D("evtCutFlow", 10);
-    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 10, luWt);
-    /*
-    if (isSR) {
-      AnaUtil::fillHist1D("evtCutFlow", 10);
-      if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 10, allWt);
-    }
-    else if (isFake) {
-      AnaUtil::fillHist1D("evtCutFlow", 11);
-      if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 11, allWt);
-    }
-    */
+    auto lep1 = fakeableLepColl[0];
+    auto lep2 = fakeableLepColl[1];
 
+    // -------------------------------------------------------------------------- //
+    // ---------------------- !!! Weight Factory !!! ---------------------------- //
+    // -------------------------------------------------------------------------- //
+    bool isSR_EleEle = (isSR && tel == 2) ? true : false;
+    bool isSR_MuMu   = (isSR && tmu == 2) ? true : false;
+    bool isSR_EleMu  = (isSR && tel == 1 && tmu == 1) ? true : false;
+
+    bool isFake_EleEle = (isFake && fel == 2) ? true : false;
+    bool isFake_MuMu   = (isFake && fmu == 2) ? true : false;
+    bool isFake_EleMu  = (isFake && fel == 1 && fmu ==1) ? true : false;
+
+    if (isMC() && isSR) {
+      if (isSR_EleEle)     allWt = allWt * AnaBase::getIdSF("Tight", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, lep2.flavour);
+      else if (isSR_MuMu)  allWt = allWt * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, lep2.flavour);
+      else if (isSR_EleMu) {
+	if (leadIsTightMuon) allWt = allWt * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, lep2.flavour);
+	else allWt = allWt * AnaBase::getIdSF("Tight", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, lep2.flavour);
+      }
+    }
+    
+    else if (isMC() && isFake) {
+      if (isFake_EleEle) {
+	if (tel == 0) allWt = allWt * 0.01 * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour);
+	else allWt = (leadIsTightEle) ? allWt * 0.01 * AnaBase::getIdSF("Tight", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour) 
+	       : allWt * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, lep2.flavour); 
+      }
+      else if (isFake_MuMu) { 
+	if (tmu == 0) allWt = allWt * 0.01 * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour);
+	else allWt = (leadIsTightMuon) ? allWt * 0.01 * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour)
+	       : allWt * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, lep2.flavour);
+      }
+      else if (isFake_EleMu) {
+	if (tel == 0 && tmu == 0) allWt = allWt * 0.01 * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour);
+	else if (tel == 1 && tmu == 0) 
+	  allWt = (leadIsTightEle) ? allWt * 0.01 * AnaBase::getIdSF("Tight", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour) 
+	    : allWt * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, lep2.flavour);
+	else if (tel == 0 && tmu == 1) 
+	  allWt = (leadIsTightMuon) ? allWt * 0.01 * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, lep2.flavour)
+	    : allWt * 0.01 * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, lep1.flavour) * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, lep2.flavour); 
+      }
+    }
+    // -------------------------------------------------------------------------- //
+    
+    if (isSR) {
+      AnaUtil::fillHist1DBasic("evtCutFlow", 10);
+      if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 10, allWt*lumiFac);
+    }
+    
     bool isResolved_WZ = (jetColl.size() >= 3 && fatJetColl.size() == 0 && bJetColl.size()==0) ? true : false;
     bool isBoosted_WZ  = (fatJetColl.size() >= 1 && bJetColl.size()==0 && fatbJetColl.size()==0) ? true : false;
- 
+  
     if (isResolved_WZ) {
-      AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), allWt);
-      AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, allWt);
-      AnaUtil::fillHist1D("ak4Jet2Pt_Resolved_WZ", jetColl[1].pt, allWt);
-      AnaUtil::fillHist1D("ak4Jet3Pt_Resolved_WZ", jetColl[2].pt, allWt);
-      if (jetColl.size() > 3) AnaUtil::fillHist1D("ak4Jet4Pt_Resolved_WZ", jetColl[3].pt, allWt);
+      AnaUtil::fillHist1D("Ak4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "_SR", "_EleEle", allWt, isSR_EleEle);
+      AnaUtil::fillHist1D("Ak4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "_Fake", "_EleEle", allWt, isFake_EleEle);
+      AnaUtil::fillHist1D("Ak4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "_SR", "_MuMu", allWt, isSR_MuMu);
+      AnaUtil::fillHist1D("Ak4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "_SR", "_EleMu",allWt, isSR_EleMu);
+      AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, "_SR", "_EleMu",allWt, isSR_EleMu);
+      AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, "_Fake", "_EleMu", allWt, isFake_EleMu);
     }
+    
     if (isBoosted_WZ) {
-      AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), allWt);
-      if (jetColl_ak8Cleaned.size() >= 1) AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", jetColl_ak8Cleaned[0].pt, allWt);
-      if (jetColl_ak8Cleaned.size() >= 2) AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", jetColl_ak8Cleaned[1].pt, allWt);
-      if (jetColl_ak8Cleaned.size() >= 3) AnaUtil::fillHist1D("ak4Jet3Pt_Boosted_WZ", jetColl_ak8Cleaned[2].pt, allWt);
-      if (jetColl_ak8Cleaned.size() >= 4) AnaUtil::fillHist1D("ak4Jet4Pt_Boosted_WZ", jetColl_ak8Cleaned[3].pt, allWt);
-      if (fatJetColl.size() == 1) {
-	AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), allWt);
-	for (auto& jet : jetColl) AnaUtil::fillHist1D("dR_leadFatJet_ak4Jets_has1FatJet_Boosted_WZ", AnaUtil::getP4(fatJetColl[0]).DeltaR(AnaUtil::getP4(jet)), allWt);
+      AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_SR", "_EleEle", allWt, isSR_EleEle);
+      AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_Fake", "_EleEle", allWt, isFake_EleEle);
+      if (jetColl_ak8Cleaned.size() >= 1){ 
+	AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, "_SR", "_EleEle", allWt, isSR_EleEle);
+	AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, "_Fake", "_EleEle", allWt, isFake_EleEle);
+	if (jetColl_ak8Cleaned.size() >= 2){ 
+	  AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, "_SR", "_EleEle", allWt, isSR_EleEle);
+	  AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, "_Fake", "_EleEle", allWt, isFake_EleEle);
+	}
       }
-      if (fatJetColl.size() >= 2) AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), allWt);
+      if (fatJetColl.size() == 1) {
+	AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_SR", "_EleEle", allWt, isSR_EleEle);
+	AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_Fake", "_EleEle", allWt, isFake_EleEle);
+      }
+      if (fatJetColl.size() >= 2) {
+	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_SR", "_EleEle", allWt, isSR_EleEle);
+	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "_Fake", "_EleEle", allWt, isFake_EleEle);
+      }
     } 
-
     if (!isMC()) selEvLog() << evt.run << " " << evt.lumis << " " << evt.event << std::endl;
    // Print only the first n events; n configurable
    //  if (isMC() && dumpEventCount_ > -1 && ++nEventSel >= dumpEventCount_) continue;
   }
   // Analysis over
 }
+
 
 bool MultiLeptonMVAna::hasZcandidate(const std::vector<LeptonCand>& lepColl) {
   bool hasZToLL {false};
@@ -531,7 +543,7 @@ void MultiLeptonMVAna::endJob() {
   PhysicsObjSelector::endJob();
   
   histf()->cd();
-  histf()->cd("TMVAnalysis");
+  //histf()->cd("Analysis");
   vector<string> evLabels {
       "Events processed                    : ",
       "has GoodPV                          : ",

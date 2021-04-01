@@ -81,13 +81,17 @@ void AnaBase::clearEvent() {
 bool AnaBase::beginJob() 
 { 
   //  if (isMC_ && usePUWt_ && !readPileUpHist()) return false;
-
+  if (isMC() && !openScaleFactorRootFiles()) {
+    cerr << "Scale Factors are not accessible !!!\n";
+    return false;
+  }
+  
   // Open the output ROOT file
   TFile* f = TFile::Open(histFile_.c_str(), "RECREATE");
   histf_.reset(std::move(f));
   // Open the output FakeExtrapolated ROOT file
-  TFile* fakef = TFile::Open(fakehistFile_.c_str(), "RECREATE");
-  fakehistf_.reset(std::move(fakef));
+  //TFile* fakef = TFile::Open(fakehistFile_.c_str(), "RECREATE");
+  //fakehistf_.reset(std::move(fakef));
 
   nEvents_ = static_cast<int>(chain_->GetEntries()); 
   if (nEvents_ <= 0) {
@@ -373,9 +377,9 @@ void AnaBase::closeHistFile() //Called by closeFiles
   histf_->cd();
   histf_->Write();
   histf_->Close();
-  fakehistf_->cd();
-  fakehistf_->Write();
-  fakehistf_->Close();
+  //fakehistf_->cd();
+  //fakehistf_->Write();
+  //fakehistf_->Close();
 }
 double AnaBase::lumiWt(double evtWeightSum, bool verbose) const 
 {
@@ -570,8 +574,8 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       bunchCrossing_ = std::stoi(value.c_str());
     else if (key == "histFile") 
       histFile_ = value;
-    else if (key == "fakehistFile") 
-      fakehistFile_ = value;
+    //else if (key == "fakehistFile") 
+    //  fakehistFile_ = value;
     else if (key == "puHistFile") 
       puHistFile_ = value;
     else if (key == "puHistogram") 
@@ -580,6 +584,14 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       useTrueNInt_ = std::stoi(value.c_str()) > 0 ? true : false;
     else if (key == "inputFile") 
       AnaUtil::buildList(tokens, fileList_);
+    else if (key == "muonIdSFRootFile")
+      muonIdSFRootFile_ = value;
+    else if (key == "looseMuonIdSFhistName")
+      looseMuonIdSFhistName_ = value;
+    else if (key == "medMuonIdSFhistName")
+      medMuonIdSFhistName_ = value;
+    else if (key == "tightMuonIdSFhistName")
+      tightMuonIdSFhistName_ = value;
     else if (key == "DoubleMuon") 
       AnaUtil::buildList(tokens, doubleMuonHltPathList_);
     else if (key == "SingleMuon") 
@@ -658,34 +670,69 @@ void AnaBase::printJob(ostream& os) const
   // Cuts
   AnaUtil::showCuts(hmap_, os);
 }
-/*
-bool AnaBase::readPileUpHist(bool verbose) {
-  size_t found = puHistFile_.find(".root");
-  if (found == string::npos) {
-    cerr << ">>> Warning: <<" << puHistFile_ << ">> does not have .root extension!!" << endl;
+
+bool AnaBase::openScaleFactorRootFiles(bool verbose) {
+  const char* fname_MuonIdSF = gSystem->ExpandPathName(muonIdSFRootFile_.c_str());
+  if (gSystem->AccessPathName(fname_MuonIdSF)) {
+    cerr << ">>> Warning: File <<" << muonIdSFRootFile_ << ">> not found!!" << endl;
     return false;
   }
+  TFile* file_MuonIdSF = TFile::Open(fname_MuonIdSF);
 
-  const char* fname = gSystem->ExpandPathName(puHistFile_.c_str());
-  if (gSystem->AccessPathName(fname)) {
-    cerr << ">>> Warning: File <<" << puHistFile_ << ">> not found!!" << endl;
+  // Loose Muon ID SF
+  file_MuonIdSF -> GetObject(looseMuonIdSFhistName_.c_str(), looseMuonIdSFhist_);
+  if (!looseMuonIdSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << looseMuonIdSFhistName_ << ">> not found!!" << endl;
     return false;
   }
+  looseMuonIdSFhist_->SetDirectory(0);
 
-  TFile* file = TFile::Open(fname);
-  file->GetObject(puHistogram_.c_str(), puHist_);
-  if (!puHist_) {
-    cerr << ">>> Warning: Histogram <<" << puHistogram_ << ">> not found!!" << endl;
+  // Medium Muon ID SF
+  file_MuonIdSF ->GetObject(medMuonIdSFhistName_.c_str(), medMuonIdSFhist_);
+  if (!medMuonIdSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << medMuonIdSFhistName_ << ">> not found!!" << endl;
     return false;
   }
-  puHist_->SetDirectory(0);
+  medMuonIdSFhist_->SetDirectory(0);
 
-  file->Close();
-  delete file;
+  // Tight Muon ID SF
+  file_MuonIdSF ->GetObject(tightMuonIdSFhistName_.c_str(), tightMuonIdSFhist_);
+  if (!tightMuonIdSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << tightMuonIdSFhist_ << ">> not found!!" << endl;
+    return false;
+  }
+  tightMuonIdSFhist_->SetDirectory(0);
 
+  file_MuonIdSF ->Close();
+  delete file_MuonIdSF;
   return true;
 }
+/*
 double AnaBase::wtPileUp(float nPU, bool verbose) const {
   return puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(nPU));
 }
 */
+double AnaBase::getIdSF(std::string IdType, float pt, float eta, int lepFlav) const {
+  double SF = 0.0;
+  if (lepFlav == 1) {
+    if (IdType == "Loose") {
+      Int_t binX = looseMuonIdSFhist_->GetXaxis()->FindBin(pt);
+      Int_t binY = looseMuonIdSFhist_->GetYaxis()->FindBin(eta);
+      SF = looseMuonIdSFhist_->GetBinContent(binX, binY);
+    }
+    else if (IdType == "Medium") {
+      Int_t binX = medMuonIdSFhist_->GetXaxis()->FindBin(pt);
+      Int_t binY = medMuonIdSFhist_->GetYaxis()->FindBin(eta);
+      SF = medMuonIdSFhist_->GetBinContent(binX, binY);
+    }
+    else if (IdType == "Tight") {
+      Int_t binX = tightMuonIdSFhist_->GetXaxis()->FindBin(pt);
+      Int_t binY = tightMuonIdSFhist_->GetYaxis()->FindBin(eta);
+      SF = tightMuonIdSFhist_->GetBinContent(binX, binY);
+    }
+  }
+  else if (lepFlav == 2) {
+    SF = 1.0;
+  }
+  return SF;
+}

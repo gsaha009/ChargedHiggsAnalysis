@@ -107,13 +107,12 @@ public:
   bool branchFound(const std::string& b);
   int getEntries() const;
   //  bool readPileUpHist(bool verbose=false);
-  //  double wtPileUp(float nPU, bool verbose=false) const;
   void clearEvent();
   void enableBranches();
   int getEntry(int lflag) const;
 
   std::unique_ptr<TFile>& histf() {return histf_;}
-  std::unique_ptr<TFile>& fakehistf() {return fakehistf_;}
+  //std::unique_ptr<TFile>& fakehistf() {return fakehistf_;}
   TTreeReader* treeReader() {return treeReader_;}
   TTreeReader* treeReaderRun() {return treeReaderRun_;}
   TChain* chain() {return chain_;}
@@ -141,6 +140,8 @@ public:
   bool useTrueNInt() const {return useTrueNInt_;}
   int getEra() const {return era_;}
   std::string getDatasetName() {return dataset_;}
+  bool openScaleFactorRootFiles(bool verbose=false);
+  double getIdSF(std::string IdType, float pt, float eta, int lepFlav) const;
 
   const std::map<std::string, double>& lumiWtMap() const {return AnaUtil::cutMap(hmap_, "lumiWtList");}
   const std::map<std::string, double>& vtxCutMap() const {return AnaUtil::cutMap(hmap_, "vtxCutList");}
@@ -171,7 +172,7 @@ public:
 private:
   //  std::unique_ptr<TChain> chain_;      // chain contains a list of root files containing the same tree
   std::unique_ptr<TFile> histf_;       // The output file with histograms
-  std::unique_ptr<TFile> fakehistf_;       // The output file with histograms
+  //std::unique_ptr<TFile> fakehistf_;       // The output file with histograms
   TChain* chain_; 
   TChain* chainRun_;  
   std::vector<std::string> brList_;
@@ -211,7 +212,7 @@ private:
   std::string evtWtSum_;
   std::string dataset_ {"bla"};
   std::string histFile_ {"default.root"};
-  std::string fakehistFile_ {"fakedefault.root"};
+  //std::string fakehistFile_ {"fakedefault.root"};
   std::string logFile_ {"default.out"};
   std::string evFile_ {"events.out"};
   std::string selEvFile_ {"selected_events.out"};
@@ -226,6 +227,14 @@ private:
 
   TTreeReader* treeReader_;   //!pointer to the analyzed TTree::Events 
   TTreeReader* treeReaderRun_;   //!pointer to the analyzed TTree::Runs 
+  // SF related
+  std::string muonIdSFRootFile_ {"default.root"};
+  std::string looseMuonIdSFhistName_ {"hist"};
+  TH2D* looseMuonIdSFhist_ {nullptr};
+  std::string medMuonIdSFhistName_ {"hist"};
+  TH2D* medMuonIdSFhist_ {nullptr};
+  std::string tightMuonIdSFhistName_ {"hist"};
+  TH2D* tightMuonIdSFhist_ {nullptr};
 
  public:
   // Required Branches
