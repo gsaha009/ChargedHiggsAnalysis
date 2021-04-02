@@ -208,6 +208,7 @@ bool AnaBase::init(){
   if (branchFound("Electron_mvaFall17V2noIso_WPL")) Electron_mvaFall17V2noIso_WPL = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2noIso_WPL");
   if (branchFound("Electron_lostHits")) Electron_lostHits              = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_lostHits");
   if (branchFound("Electron_convVeto")) Electron_convVeto              = new TTreeReaderArray< bool >(*treeReader_, "Electron_convVeto");
+  if (branchFound("Electron_deltaEtaSC")) Electron_deltaEtaSC          = new TTreeReaderArray< float >(*treeReader_, "Electron_deltaEtaSC");
 
   //MET
   if (branchFound("MET_pt")) Met_pt                                    = new TTreeReaderValue< float >(*treeReader_, "MET_pt");
@@ -592,6 +593,14 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       medMuonIdSFhistName_ = value;
     else if (key == "tightMuonIdSFhistName")
       tightMuonIdSFhistName_ = value;
+    else if (key == "electronLooseIdSFRootFile")
+      electronLooseIdSFRootFile_ = value;
+    else if (key == "looseEleIdSFhistName")
+      looseEleIdSFhistName_ = value;
+    else if (key == "electronTightIdSFRootFile")
+      electronTightIdSFRootFile_ = value;
+    else if (key == "tightEleIdSFhistName")
+      tightEleIdSFhistName_ = value;
     else if (key == "DoubleMuon") 
       AnaUtil::buildList(tokens, doubleMuonHltPathList_);
     else if (key == "SingleMuon") 
@@ -672,6 +681,7 @@ void AnaBase::printJob(ostream& os) const
 }
 
 bool AnaBase::openScaleFactorRootFiles(bool verbose) {
+  // MUON POG ID SCALE FACTOR
   const char* fname_MuonIdSF = gSystem->ExpandPathName(muonIdSFRootFile_.c_str());
   if (gSystem->AccessPathName(fname_MuonIdSF)) {
     cerr << ">>> Warning: File <<" << muonIdSFRootFile_ << ">> not found!!" << endl;
@@ -679,7 +689,7 @@ bool AnaBase::openScaleFactorRootFiles(bool verbose) {
   }
   TFile* file_MuonIdSF = TFile::Open(fname_MuonIdSF);
 
-  // Loose Muon ID SF
+  // --- Loose Muon ID SF
   file_MuonIdSF -> GetObject(looseMuonIdSFhistName_.c_str(), looseMuonIdSFhist_);
   if (!looseMuonIdSFhist_) {
     cerr << ">>> Warning: Histogram <<" << looseMuonIdSFhistName_ << ">> not found!!" << endl;
@@ -687,7 +697,7 @@ bool AnaBase::openScaleFactorRootFiles(bool verbose) {
   }
   looseMuonIdSFhist_->SetDirectory(0);
 
-  // Medium Muon ID SF
+  // --- Medium Muon ID SF
   file_MuonIdSF ->GetObject(medMuonIdSFhistName_.c_str(), medMuonIdSFhist_);
   if (!medMuonIdSFhist_) {
     cerr << ">>> Warning: Histogram <<" << medMuonIdSFhistName_ << ">> not found!!" << endl;
@@ -695,7 +705,7 @@ bool AnaBase::openScaleFactorRootFiles(bool verbose) {
   }
   medMuonIdSFhist_->SetDirectory(0);
 
-  // Tight Muon ID SF
+  // --- Tight Muon ID SF
   file_MuonIdSF ->GetObject(tightMuonIdSFhistName_.c_str(), tightMuonIdSFhist_);
   if (!tightMuonIdSFhist_) {
     cerr << ">>> Warning: Histogram <<" << tightMuonIdSFhist_ << ">> not found!!" << endl;
@@ -705,6 +715,43 @@ bool AnaBase::openScaleFactorRootFiles(bool verbose) {
 
   file_MuonIdSF ->Close();
   delete file_MuonIdSF;
+
+  // Electron POG ID SCALE FACTOR
+  const char* fname_EleLooseIdSF = gSystem->ExpandPathName(electronLooseIdSFRootFile_.c_str());
+  if (gSystem->AccessPathName(fname_EleLooseIdSF)) {
+    cerr << ">>> Warning: File <<" << electronLooseIdSFRootFile_ << ">> not found!!" << endl;
+    return false;
+  }
+  TFile* file_EleLooseIdSF = TFile::Open(fname_EleLooseIdSF);
+
+  file_EleLooseIdSF -> GetObject(looseEleIdSFhistName_.c_str(), looseEleIdSFhist_);
+  if (!looseEleIdSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << looseEleIdSFhist_ << ">> not found!!" << endl;
+    return false;
+  }
+  looseEleIdSFhist_->SetDirectory(0);
+
+  file_EleLooseIdSF ->Close();
+  delete file_EleLooseIdSF;
+
+
+  const char* fname_EleTightIdSF = gSystem->ExpandPathName(electronTightIdSFRootFile_.c_str());
+  if (gSystem->AccessPathName(fname_EleTightIdSF)) {
+    cerr << ">>> Warning: File <<" << electronTightIdSFRootFile_ << ">> not found!!" << endl;
+    return false;
+  }
+  TFile* file_EleTightIdSF = TFile::Open(fname_EleTightIdSF);
+
+  file_EleTightIdSF -> GetObject(tightEleIdSFhistName_.c_str(), tightEleIdSFhist_);
+  if (!tightEleIdSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << tightEleIdSFhist_ << ">> not found!!" << endl;
+    return false;
+  }
+  tightEleIdSFhist_->SetDirectory(0);
+
+  file_EleTightIdSF ->Close();
+  delete file_EleTightIdSF;
+
   return true;
 }
 /*
@@ -712,27 +759,51 @@ double AnaBase::wtPileUp(float nPU, bool verbose) const {
   return puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(nPU));
 }
 */
-double AnaBase::getIdSF(std::string IdType, float pt, float eta, int lepFlav) const {
+double AnaBase::getIdSF(std::string IdType, float pt, float eta, std::string Flav) const {
   double SF = 0.0;
-  if (lepFlav == 1) {
+  if (Flav == "Muon") {
     if (IdType == "Loose") {
-      Int_t binX = looseMuonIdSFhist_->GetXaxis()->FindBin(pt);
-      Int_t binY = looseMuonIdSFhist_->GetYaxis()->FindBin(eta);
-      SF = looseMuonIdSFhist_->GetBinContent(binX, binY);
+      if (pt < looseMuonIdSFhist_->GetXaxis()->GetXmax()){
+	Int_t binX = looseMuonIdSFhist_->GetXaxis()->FindBin(pt);
+	Int_t binY = looseMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = looseMuonIdSFhist_->GetBinContent(binX, binY);
+      }
+      else SF = 1.0;
     }
     else if (IdType == "Medium") {
-      Int_t binX = medMuonIdSFhist_->GetXaxis()->FindBin(pt);
-      Int_t binY = medMuonIdSFhist_->GetYaxis()->FindBin(eta);
-      SF = medMuonIdSFhist_->GetBinContent(binX, binY);
+      if (pt < medMuonIdSFhist_->GetXaxis()->GetXmax()){
+	Int_t binX = medMuonIdSFhist_->GetXaxis()->FindBin(pt);
+	Int_t binY = medMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = medMuonIdSFhist_->GetBinContent(binX, binY);
+      }
+      else SF = 1.0;
     }
     else if (IdType == "Tight") {
-      Int_t binX = tightMuonIdSFhist_->GetXaxis()->FindBin(pt);
-      Int_t binY = tightMuonIdSFhist_->GetYaxis()->FindBin(eta);
-      SF = tightMuonIdSFhist_->GetBinContent(binX, binY);
+      if (pt < tightMuonIdSFhist_->GetXaxis()->GetXmax()){
+	Int_t binX = tightMuonIdSFhist_->GetXaxis()->FindBin(pt);
+	Int_t binY = tightMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = tightMuonIdSFhist_->GetBinContent(binX, binY);
+      }
     }
   }
-  else if (lepFlav == 2) {
-    SF = 1.0;
+  else if (Flav == "Electron") {
+    if (IdType == "Loose") {
+      if (pt < looseEleIdSFhist_->GetYaxis()->GetXmax()){
+	Int_t binX = looseEleIdSFhist_->GetXaxis()->FindBin(std::abs(eta));
+	Int_t binY = looseEleIdSFhist_->GetYaxis()->FindBin(pt);
+	SF = looseEleIdSFhist_->GetBinContent(binX, binY);
+      }
+      else SF = 1.00;
+    }
+    else if (IdType == "Tight") {
+      if (pt < tightEleIdSFhist_->GetYaxis()->GetXmax()){
+	Int_t binX = tightEleIdSFhist_->GetXaxis()->FindBin(std::abs(eta));
+	Int_t binY = tightEleIdSFhist_->GetYaxis()->FindBin(pt);
+	SF = tightEleIdSFhist_->GetBinContent(binX, binY);
+      }
+      else SF = 1.0;
+    }
   }
+
   return SF;
 }

@@ -140,7 +140,7 @@ namespace AnaUtil {
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
   TH1* getHist1D(const char* hname, int nbins, float xlow, float xhigh, const char* region, const char* channel) {
-    std::string hname_ = std::string(hname)+std::string(region)+std::string(channel);
+    std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       TH1D *obj = new TH1D(hname_.c_str(), "", nbins, xlow, xhigh);
@@ -345,6 +345,30 @@ namespace AnaUtil {
 	   << setw(10) << (1/cont)*TMath::Sqrt(conti*(1-(conti/cont)))
 	   << setw(10) << ( i == 1 ? 1.0 :(contj > 0) ? conti/contj : 0.0)
 	   << setw(10) << ((contj > 0) ? (1/contj)*TMath::Sqrt(conti*(1-(conti/contj))) : 0.0)
+	   << endl;
+      }
+    }
+  }
+  void showYield(const string& hname,
+		 const std::vector<std::string>& slist,
+		 const string& header,
+		 const string& tag,
+		 std::ostream& os)
+  {
+    os << ">>> " << header << " Yield " << endl;
+    TH1 *h = AnaUtil::getHist1DBasic(hname);
+    if (h != nullptr) {
+      os << setw(64) << "Channel"
+	 << setw(24) << tag
+	 << endl;
+      os.precision(10);
+      os << setw(90) <<	"---------------------------------\n";
+      int nbins = h->GetNbinsX();
+      for (int i = 1; i <= nbins; ++i) {
+	double conti = static_cast<double>(h->GetBinContent(i));
+	os << setw(64) << slist[i-1]
+	   << std::setprecision(5)
+	   << setw(24) << conti
 	   << endl;
       }
     }

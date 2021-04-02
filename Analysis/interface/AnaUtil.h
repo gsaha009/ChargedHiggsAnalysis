@@ -82,21 +82,29 @@ namespace AnaUtil {
   TH1* getHist1D(const std::string& hname, int nbins, float xlow, float xhigh, const std::string& region, const std::string& channel);
   template <class T>
     bool fillHist1D(const char* hname, T value, int nbins, float xlow, float xhigh,
-		    const char* region, const char* channel, double w=1.0, bool check=true) {
-    if (check) {
-      TH1* h = getHist1D(hname, nbins, xlow, xhigh, region, channel);
-      if (h == nullptr) return false;
-      h->Fill(value, w);
+		    const char* region, const std::string channels[], double w=1.0, bool check[]={false}) {
+    if (check[0]) {
+      TH1* h1 = getHist1D(hname, nbins, xlow, xhigh, region, channels[0].c_str());
+      if (h1 == nullptr) return false;
+      h1->Fill(value, w);
+    }
+    if (check[1]) {
+      TH1* h2 = getHist1D(hname, nbins, xlow, xhigh, region, channels[1].c_str());
+      if (h2 == nullptr) return false;
+      h2->Fill(value, w);
+    }
+    if (check[2]) {
+      TH1* h3 = getHist1D(hname, nbins, xlow, xhigh, region, channels[2].c_str());
+      if (h3 == nullptr) return false;
+      h3->Fill(value, w);
     }
     return true;
   }
-  /*
   template <class T>
     bool fillHist1D(const std::string& hname, T value, int nbins, float xlow, float xhigh,
-		    const std::string& region, const std::string& channel, double w=1.0, bool check=true) {
-    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, region.c_str(), channel.c_str(), w, check);
+		    const std::string& region, const std::string channels[], double w=1.0, bool check[]={false}) {
+    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, region.c_str(), channels, w, check);
   }
-  */
 
 
   TH1* getHist1DBasic(const char* hname);
@@ -183,5 +191,9 @@ namespace AnaUtil {
 		      const std::vector<std::string>& slist,
 		      const std::string& header,
 		      const std::string& tag="Events", std::ostream& os=std::cout);
+  void showYield(const std::string& hname,
+		 const std::vector<std::string>& slist,
+		 const std::string& header,
+		 const std::string& tag="Events", std::ostream& os=std::cout);
 }
 #endif

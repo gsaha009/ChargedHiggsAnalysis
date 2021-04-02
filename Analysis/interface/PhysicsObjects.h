@@ -87,6 +87,7 @@ namespace vhtm {
     unsigned int index;
     float pt;
     float eta;
+    float SCeta;
     float phi;
     float mass;
     int charge;
@@ -111,6 +112,8 @@ namespace vhtm {
     unsigned int index;
     float pt;
     float eta;
+    float SCdEta;
+    float SCeta;
     float phi;
     float mass;
     int charge;

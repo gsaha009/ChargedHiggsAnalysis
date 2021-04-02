@@ -387,6 +387,8 @@ void PhysicsObjSelector::electronSelector() {
     el.index   = i;
     el.pt      = Electron_pt->At(i);
     el.eta     = Electron_eta->At(i);
+    el.SCdEta  = Electron_deltaEtaSC->At(i);
+    el.SCeta   = Electron_eta->At(i)+Electron_deltaEtaSC->At(i);
     el.phi     = Electron_phi->At(i);
     el.mass    = Electron_mass->At(i);
     el.charge  = Electron_charge->At(i);

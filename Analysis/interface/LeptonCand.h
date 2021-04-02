@@ -8,6 +8,7 @@ struct LeptonCand {
   unsigned int index {100};
   float pt {-999};
   float eta {-999};
+  float SCeta {-999};
   float phi {-999};
   float mass {-999};
   int charge {-999};

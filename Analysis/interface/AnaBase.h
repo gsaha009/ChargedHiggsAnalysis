@@ -141,7 +141,7 @@ public:
   int getEra() const {return era_;}
   std::string getDatasetName() {return dataset_;}
   bool openScaleFactorRootFiles(bool verbose=false);
-  double getIdSF(std::string IdType, float pt, float eta, int lepFlav) const;
+  double getIdSF(std::string IdType, float pt, float eta, std::string Flav) const;
 
   const std::map<std::string, double>& lumiWtMap() const {return AnaUtil::cutMap(hmap_, "lumiWtList");}
   const std::map<std::string, double>& vtxCutMap() const {return AnaUtil::cutMap(hmap_, "vtxCutList");}
@@ -236,6 +236,13 @@ private:
   std::string tightMuonIdSFhistName_ {"hist"};
   TH2D* tightMuonIdSFhist_ {nullptr};
 
+  std::string electronLooseIdSFRootFile_ {"default.root"};
+  std::string looseEleIdSFhistName_ {"hist"};
+  TH2F* looseEleIdSFhist_ {nullptr};
+  std::string electronTightIdSFRootFile_ {"default.root"};
+  std::string tightEleIdSFhistName_ {"hist"};
+  TH2F* tightEleIdSFhist_ {nullptr};
+
  public:
   // Required Branches
 
@@ -324,7 +331,7 @@ private:
   TTreeReaderArray< bool >* Electron_mvaFall17V2noIso_WPL;
   TTreeReaderArray< unsigned char >*Electron_lostHits;
   TTreeReaderArray< bool >*Electron_convVeto;
-
+  TTreeReaderArray< float >*Electron_deltaEtaSC;
 
   // Jet
   // https://github.com/cms-nanoAOD/cmssw/blob/master-cmsswmaster/PhysicsTools/NanoAOD/python/jets_cff.py

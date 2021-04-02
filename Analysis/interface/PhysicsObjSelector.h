@@ -27,6 +27,7 @@ void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candLis
     lc.index   = ip.index;
     lc.pt      = ip.pt;
     lc.eta     = ip.eta;
+    lc.SCeta   = ip.SCeta;
     lc.phi     = ip.phi;
     lc.mass    = ip.mass;
     lc.charge  = ip.charge;
