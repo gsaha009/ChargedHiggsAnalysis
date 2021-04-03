@@ -408,7 +408,6 @@ void PhysicsObjSelector::electronSelector() {
     if (Electron_lostHits->At(i) != 0) continue;
     AnaUtil::fillHist1DBasic ("eleCutFlow", 3, 1.0); 
     fakeableEleList_.push_back(el);
-
     if (!Electron_mvaFall17V2Iso_WP90->At(i)) continue;
     AnaUtil::fillHist1DBasic ("eleCutFlow", 4, 1.0);
     tightEleList_.push_back(el);
@@ -478,8 +477,8 @@ void PhysicsObjSelector::metSelector() {
   histf()->cd("ObjectSelection");
 
   vhtm::MET met;
-  met.pt    = *Met_nomPt->Get();
-  met.phi   = *Met_nomPhi->Get();
+  met.pt    = (isSignal()) ? *Met_nomPt->Get() : *Met_pt->Get();
+  met.phi   = (isSignal()) ? *Met_nomPhi->Get() : *Met_phi->Get();
   met.signf = *Met_significance->Get();
   met.sumEt = *Met_sumEt->Get();
 
@@ -501,8 +500,12 @@ void PhysicsObjSelector::tauSelector() {
     if (std::fabs(Tau_dz->At(it)) > 0.2) continue;
     if (!Tau_idDecayModeNewDMs->At(it)) continue;
     if (!(Tau_decayMode->At(it) == 0 || Tau_decayMode->At(it) == 1 || Tau_decayMode->At(it) == 2 || Tau_decayMode->At(it) == 10 || Tau_decayMode->At(it) == 11)) continue;
-    if (!(Tau_idDeepTau2017v2VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2VSmu->At(it) >> 0 & 0x1)) continue;
-
+    if (isSignal()) {
+      if (!(Tau_idDeepTau2017v2VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2VSmu->At(it) >> 0 & 0x1)) continue;
+    }
+    else {
+      if (!(Tau_idDeepTau2017v2p1VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2p1VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2p1VSmu->At(it) >> 0 & 0x1)) continue;
+    }
     AnaUtil::fillHist1DBasic ("tauCutFlow", 1, 1.0);
     
     vhtm::Tau ta;
@@ -617,100 +620,6 @@ bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
   for (const auto& el: tightEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) return false;
   return true;
 }
-/*
-bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
-  bool isMuon {false};
-  bool isElectron {false};
-  TLorentzVector jp4(AnaUtil::getP4(jet));
-  // Medium Isolated muons
-  for (const auto& mu: tightMuList_){
-    if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.4) {
-      isMuon = true;
-      break;
-    }
-    if (isMuon) return false;
-  }
-  // LooseMVA Isolated electrons
-  for (const auto& el: tightEleList_){
-    if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) {
-      isElectron = true;
-      break;
-    }
-    if (isElectron) return false;
-  }
-  return true;
-}
-// fat-jet lepton cleaning
-bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet) const {
-  bool isMuon {false};
-  bool isElectron {false};
-  TLorentzVector jp4(AnaUtil::getP4(jet));
-  // Medium Isolated muons
-  for (const auto& mu: tightMuList_){
-    if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.8) {
-      isMuon = true;
-      break;
-    }
-    if (isMuon) return false;
-  }
-  // LooseMVA Isolated electrons
-  for (const auto& el: tightEleList_){
-    if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.8) {
-      isElectron = true;
-      break;
-    }
-    if (isElectron) return false;
-  }
-  return true;
-}
-
-bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau) const {
-  bool isMuon {false};
-  bool isElectron {false};
-  TLorentzVector tp4(AnaUtil::getP4(tau));
-  // Medium Isolated muons
-  for (const auto& mu: tightMuList_){
-    if (tp4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) {
-      isMuon = true;
-      break;
-    }
-    if (isMuon) return false;
-  }
-  // LooseMVA Isolated electrons
-  for (const auto& el: tightEleList_){
-    if (tp4.DeltaR(AnaUtil::getP4(el)) <= 0.3) {
-      isElectron = true;
-      break;
-    }
-    if (isElectron) return false;
-  }
-  return true;
-}
-
-bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons,  bool VsTightMuons) const {
-  bool isMuon {false};
-  TLorentzVector elep4(AnaUtil::getP4(ele));
-  if (VsLooseMuons) {
-    for (const auto& mu: preSelMuList_){
-      if (elep4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) {
-	isMuon  = true;
-	break;
-      }
-      if (isMuon) return true;
-    }
-  }
-  else if (VsTightMuons) {
-    for (const auto& mu: tightMuList_){
-      if (elep4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) {
-	isMuon  = true;
-	break;
-      }
-      if (isMuon) return true;
-    }
-  }
-  return false;
-}
-*/
 // fat-jet lepton cleaning
 bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet) const {
   TLorentzVector jp4(AnaUtil::getP4(jet));

@@ -55,6 +55,8 @@ ScaleFactorsInfo:
   - looseEleIdSFhistName EGamma_SF2D
   - electronTightIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/egammaEffi_txt_EGM2D_MVA90iso_UL17.root
   - tightEleIdSFhistName EGamma_SF2D
+  - muonTightIsoSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/RunBCDEF_SF_ISO.root
+  - tightMuIsoSFhistName NUM_TightRelIso_DEN_MediumID_pt_abseta
 endInfo:
   - useEventList 1
   - eventId 1 895751 20

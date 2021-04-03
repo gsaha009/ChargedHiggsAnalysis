@@ -102,13 +102,15 @@ void MultiLeptonMVAna::bookHistograms()
 {
   PhysicsObjSelector::bookHistograms();
   histf()->cd();
-  // book histograms to be filled at different stages
+
+  // book basic histograms to be filled at different stages
   new TH1D("evtCutFlow", "Event CutFlow", 12, -0.5, 11.5);
   if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 12, -0.5, 11.5);
   new TH1D("SR_yield", "Yield in Signal Region", 3, -0.5, 2.5);
   if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 3, -0.5, 2.5);
   new TH1D("FR_yield", "Yield in Fake Extrapolated Region", 3, -0.5, 2.5);
   if (isMC()) new TH1D("FR_yieldWt", "Yield in Fake Extrapolated Region Weighted", 3, -0.5, 2.5);
+
   histf()->ls();
 }
 
@@ -438,10 +440,13 @@ void MultiLeptonMVAna::eventLoop()
 			     * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
       else if (isSR_MuMu)  MCweight = MCweight 
 			     * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
-			     * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
+			     * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
+			     * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
+			     * AnaBase::getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
       else if (isSR_EleMu) {
 	if (leadIsTightMuon) MCweight = MCweight 
-			       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
+			       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
+			       * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
 			       * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
 	else MCweight = MCweight 
 	       * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
@@ -475,12 +480,14 @@ void MultiLeptonMVAna::eventLoop()
 	else MCweight = (leadIsTightMuon) ? 
 	       MCweight 
 	       * 0.01 
-	       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
+	       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
+	       * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
 	       * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
 	       : MCweight 
 	       * 0.01 
 	       * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
-	       * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
+	       * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
+	       * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, "Muon");
       }
       else if (isFR_EleMu) {
 	if (tel == 0 && tmu == 0) MCweight = (lep1.flavour == 1) ? 
@@ -508,11 +515,13 @@ void MultiLeptonMVAna::eventLoop()
 	  MCweight = (leadIsTightMuon) ? MCweight 
 	    * 0.01 
 	    * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
+	    * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon") 
 	    * AnaBase::getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
 	    : MCweight 
 	    * 0.01 
 	    * AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
-	    * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muuon"); 
+	    * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon") 
+	    * AnaBase::getIsoSF("Tight", lep2.pt, lep2.eta, "Muon"); 
       }
     }
     /*
@@ -539,7 +548,8 @@ void MultiLeptonMVAna::eventLoop()
     std::string channels[3] = {"EleEle", "EleMu", "MuMu"};
     bool SR_flags[3]        = {isSR_EleEle, isSR_EleMu, isSR_MuMu};
     bool FR_flags[3]        = {isFR_EleEle, isFR_EleMu, isFR_MuMu};
-
+    // -------------------------------------------------------------------------- //
+    // To get the yields for different regions
     if (isSR_EleEle){
       AnaUtil::fillHist1DBasic("SR_yield", 0);
       if (isMC()) AnaUtil::fillHist1DBasic("SR_yieldWt", 0, MCweight*lumiFac);
@@ -564,7 +574,7 @@ void MultiLeptonMVAna::eventLoop()
       AnaUtil::fillHist1DBasic("FR_yield", 2);
       if (isMC()) AnaUtil::fillHist1DBasic("FR_yieldWt", 2, MCweight*lumiFac);
     }
-    // -------------------------------------------------------------------------- //
+
 
     // MET Distribution
     AnaUtil::fillHist1D("metPt", met.pt, 100, 0, 500, "SR", channels, MCweight, SR_flags);
@@ -694,16 +704,16 @@ void MultiLeptonMVAna::endJob() {
       "MuMu"
 	};
   AnaUtil::showEfficiency("evtCutFlow", evLabels, "Event Selection");  
-  AnaUtil::showYield("SR_yield",   yieldLabels, "Prompt Contribution in Signal Region", "Yield");
-  AnaUtil::showYield("FR_yield",   yieldLabels, "Fake Extrapolation in Signal Region", "Yield");
+  AnaUtil::showYield("SR_yield",   yieldLabels, "Prompt Contribution in Signal Region (unweighted)", "Yield");
+  AnaUtil::showYield("FR_yield",   yieldLabels, "Fake Extrapolation in Signal Region (unweighted)", "Yield");
   if (isMC()) {
     cout << endl
          << "evtWeightSum: " << setw(10) << setprecision(0) << evtWeightSum_ << endl
          << "      lumiWt: " << setw(10) << setprecision(5) << lumiFac
          << endl;
     //AnaUtil::showEfficiency("evtCutFlowWt", evLabels, "Event Selection (Weighted)", "Events");
-    AnaUtil::showYield("SR_yieldWt",   yieldLabels, "Prompt Contribution in Signal Region (Weighted)", "Yield");
-    AnaUtil::showYield("FR_yieldWt",   yieldLabels, "Fake Extrapolation in Signal Region (Weighted)", "Yield");
+    AnaUtil::showYield("SR_yieldWt",   yieldLabels, "Prompt Contribution in Signal Region (Lumi weighted)", "Yield");
+    AnaUtil::showYield("FR_yieldWt",   yieldLabels, "Fake Extrapolation in Signal Region (Lumi weighted)", "Yield");
   }
 }
 

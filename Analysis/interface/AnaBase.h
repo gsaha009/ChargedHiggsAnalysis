@@ -142,6 +142,7 @@ public:
   std::string getDatasetName() {return dataset_;}
   bool openScaleFactorRootFiles(bool verbose=false);
   double getIdSF(std::string IdType, float pt, float eta, std::string Flav) const;
+  double getIsoSF(std::string IsoType, float pt, float eta, std::string Flav) const;
 
   const std::map<std::string, double>& lumiWtMap() const {return AnaUtil::cutMap(hmap_, "lumiWtList");}
   const std::map<std::string, double>& vtxCutMap() const {return AnaUtil::cutMap(hmap_, "vtxCutList");}
@@ -243,6 +244,10 @@ private:
   std::string tightEleIdSFhistName_ {"hist"};
   TH2F* tightEleIdSFhist_ {nullptr};
 
+  std::string muonTightIsoSFRootFile_ {"default.root"};
+  std::string tightMuIsoSFhistName_ {"hist"};
+  TH2D* tightMuIsoSFhist_ {nullptr};
+
  public:
   // Required Branches
 
@@ -322,6 +327,7 @@ private:
   TTreeReaderArray< float >* Electron_pfRelIso03_chg;
   TTreeReaderArray< bool >* Electron_mvaFall17V2Iso_WP80;
   TTreeReaderArray< bool >* Electron_mvaFall17V2Iso_WP90;
+  TTreeReaderArray< bool >* Electron_mvaFall17V1Iso_WP90;
   TTreeReaderArray< bool >* Electron_mvaFall17V2noIso_WP80;
   TTreeReaderArray< bool >* Electron_mvaFall17V2noIso_WP90;
   TTreeReaderArray< int >* Electron_genPartIdx;
@@ -329,6 +335,7 @@ private:
   TTreeReaderArray< float >* Electron_dxy;
   TTreeReaderArray< float >* Electron_dz;
   TTreeReaderArray< bool >* Electron_mvaFall17V2noIso_WPL;
+  TTreeReaderArray< bool >* Electron_mvaFall17V1noIso_WPL;
   TTreeReaderArray< unsigned char >*Electron_lostHits;
   TTreeReaderArray< bool >*Electron_convVeto;
   TTreeReaderArray< float >*Electron_deltaEtaSC;
@@ -431,6 +438,9 @@ private:
   TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSjet;
   TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSe;
   TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2VSmu;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSjet;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSe;
+  TTreeReaderArray< unsigned char >* Tau_idDeepTau2017v2p1VSmu;
 
 
 

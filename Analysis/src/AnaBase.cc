@@ -199,6 +199,7 @@ bool AnaBase::init(){
   if (branchFound("Electron_pfRelIso03_chg")) Electron_pfRelIso03_chg  = new TTreeReaderArray< float >(*treeReader_, "Electron_pfRelIso03_chg");
   if (branchFound("Electron_mvaFall17V2Iso_WP80")) Electron_mvaFall17V2Iso_WP80 = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2Iso_WP80");
   if (branchFound("Electron_mvaFall17V2Iso_WP90")) Electron_mvaFall17V2Iso_WP90 = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2Iso_WP90");
+  if (branchFound("Electron_mvaFall17V1Iso_WP90")) Electron_mvaFall17V1Iso_WP90 = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V1Iso_WP90");
   if (isMC_) {
     if (branchFound("Electron_genPartIdx")) Electron_genPartIdx        = new TTreeReaderArray< int >(*treeReader_, "Electron_genPartIdx");
     if (branchFound("Electron_genPartFlav")) Electron_genPartFlv       = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_genPartFlav");
@@ -206,6 +207,7 @@ bool AnaBase::init(){
   if (branchFound("Electron_dxy")) Electron_dxy                        = new TTreeReaderArray< float >(*treeReader_, "Electron_dxy");
   if (branchFound("Electron_dz")) Electron_dz                          = new TTreeReaderArray< float >(*treeReader_, "Electron_dz");
   if (branchFound("Electron_mvaFall17V2noIso_WPL")) Electron_mvaFall17V2noIso_WPL = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V2noIso_WPL");
+  if (branchFound("Electron_mvaFall17V1noIso_WPL")) Electron_mvaFall17V1noIso_WPL = new TTreeReaderArray< bool >(*treeReader_, "Electron_mvaFall17V1noIso_WPL");
   if (branchFound("Electron_lostHits")) Electron_lostHits              = new TTreeReaderArray< unsigned char >(*treeReader_, "Electron_lostHits");
   if (branchFound("Electron_convVeto")) Electron_convVeto              = new TTreeReaderArray< bool >(*treeReader_, "Electron_convVeto");
   if (branchFound("Electron_deltaEtaSC")) Electron_deltaEtaSC          = new TTreeReaderArray< float >(*treeReader_, "Electron_deltaEtaSC");
@@ -302,8 +304,11 @@ bool AnaBase::init(){
   if (branchFound("Tau_idAntiMu")) Tau_idAntiMu                        = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idAntiMu");
   if (branchFound("Tau_idMVAoldDM")) Tau_idMVAoldDM                    = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idMVAoldDM");
   if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSjet= new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSjet");
-  if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSmu = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSmu");
-  if (branchFound("Tau_idDeepTau2017v2VSjet")) Tau_idDeepTau2017v2VSe  = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSe");
+  if (branchFound("Tau_idDeepTau2017v2VSmu")) Tau_idDeepTau2017v2VSmu  = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSmu");
+  if (branchFound("Tau_idDeepTau2017v2VSe")) Tau_idDeepTau2017v2VSe    = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2VSe");
+  if (branchFound("Tau_idDeepTau2017v2p1VSjet")) Tau_idDeepTau2017v2p1VSjet= new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSjet");
+  if (branchFound("Tau_idDeepTau2017v2p1VSmu")) Tau_idDeepTau2017v2p1VSmu  = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSmu");
+  if (branchFound("Tau_idDeepTau2017v2p1VSe")) Tau_idDeepTau2017v2p1VSe    = new TTreeReaderArray< unsigned char >(*treeReader_, "Tau_idDeepTau2017v2p1VSe");
 
   if (isMC_){
     //LHE
@@ -601,6 +606,10 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       electronTightIdSFRootFile_ = value;
     else if (key == "tightEleIdSFhistName")
       tightEleIdSFhistName_ = value;
+    else if (key == "muonTightIsoSFRootFile")
+      muonTightIsoSFRootFile_ = value;
+    else if (key == "tightMuIsoSFhistName")
+      tightMuIsoSFhistName_ = value;
     else if (key == "DoubleMuon") 
       AnaUtil::buildList(tokens, doubleMuonHltPathList_);
     else if (key == "SingleMuon") 
@@ -752,6 +761,24 @@ bool AnaBase::openScaleFactorRootFiles(bool verbose) {
   file_EleTightIdSF ->Close();
   delete file_EleTightIdSF;
 
+  // Iso Scale factor
+  const char* fname_MuonTightIsoSF = gSystem->ExpandPathName(muonTightIsoSFRootFile_.c_str());
+  if (gSystem->AccessPathName(fname_MuonTightIsoSF)) {
+    cerr << ">>> Warning: File <<" << muonTightIsoSFRootFile_ << ">> not found!!" << endl;
+    return false;
+  }
+  TFile* file_MuTightIsoSF = TFile::Open(fname_MuonTightIsoSF);
+
+  file_MuTightIsoSF -> GetObject(tightMuIsoSFhistName_.c_str(), tightMuIsoSFhist_);
+  if (!tightMuIsoSFhist_) {
+    cerr << ">>> Warning: Histogram <<" << tightMuIsoSFhist_ << ">> not found!!" << endl;
+    return false;
+  }
+  tightMuIsoSFhist_->SetDirectory(0);
+
+  file_MuTightIsoSF ->Close();
+  delete file_MuTightIsoSF;
+
   return true;
 }
 /*
@@ -805,5 +832,20 @@ double AnaBase::getIdSF(std::string IdType, float pt, float eta, std::string Fla
     }
   }
 
+  return SF;
+}
+
+double AnaBase::getIsoSF(std::string IsoType, float pt, float eta, std::string Flav) const {
+  double SF = 0.0;
+  if (Flav == "Muon") {
+    if (IsoType == "Tight") {
+      if (pt < tightMuIsoSFhist_->GetXaxis()->GetXmax()){
+        Int_t binX = tightMuIsoSFhist_->GetXaxis()->FindBin(pt);
+        Int_t binY = tightMuIsoSFhist_->GetYaxis()->FindBin(std::abs(eta));
+        SF = tightMuIsoSFhist_->GetBinContent(binX, binY);
+      }
+      else SF = 1.0;
+    }
+  }
   return SF;
 }
