@@ -144,11 +144,6 @@ namespace AnaUtil {
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       TH1D *obj = new TH1D(hname_.c_str(), "", nbins, xlow, xhigh);
-      /*      cerr << "**** getHist1D: Histogram for <" << hname 
-	   << "> not found! (" 
-	   << __FILE__ << ":" << __LINE__ << ")" 
-	   << endl;*/
-      //return nullptr;
       return obj;
     }
     TH1* h = nullptr;
@@ -182,10 +177,6 @@ namespace AnaUtil {
   TH1* getHist1DBasic(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (obj == nullptr) {
-      /*      cerr << "**** getHist1D: Histogram for <" << hname 
-	   << "> not found! (" 
-	   << __FILE__ << ":" << __LINE__ << ")" 
-	   << endl;*/
       return nullptr;
     }
     TH1* h = nullptr;

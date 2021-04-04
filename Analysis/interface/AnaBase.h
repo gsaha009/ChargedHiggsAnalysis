@@ -140,7 +140,7 @@ public:
   bool useTrueNInt() const {return useTrueNInt_;}
   int getEra() const {return era_;}
   std::string getDatasetName() {return dataset_;}
-  bool openScaleFactorRootFiles(bool verbose=false);
+  bool openScaleFactorRootFiles();
   double getIdSF(std::string IdType, float pt, float eta, std::string Flav) const;
   double getIsoSF(std::string IsoType, float pt, float eta, std::string Flav) const;
 

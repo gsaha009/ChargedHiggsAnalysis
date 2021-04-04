@@ -107,7 +107,7 @@ def main():
             jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
             jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
             jfile.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-            jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
+            #jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
             jfile.write('############ Cut lists ###############'+'\n')
             for item in cutLists:
                 jfile.write(item+'\n')
@@ -173,7 +173,7 @@ def main():
                 tmpl.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
                 tmpl.write('histFile '+histDir+'/'+str(key)+'_'+str(i)+'_hist.root'+'\n')
                 tmpl.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-                tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
+                #tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
                 tmpl.write('############ Cut lists ###############'+'\n')
                 for item in cutLists:
                     tmpl.write(item+'\n')
@@ -248,7 +248,7 @@ def main():
             jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
             jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
             jfile.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-            jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
+            #jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
             jfile.write('############ Cut lists ###############'+'\n')
             for item in cutLists:
                 jfile.write(item+'\n')
@@ -314,7 +314,7 @@ def main():
                 tmpl.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
                 tmpl.write('histFile '+histDir+'/'+str(key)+'_'+str(i)+'_hist.root'+'\n')
                 tmpl.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-                tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
+                #tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
                 tmpl.write('############ Cut lists ###############'+'\n')
                 for item in cutLists:
                     tmpl.write(item+'\n')
@@ -390,7 +390,7 @@ def main():
             jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
             jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
             jfile.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-            jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
+            #jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
             jfile.write('############ Cut lists ###############'+'\n')
             for item in cutLists:
                 jfile.write(item+'\n')
@@ -456,7 +456,7 @@ def main():
                 tmpl.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
                 tmpl.write('histFile '+histDir+'/'+str(key)+'_'+str(i)+'_hist.root'+'\n')
                 tmpl.write('fakehistFile '+histDir+'/'+str(key)+'_fakehist.root'+'\n')
-                tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
+                #tmpl.write('logFile '+histDir+'/'+str(key)+'_'+str(i)+'_dump.log'+'\n')
                 tmpl.write('############ Cut lists ###############'+'\n')
                 for item in cutLists:
                     tmpl.write(item+'\n')

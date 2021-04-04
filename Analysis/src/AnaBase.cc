@@ -424,13 +424,16 @@ int AnaBase::getEntries() const
 // ------------------------------------------------------
 bool AnaBase::openFiles() //Called by beginJob  
 {
+  // not using the dump funtion right now.
+  // so commented out
+  /*
   fLog_.open(logFile_.c_str(), ios::out);
   if (!fLog_) {
     cerr << "File: " << logFile_ << " could not be opened!" << endl;
     return false;
   }
   fLog_ << setiosflags(ios::fixed);
-
+  */
   evLog_.open(evFile_.c_str(), ios::out);
   if (!evLog_) {
     cerr << "File: " << evFile_ << " could not be opened!" << endl;
@@ -452,10 +455,12 @@ bool AnaBase::openFiles() //Called by beginJob
 // ------------------------
 void AnaBase::closeFiles() 
 {
+  /*
   if (fLog_) {
     fLog_ << resetiosflags(ios::fixed); 
     fLog_.close();
   }
+  */
   if (evLog_) {
     evLog_ << resetiosflags(ios::fixed); 
     evLog_.close();
@@ -689,7 +694,7 @@ void AnaBase::printJob(ostream& os) const
   AnaUtil::showCuts(hmap_, os);
 }
 
-bool AnaBase::openScaleFactorRootFiles(bool verbose) {
+bool AnaBase::openScaleFactorRootFiles() {
   // MUON POG ID SCALE FACTOR
   const char* fname_MuonIdSF = gSystem->ExpandPathName(muonIdSFRootFile_.c_str());
   if (gSystem->AccessPathName(fname_MuonIdSF)) {
