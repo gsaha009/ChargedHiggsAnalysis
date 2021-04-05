@@ -561,6 +561,7 @@ void MultiLeptonMVAna::eventLoop()
     if (isSR) {
       AnaUtil::fillHist1DBasic("evtCutFlow", 11);
       if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 11, MCweight*lumiFac);
+      AnaUtil::fillHist1D("nAk4Jets_Check", jetColl.size(), 10, -0.5, 9.5, "SR", channels, 1.0, SR_flags);
     }
 
     // To get the yields for different regions
