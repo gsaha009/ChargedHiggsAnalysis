@@ -110,6 +110,7 @@ void MultiLeptonMVAna::bookHistograms()
   if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 3, -0.5, 2.5);
   new TH1D("FR_yield", "Yield in Fake Extrapolated Region", 3, -0.5, 2.5);
   if (isMC()) new TH1D("FR_yieldWt", "Yield in Fake Extrapolated Region Weighted", 3, -0.5, 2.5);
+  new TH1D("EventWtSum", "Event Weight Sum", 1, -0.5, 1.5);
 
   histf()->ls();
 }
@@ -154,8 +155,9 @@ void MultiLeptonMVAna::eventLoop()
       evtWeightSum_ += getGenSumW();
     }
     lumiFac = lumiWt(evtWeightSum_, true);
-    cout <<">>> lumiWt: "<<lumiFac<<" <<<<"<<endl;
+    cout <<setprecision(5)<<">>> evtWeightSum: "<<evtWeightSum_<<"\t"<<">>> lumiWt: "<<lumiFac<<" <<<<"<<endl;
   }
+  AnaUtil::fillHist1DBasic("EventWtSum", 0, evtWeightSum_);
   //--------------------------------------------------//
   //--------------------Event Loop--------------------//
   //--------------------------------------------------//
@@ -208,11 +210,8 @@ void MultiLeptonMVAna::eventLoop()
 
     if (isMC()) {
       evWt = evt.genEvWt;
-      //AnaUtil::fillHist1D ("evWeight", evWt, 1.0);
       puWt = evt.PUWeight;
-      //AnaUtil::fillHist1D("puWeight", puWt, 1.0);      
       MCweight = evWt * puWt;
-      //AnaUtil::fillHist1D ("TotWt", MCweight, 1.0);
     }
     if (op.verbose && ev == 1) 
       cout << " <<<eventNo# " << setw(8) << ev <<"\n"
@@ -226,8 +225,6 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1DBasic("evtCutFlow", 0);
     if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 0, MCweight*lumiFac);
 
-    //AnaUtil::fillHist1D("nPV", evt.nPV, MCweight);
-    //AnaUtil::fillHist1D("nGoodPV", evt.nGoodPV, MCweight);
     if (evt.nGoodPV < 1) continue;
     AnaUtil::fillHist1DBasic("evtCutFlow", 1);
     if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 1, MCweight*lumiFac);

@@ -495,7 +495,7 @@ void PhysicsObjSelector::tauSelector() {
     AnaUtil::fillHist1DBasic ("tauCutFlow", 0, 1.0);
 
     if (Tau_pt->At(it) < 20) continue;
-    if (std::fabs(Tau_eta->At(it)) < 2.3) continue;
+    if (std::fabs(Tau_eta->At(it)) > 2.3) continue;
     if (std::fabs(Tau_dxy->At(it)) > 0.1) continue;
     if (std::fabs(Tau_dz->At(it)) > 0.2) continue;
     if (!Tau_idDecayModeNewDMs->At(it)) continue;

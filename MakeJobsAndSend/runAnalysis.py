@@ -21,7 +21,7 @@ def replaceAll(file,searchExp,replaceExp):
 
 def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists, 
                   HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, 
-                  SFInfo, files, endInfoList, ismc, isdata, issignal):
+                  SFInfo, dataset, files, endInfoList, ismc, isdata, issignal):
     if ismc:
         jfile.write('START\n'+'era '+str(era)+'\n'+'dataType mc\n')
     if issignal:
@@ -57,6 +57,8 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
     for item in SFInfo:
         jfile.write(item+'\n')
     jfile.write('############ Input Files ##############'+'\n')
+    if isdata:
+        jfile.write('dataset '+dataset+'\n')
     for item in files:
         jfile.write('inputFile '+item+'\n')
     jfile.write('########################################\n')
@@ -75,6 +77,7 @@ def main():
     args = parser.parse_args()
 
     pwd = os.getcwd()
+    logging.info(' >>>--------------| JobCard Producer |-------------->')
     logging.info('present working dir : {}'.format(pwd))
     
     with open(args.configName, 'r') as config:
@@ -138,14 +141,14 @@ def main():
         else:
             raise RuntimeError('Unknown datatype. Please mention MC, DATA or SIGNAL')
 
-        logging.info('Start making job cards for {} samples >>------>'.format(str(dataType)))
         if valDict == None or len(valDict) == 0:
             logging.info('Sorry! No {} samples are present in yaml'.format(str(dataType)))
         else:
+            logging.info('Start making job cards for {} samples >>------>'.format(str(dataType)))
             logging.info('{}_Samples : {}'.format(str(dataType), [sample for sample in valDict.keys()]))
             for key, val in valDict.items():
                 logging.info(' Sample : {}'.format(key))
-                dataset = str(key.split('_')[0]) if isdata else None
+                dataset      = str(key.split('_')[0]) if isdata else 'null'
                 filePathList = val.get('filedirs')
                 xsec         = val.get('xsec') if not isdata else -999.9
                 evtWtSum     = val.get('genEvtWtSum') if not isdata else 'null'
@@ -158,9 +161,10 @@ def main():
                 with open(os.path.join(jobDir,jobFile), 'w') as jfile:
                     dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists,
                                   HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG,
-                                  SFInfo, files, endInfoList, ismc, isdata, issignal)
+                                  SFInfo, dataset, files, endInfoList, ismc, isdata, issignal)
                 jfile.close()
                 # jobfile production finished
+
                 # Now prepare to send jobs to condor
                 conDir = os.path.join(jobDir, str(key)+'_condorJobs')
                 if not os.path.isdir(conDir):
@@ -192,7 +196,7 @@ def main():
                         tmplKey = key+'_'+str(i)
                         dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
                                       HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG,
-                                      SFInfo, filesList, endInfoList, ismc, isdata, issignal)
+                                      SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
                     tmpl.close()
                     
                     # Make the condor scripts ready
@@ -221,9 +225,9 @@ def main():
                         st = os.stat(shkey)
                         os.chmod(shkey, st.st_mode | stat.S_IEXEC)
                         process = Popen(condorJobCommandList, stdout=PIPE)
-                        bla = process.communicate()[0]
-                        print bla
-                        JobIdList.write(bla.split('cluster ')[-1])
+                        report = process.communicate()[0]
+                        print report
+                        JobIdList.write(report.split('cluster ')[-1])
 
 
     if args.send:
