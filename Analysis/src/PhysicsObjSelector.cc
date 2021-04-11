@@ -377,9 +377,9 @@ void PhysicsObjSelector::electronSelector() {
     if (std::fabs(Electron_eta->At(i)) > 2.5) continue;
     if (std::fabs(Electron_dxy->At(i)) > 0.1) continue;
     if (std::fabs(Electron_dz->At(i)) > 0.2) continue;
-    if (Electron_sip3d->At(i) > 8) continue;
+    //if (Electron_sip3d->At(i) > 8) continue;
     if (!Electron_mvaFall17V2noIso_WPL->At(i)) continue;
-    if (Electron_lostHits->At(i) > 1) continue;
+    //if (Electron_lostHits->At(i) > 1) continue;
 
     AnaUtil::fillHist1DBasic ("eleCutFlow", 1, 1.0);
 
@@ -404,8 +404,8 @@ void PhysicsObjSelector::electronSelector() {
     AnaUtil::fillHist1DBasic ("eleCutFlow", 2, 1.0); 
 
     if (Electron_pt->At(i) < 10) continue;
-    if (!Electron_convVeto->At(i)) continue;;
-    if (Electron_lostHits->At(i) != 0) continue;
+    //if (!Electron_convVeto->At(i)) continue;;
+    //if (Electron_lostHits->At(i) != 0) continue;
     AnaUtil::fillHist1DBasic ("eleCutFlow", 3, 1.0); 
     fakeableEleList_.push_back(el);
     if (!Electron_mvaFall17V2Iso_WP90->At(i)) continue;

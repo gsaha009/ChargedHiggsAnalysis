@@ -104,8 +104,8 @@ void MultiLeptonMVAna::bookHistograms()
   histf()->cd();
 
   // book basic histograms to be filled at different stages
-  new TH1D("evtCutFlow", "Event CutFlow", 12, -0.5, 11.5);
-  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 12, -0.5, 11.5);
+  new TH1D("evtCutFlow", "Event CutFlow", 15, -0.5, 14.5);
+  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 13, -0.5, 12.5);
   new TH1D("SR_yield", "Yield in Signal Region", 3, -0.5, 2.5);
   if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 3, -0.5, 2.5);
   new TH1D("FR_yield", "Yield in Fake Extrapolated Region", 3, -0.5, 2.5);
@@ -280,11 +280,16 @@ void MultiLeptonMVAna::eventLoop()
     if (!isMC()) {
       bool HLT_Scores[5] = {trigDoubleMuonHLT, trigDoubleEgHLT, trigMuonEgHLT, trigSingleMuonHLT, trigSingleEleHLT};
       std::string dataset = getDatasetName();
-      if (dataset == "DoubleMuon" && !HLT_Scores[0]) continue;
-      else if (dataset == "DoubleEG" && (!HLT_Scores[1] || HLT_Scores[0])) continue;
-      else if (dataset == "MuonEG" && (!HLT_Scores[2] || (HLT_Scores[0] || HLT_Scores[1]))) continue;
-      else if (dataset == "SingleMuon" && (!HLT_Scores[3] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2]))) continue;
-      else if (dataset == "SingleElectron" && (!HLT_Scores[4] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2] || HLT_Scores[3]))) continue;
+      if (dataset == "DoubleMuon" && !HLT_Scores[0])
+	continue;
+      else if (dataset == "DoubleEG" && (!HLT_Scores[1] || HLT_Scores[0]))
+	continue;
+      else if (dataset == "MuonEG" && (!HLT_Scores[2] || (HLT_Scores[0] || HLT_Scores[1])))
+	continue;
+      else if (dataset == "SingleMuon" && (!HLT_Scores[3] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2])))
+	continue;
+      else if (dataset == "SingleElectron" && (!HLT_Scores[4] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2] || HLT_Scores[3])))
+	continue;
     }  
     //Making the object collections ready!!!
     findObjects();
@@ -309,18 +314,18 @@ void MultiLeptonMVAna::eventLoop()
 
     //P A C K I N G  L E P T O N S
     std::vector<LeptonCand>preselLepColl;
-    if (preselMuColl.size() > 0) packLeptons <vhtm::Muon> (preselMuColl, preselLepColl);
-    if (preselElColl.size() > 0) packLeptons <vhtm::Electron> (preselElColl, preselLepColl);
+    if (preselMuColl.size() > 0) packLeptons <vhtm::Muon> (preselMuColl, preselLepColl, isMC());
+    if (preselElColl.size() > 0) packLeptons <vhtm::Electron> (preselElColl, preselLepColl, isMC());
     std::sort(std::begin(preselLepColl), std::end(preselLepColl), PtComparator<LeptonCand>());
 
     std::vector<LeptonCand>fakeableLepColl;
-    if (fakeableMuColl.size() > 0) packLeptons <vhtm::Muon> (fakeableMuColl, fakeableLepColl);
-    if (fakeableElColl.size() > 0) packLeptons <vhtm::Electron> (fakeableElColl, fakeableLepColl);
+    if (fakeableMuColl.size() > 0) packLeptons <vhtm::Muon> (fakeableMuColl, fakeableLepColl, isMC());
+    if (fakeableElColl.size() > 0) packLeptons <vhtm::Electron> (fakeableElColl, fakeableLepColl, isMC());
     std::sort(std::begin(fakeableLepColl), std::end(fakeableLepColl), PtComparator<LeptonCand>()); //sorting fakeable lepton candidates
 
     std::vector<LeptonCand>tightLepColl;
-    if (tightMuColl.size() > 0) packLeptons <vhtm::Muon> (tightMuColl, tightLepColl);
-    if (tightElColl.size() > 0) packLeptons <vhtm::Electron> (tightElColl, tightLepColl);
+    if (tightMuColl.size() > 0) packLeptons <vhtm::Muon> (tightMuColl, tightLepColl, isMC());
+    if (tightElColl.size() > 0) packLeptons <vhtm::Electron> (tightElColl, tightLepColl, isMC());
     std::sort(std::begin(tightLepColl), std::end(tightLepColl), PtComparator<LeptonCand>()); //sorting fakeable lepton candidates
 
     if (fakeableLepColl.size() < 2) continue;
@@ -420,6 +425,10 @@ void MultiLeptonMVAna::eventLoop()
     auto lep1 = fakeableLepColl[0];
     auto lep2 = fakeableLepColl[1];
 
+    if (!(isPrompt(lep1) && isPrompt(lep2))) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 10);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 10, MCweight*lumiFac);
+
     // -------------------------------------------------------------------------- //
     // ---------------------- !!! Weight Factory !!! ---------------------------- //
     // -------------------------------------------------------------------------- //
@@ -454,7 +463,7 @@ void MultiLeptonMVAna::eventLoop()
     // For Fake extrapolated region
     else if (isMC() && isFR) {
       if (isFR_EleEle) {
-	if (tel == 0) MCweight = MCweight 
+	if (tel == 0) MCweight = - MCweight 
 			* 0.01 
 			* 0.01 
 			* AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
@@ -470,7 +479,7 @@ void MultiLeptonMVAna::eventLoop()
 	       * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron"); 
       }
       else if (isFR_MuMu) { 
-	if (tmu == 0) MCweight = MCweight 
+	if (tmu == 0) MCweight = - MCweight 
 			* 0.01 
 			* 0.01 
 			* AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
@@ -489,7 +498,7 @@ void MultiLeptonMVAna::eventLoop()
       }
       else if (isFR_EleMu) {
 	if (tel == 0 && tmu == 0) MCweight = (lep1.flavour == 1) ? 
-				    MCweight 
+				    - MCweight 
 				    * 0.01 
 				    * 0.01 
 				    * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
@@ -552,12 +561,12 @@ void MultiLeptonMVAna::eventLoop()
     // MET Distribution
     AnaUtil::fillHist1D("metPt", met.pt, 100, 0, 500, "SR", channels, MCweight, SR_flags);
     if (met.pt < 60) continue;
-    AnaUtil::fillHist1DBasic("evtCutFlow", 10);
-    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 10, MCweight*lumiFac);
+    AnaUtil::fillHist1DBasic("evtCutFlow", 11);
+    if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 11, MCweight*lumiFac);
         
     if (isSR) {
-      AnaUtil::fillHist1DBasic("evtCutFlow", 11);
-      if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 11, MCweight*lumiFac);
+      AnaUtil::fillHist1DBasic("evtCutFlow", 12);
+      if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 12, MCweight*lumiFac);
       AnaUtil::fillHist1D("nAk4Jets_Check", jetColl.size(), 10, -0.5, 9.5, "SR", channels, 1.0, SR_flags);
     }
 
@@ -592,6 +601,10 @@ void MultiLeptonMVAna::eventLoop()
     bool isBoosted_WZ  = (fatJetColl.size() >= 1 && bJetColl.size()==0 && fatbJetColl.size()==0) ? true : false;
   
     if (isResolved_WZ) {
+      if (isSR) {
+	AnaUtil::fillHist1DBasic("evtCutFlow", 13);
+	if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 13, MCweight*lumiFac);
+      }
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "SR", channels, MCweight, SR_flags);
       if (!isSignal()) AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "FR", channels, MCweight, FR_flags);
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, "SR", channels, MCweight, SR_flags);
@@ -613,6 +626,10 @@ void MultiLeptonMVAna::eventLoop()
     }
 
     if (isBoosted_WZ) {
+      if (isSR) {
+	AnaUtil::fillHist1DBasic("evtCutFlow", 14);
+	if (isMC()) AnaUtil::fillHist1DBasic("evtCutFlowWt", 14, MCweight*lumiFac);
+      }
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "SR", channels, MCweight, SR_flags);
       if (!isSignal()) AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "FR", channels, MCweight, FR_flags);
       if (jetColl_ak8Cleaned.size() >= 1){ 
@@ -680,6 +697,15 @@ bool MultiLeptonMVAna::hasLowMassResonance(const std::vector<LeptonCand>& lepCol
   return false;
 }
 
+bool MultiLeptonMVAna::isPrompt(LeptonCand lep) {
+  if (!isMC()) return true;
+  else {
+    // either prompt or from tau decay
+    if (lep.genFlv == 1 || lep.genFlv == 15 || lep.genFlv == 22) 
+      return true;
+  }
+  return false;
+}
 
 void MultiLeptonMVAna::endJob() {
   PhysicsObjSelector::endJob();
@@ -697,8 +723,11 @@ void MultiLeptonMVAna::endJob() {
       "Z mass resonance veto               : ",
       "has max 2 tight leptons             : ",
       "tau veto                            : ",
+      "isPrompt                            : ",
       "met > 60                            : ",
-      "is SR                               : "
+      "is SR                               : ",
+      "isResolved_WZ                       : ",
+      "isBoosted_WZ                        : "
       };
   vector<string> yieldLabels {
       "EleEle",

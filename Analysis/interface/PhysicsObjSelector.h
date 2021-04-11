@@ -20,7 +20,7 @@
 
 
 template <typename T>
-void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candList) {
+void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candList, bool ismc = false) {
   for (unsigned int i = 0; i < lepList.size(); ++i) {
     const auto& ip = lepList[i];
     LeptonCand lc;
@@ -32,6 +32,7 @@ void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candLis
     lc.mass    = ip.mass;
     lc.charge  = ip.charge;
     lc.flavour = (typeid(ip) == typeid(vhtm::Muon)) ? 1 : 2;
+    if (ismc) lc.genFlv  = ip.genFlv;
 
     candList.push_back(lc);
   }

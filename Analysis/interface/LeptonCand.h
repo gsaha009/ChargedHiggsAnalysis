@@ -13,6 +13,7 @@ struct LeptonCand {
   float mass {-999};
   int charge {-999};
   int flavour {-111}; // 1:muon, 2:electron, -1:others
+  int genFlv {-111};
 
 };
 #endif

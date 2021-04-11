@@ -70,11 +70,11 @@ samplesDict:
 #      filesPerJob: 2
 
     ### ttbar
-    TTToSemiLeptonic: 
-      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
-      genEvtWtSum: 'genEventSumw'
-      xsec: 365.52
-      filesPerJob: 2
+#    TTToSemiLeptonic: 
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
+#      genEvtWtSum: 'genEventSumw'
+#      xsec: 365.52
+#      filesPerJob: 2
 
 #    TTTo2L2Nu:
 #      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/']
@@ -118,23 +118,39 @@ samplesDict:
 #      xsec : 136.02
 #      filesPerJob: 2
 
-    ST_t-channel_antitop_5f:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_antitop_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
-      genEvtWtSum: 'genEventSumw'
-      xsec : 80.95
-      filesPerJob: 2
+#    ST_t-channel_antitop_5f:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_antitop_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
+#      genEvtWtSum: 'genEventSumw'
+#      xsec : 80.95
+#      filesPerJob: 2
 
   DATA:  
     ### era B
-#    SingleMuon_2016B:
+#    SingleMuon_2017B:
 #      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
 #      filesPerJob: 2
 
-    DoubleMuon_2016B:
-      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
-      filesPerJob: 5
+    DoubleMuon_2017B:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017B-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 2
 
-#    MuonEG_2016B:
+    DoubleMuon_2017C:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017C-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 2
+
+    DoubleMuon_2017D:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017D-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 2
+
+    DoubleMuon_2017E:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017E-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 2
+
+    DoubleMuon_2017F:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017F-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 2
+
+#    MuonEG_2017B:
 #      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleEG2016/EraB/']
 #      filesPerJob: 2
 

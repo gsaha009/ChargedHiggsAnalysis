@@ -143,7 +143,7 @@ namespace AnaUtil {
     std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
-      obj = new TH1D(hname_.c_str(), "", nbins, xlow, xhigh);
+      obj = new TH1D(hname_.c_str(), hname_.c_str(), nbins, xlow, xhigh);
       //return obj;
     }
     TH1* h = nullptr;
