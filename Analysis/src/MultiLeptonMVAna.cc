@@ -700,8 +700,9 @@ bool MultiLeptonMVAna::hasLowMassResonance(const std::vector<LeptonCand>& lepCol
 bool MultiLeptonMVAna::isPrompt(LeptonCand lep) {
   if (!isMC()) return true;
   else {
-    // either prompt or from tau decay
-    if (lep.genFlv == 1 || lep.genFlv == 15 || lep.genFlv == 22) 
+    if (lep.genFlv == 1  || // prompt : final state 
+	lep.genFlv == 15 || // from tau
+	lep.genFlv == 22)   // from photon conversion (for ele only)
       return true;
   }
   return false;
@@ -713,7 +714,7 @@ void MultiLeptonMVAna::endJob() {
   histf()->cd();
   //histf()->cd("Analysis");
   vector<string> evLabels {
-      "Events processed                    : ",
+    "Events processed                    : ",
       "has GoodPV                          : ",
       "at least 2 fakeable leptons         : ",
       "lep1pt > 25 and lep2pt > 20         : ",
@@ -730,11 +731,11 @@ void MultiLeptonMVAna::endJob() {
       "isBoosted_WZ                        : "
       };
   vector<string> yieldLabels {
-      "EleEle",
+    "EleEle",
       "EleMu",
       "MuMu"
-	};
-
+      };
+  
   AnaUtil::showEfficiency("evtCutFlow", evLabels, "Event Selection [Unweighted]");  
   AnaUtil::showYield("SR_yield",   yieldLabels, "Prompt Contribution in Signal Region [unweighted]", "Yield");
   if (!isSignal()) AnaUtil::showYield("FR_yield",   yieldLabels, "Fake Extrapolation in Signal Region [unweighted]", "Yield");

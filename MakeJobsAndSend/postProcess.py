@@ -82,7 +82,7 @@ def main():
                 
                 tobehadd     = []
                 posthaddfile = os.path.join(histdir, str(key)+'_hist.root')
-                haddcmd_     = ['hadd', 'posthaddfile']
+                haddcmd_     = ['hadd', posthaddfile]
                 fileabsent   = False
                 for i in range(nJobs) :
                     rootfile = os.path.join(histdir, str(key)+'_'+str(i)+'_hist.root')
