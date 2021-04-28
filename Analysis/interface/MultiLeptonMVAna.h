@@ -22,6 +22,7 @@
 #include "TH2.h"
 #include "TH3.h"
 #include "TProfile.h"
+#include "TNtuple.h"
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
 #include <TTreeReaderArray.h>
@@ -102,6 +103,7 @@ private:
 
   std::unique_ptr<MVAnalysis> mvaObj_ {nullptr};
   std::unique_ptr<MVASkim> skimObj_ {nullptr};
+
   bool _createMVATree {false};
   bool _readMVA {false};
   std::string _mvaInputFile {""};  

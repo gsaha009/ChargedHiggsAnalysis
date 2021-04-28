@@ -538,8 +538,10 @@ void PhysicsObjSelector::fatJetSelector() {
     if (FatJet_pt->At(i) < 200) continue;
     if (std::fabs(FatJet_eta->At(i)) > 2.4) continue;
     AnaUtil::fillHist1DBasic ("fatJetCutFlow", 1, 1.0);
-    if ((FatJet_subJetIdx1->At(i) <= *nSubJet->Get() && (SubJet_pt->At(FatJet_subJetIdx1->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx1->At(i))) <= 2.4)
-	&& (FatJet_subJetIdx2->At(i) <= *nSubJet->Get() && (SubJet_pt->At(FatJet_subJetIdx2->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx2->At(i))) <= 2.4)) 
+    if ((FatJet_subJetIdx1->At(i) <= static_cast<int>(*nSubJet->Get()) && 
+	 (SubJet_pt->At(FatJet_subJetIdx1->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx1->At(i))) <= 2.4)	&& 
+	(FatJet_subJetIdx2->At(i) <= static_cast<int>(*nSubJet->Get()) && 
+	 (SubJet_pt->At(FatJet_subJetIdx2->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx2->At(i))) <= 2.4)) 
       hasValidSubJets = true;
     if (!hasValidSubJets) continue;
     AnaUtil::fillHist1DBasic ("fatJetCutFlow", 2, 1.0);
@@ -647,42 +649,6 @@ bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLo
   }
   return false;
 }
-/*
-bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
-  bool isMuon {false};
-  bool isElectron {false};
-  TLorentzVector jp4(AnaUtil::getP4(jet));
-  // Medium Isolated muons
-  for (const auto& mu: tightIsoMuList_){
-    if (jet.muIdx1 == static_cast<int>(mu.index)) {
-      AnaUtil::fillHist1DBasic ("jmu1DR", jp4.DeltaR(AnaUtil::getP4(mu)), 1.0);
-      isMuon = true;
-      break;
-    }
-    else if (jet.muIdx2 == static_cast<int>(mu.index)) {
-      AnaUtil::fillHist1DBasic ("jmu2DR", jp4.DeltaR(AnaUtil::getP4(mu)), 1.0);
-      isMuon = true;
-      break;
-    }
-    if (isMuon) return false;
-  }
-  // LooseMVA Isolated electrons
-  for (const auto& el: tightIsoEleList_){
-    if (jet.elIdx1 == static_cast<int>(el.index)) {
-      AnaUtil::fillHist1DBasic ("jel1DR", jp4.DeltaR(AnaUtil::getP4(el)), 1.0);
-      isElectron = true;
-      break;
-    }
-    else if (jet.elIdx2 == static_cast<int>(el.index)) {
-      AnaUtil::fillHist1DBasic ("jel2DR", jp4.DeltaR(AnaUtil::getP4(el)), 1.0);
-      isElectron = true;
-      break;
-    }
-    if (isElectron) return false;
-  }
-  return true;
-}
-*/
 
 /*
 void PhysicsObjSelector::dumpEverything(int evNo, ostream& os) const {

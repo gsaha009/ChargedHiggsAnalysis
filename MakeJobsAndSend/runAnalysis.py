@@ -34,6 +34,7 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
     jfile.write('############ MVA Info ###############'+'\n')
     for item in mvaInfoList:
         jfile.write(item+'\n')
+    jfile.write('mvaInputFile '+histDir+'/'+str(key)+'_ntuple.root'+'\n')
     jfile.write('########### xsec,lumi,hist ###########\n')
     if not isdata:
         jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
@@ -118,6 +119,7 @@ def main():
 
     histDir = os.path.join(outdir,'ChargedHiggsAnalysis_'+str(era)+'_JobOutput_'+args.suffix)
     if os.path.isdir(histDir):
+        logging.info('Existing output directory : {}'.format(histDir))
         raise RuntimeError('Output directory exists. Please change the suffix .')
     else:
         os.mkdir(histDir)

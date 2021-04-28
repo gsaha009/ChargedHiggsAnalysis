@@ -20,11 +20,11 @@ Right now, this package can be divided into 2 parts.
  - JobCard production
 
 For the Analysis part, the following instucions should be follwed.
-###### Getting CMSSW_9_4_9
+###### Getting CMSSW_11_1_X [`To access ROOT and g++`]
 ```
 cd ChargedHiggsAnalysis
-cmsrel CMSSW_9_4_9
-cd CMSSW_9_4_9/src; cmsenv; cd -
+cmsrel CMSSW_11_1_X
+cd CMSSW_11_1_X/src; cmsenv; cd -
 ```
 ###### Compile
 ```

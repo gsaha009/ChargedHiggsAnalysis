@@ -1,4 +1,4 @@
-UNAME  = $(shell uname)
+1;95;0cUNAME  = $(shell uname)
 EXE    = multileptonMVA
  
 VPATH  = .:./interface

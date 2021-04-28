@@ -144,22 +144,9 @@ namespace AnaUtil {
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       obj = new TH1D(hname_.c_str(), hname_.c_str(), nbins, xlow, xhigh);
-      //return obj;
     }
     TH1* h = nullptr;
-    if (obj->InheritsFrom("TH1D"))
-      h = dynamic_cast<TH1D*>(obj);
-    else if (obj->InheritsFrom("TH1C"))
-      h = dynamic_cast<TH1C*>(obj);
-    else if (obj->InheritsFrom("TH1K"))
-      h = dynamic_cast<TH1K*>(obj);
-    else if (obj->InheritsFrom("TH1S"))
-      h = dynamic_cast<TH1S*>(obj);
-    else if (obj->InheritsFrom("TH1I"))
-      h = dynamic_cast<TH1I*>(obj);
-    else
-      h = dynamic_cast<TH1F*>(obj);
-    
+    h = dynamic_cast<TH1D*>(obj);
     if (h == nullptr) {
       cerr << "**** getHist1D: <" << hname 
   	 << "> may not be a 1D Histogram! (" 
@@ -171,8 +158,6 @@ namespace AnaUtil {
   TH1* getHist1D(const string& hname, int nbins, float xlow, float xhigh, const string& region, const string& channel) {
     return getHist1D(hname.c_str(), nbins, xlow, xhigh, region.c_str(), channel.c_str());
   }
-
-
 
   TH1* getHist1DBasic(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 

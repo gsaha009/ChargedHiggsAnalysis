@@ -16,11 +16,10 @@ commonInfo:
   - maxEvent -1
   - nFiles -1
 mvaInfo:
-  - createMVATree 0
+  - createMVATree 1
   - readMVA 0
   - MVAnetwork BDT_nT1500_D2_nC100_ns5
   - MVAxmlFile TMVAClassification_BDT_nT1500_D2_nC100_ns5.weights.xml
-  - mvaInputFile ll4jmet_FTree.root
 cutLists:
   - vtxCutList ndf=4 z=24 Rho=2
   - muonCutList eta=2.4 pt=10. dxy=0.05 dz=0.1 SIP3D=4. pfReliso=0.15
@@ -70,11 +69,11 @@ samplesDict:
 #      filesPerJob: 2
 
     ### ttbar
-#    TTToSemiLeptonic: 
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec: 365.52
-#      filesPerJob: 2
+    TTToSemiLeptonic: 
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
+      genEvtWtSum: 'genEventSumw'
+      xsec: 365.52
+      filesPerJob: 2
 
 #    TTTo2L2Nu:
 #      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/']
@@ -100,11 +99,11 @@ samplesDict:
 #      xsec : 35.85
 #      filesPerJob: 2
 
-#    TTWJetsToLNu:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 0.1960
-#      filesPerJob: 3
+    TTWJetsToLNu:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 0.1960
+      filesPerJob: 3
 
 #    TTGJets:
 #      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
@@ -130,33 +129,33 @@ samplesDict:
 #      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
 #      filesPerJob: 2
 
-    DoubleMuon_2017B:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017B-UL2017_MiniAODv1_NanoAODv2-v1/']
-      filesPerJob: 2
+#    DoubleMuon_2017B:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017B-UL2017_MiniAODv1_NanoAODv2-v1/']
+#      filesPerJob: 2
 
-    DoubleMuon_2017C:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017C-UL2017_MiniAODv1_NanoAODv2-v1/']
-      filesPerJob: 2
+#    DoubleMuon_2017C:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017C-UL2017_MiniAODv1_NanoAODv2-v1/']
+#      filesPerJob: 2
 
-    DoubleMuon_2017D:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017D-UL2017_MiniAODv1_NanoAODv2-v1/']
-      filesPerJob: 2
+#    DoubleMuon_2017D:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017D-UL2017_MiniAODv1_NanoAODv2-v1/']
+#      filesPerJob: 2
 
-    DoubleMuon_2017E:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017E-UL2017_MiniAODv1_NanoAODv2-v1/']
-      filesPerJob: 2
+#    DoubleMuon_2017E:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017E-UL2017_MiniAODv1_NanoAODv2-v1/']
+#      filesPerJob: 2
 
-    DoubleMuon_2017F:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017F-UL2017_MiniAODv1_NanoAODv2-v1/']
-      filesPerJob: 2
+#    DoubleMuon_2017F:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017F-UL2017_MiniAODv1_NanoAODv2-v1/']
+#      filesPerJob: 2
 
 #    MuonEG_2017B:
 #      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleEG2016/EraB/']
 #      filesPerJob: 2
 
-#  SIGNAL:
-#    Signal_PPAP_v1:
-#      filedirs: ['/eos/user/p/ppalit3/Exotic/Signal_PPAP_BP1/']
-#      xsec: 0.001929282841388
-#      genEvtWtSum: 'genEventSumw'
-#      filesPerJob: 100
+  SIGNAL:
+    Signal_PPAP_v1:
+      filedirs: ['/eos/user/p/ppalit3/Exotic/Signal_PPAP_BP1/']
+      xsec: 0.001929282841388
+      genEvtWtSum: 'genEventSumw'
+      filesPerJob: 100
