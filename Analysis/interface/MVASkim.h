@@ -13,6 +13,7 @@ typedef struct
   float Channel;
   float pt_lep1;    
   float pt_lep2;
+  float invM_jets;
     
 } TreeVariablesResolved;
 

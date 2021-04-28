@@ -18,6 +18,7 @@ MVASkim::MVASkim(const string& filename) {
   _treeR -> Branch("Channel",            &_varListR.Channel,         "Channel/F");
   _treeR -> Branch("pt_lep1",            &_varListR.pt_lep1,         "pt_lep1/F");    
   _treeR -> Branch("pt_lep2",            &_varListR.pt_lep2,         "pt_lep2/F");    
+  _treeR -> Branch("invM_jets",          &_varListR.invM_jets,       "invM_jets/F");    
 
   // Branches for Boosted tree
   _treeB = new TTree("Boosted",  "Boosted tree");
