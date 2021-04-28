@@ -622,23 +622,9 @@ void MultiLeptonMVAna::eventLoop()
       AnaUtil::fillHist1DBasic("FR_yield",      5,                   (isFR && isMuMu && !isSignal()));
       AnaUtil::fillHist1DBasic("FR_yieldWt",    5, MCweight*lumiFac, (isMC() && isFR && isMuMu && !isSignal()));
 
-      // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
-      
-      if (isSR && skimObj_) {
-	TreeVariablesResolved varListR;
-
-	varListR.MCweight               = MCweight;
-	varListR.Channel                = chTag;
-	varListR.pt_lep1                = lep1.pt;
-	varListR.pt_lep2                = lep2.pt;
-    
-	skimObj_->fill(varListR, isResolved_WZ, isBoosted_WZ);    
-      }
-      histf()->cd(); // Very Very Very Essential
-      // -------------------------------------------------------------------------------------------------- //
-
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "SR", channelnFlags_SR, MCweight);
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, "FR", channelnFlags_FR, MCweight);
+
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, "SR", channelnFlags_SR, MCweight);
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, "FR", channelnFlags_FR, MCweight);
       AnaUtil::fillHist1D("ak4Jet2Pt_Resolved_WZ", jetColl[1].pt, 20, 0, 300, "SR", channelnFlags_SR, MCweight);
@@ -656,6 +642,23 @@ void MultiLeptonMVAna::eventLoop()
 
       AnaUtil::fillHist1D("jetsInvMass_Resolved_WZ", jetsInvM, 100, 0, 500, "SR", channelnFlags_SR, MCweight);
       AnaUtil::fillHist1D("jetsInvMass_Resolved_WZ", jetsInvM, 100, 0, 500, "FR", channelnFlags_FR, MCweight);      
+
+      // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
+      
+      if (isSR && skimObj_) {
+	TreeVariablesResolved varListR;
+
+	varListR.MCweight               = MCweight;
+	varListR.Channel                = chTag;
+	varListR.pt_lep1                = lep1.pt;
+	varListR.pt_lep2                = lep2.pt;
+	varListR.invM_jets              = jetsInvM;
+    
+	skimObj_->fill(varListR, isResolved_WZ, isBoosted_WZ);    
+      }
+      histf()->cd(); // Very Very Very Essential
+      // -------------------------------------------------------------------------------------------------- //
+
     }
 
     // ----------------------------- Boosted WZ Region ----------------------------- //
@@ -677,20 +680,6 @@ void MultiLeptonMVAna::eventLoop()
       AnaUtil::fillHist1DBasic("FR_yield",      8,                   (isFR && isMuMu && !isSignal()));
       AnaUtil::fillHist1DBasic("FR_yieldWt",    8, MCweight*lumiFac, (isMC() && isFR && isMuMu && !isSignal()));
 
-      // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
-      if (isSR && skimObj_) {
-	TreeVariablesBoosted  varListB;
-	
-	varListB.MCweight               = MCweight;
-	varListB.Channel                = chTag;
-	varListB.pt_lep1                = lep1.pt;
-	varListB.pt_lep2                = lep2.pt;
-
-	skimObj_->fill(varListB, isResolved_WZ, isBoosted_WZ);
-      }
-      histf()->cd(); // Very Very Very Essential
-      // -------------------------------------------------------------------------------------------------- //
-
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "SR", channelnFlags_SR, MCweight);
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "FR", channelnFlags_FR, MCweight);
       if (jetColl_ak8Cleaned.size() >= 1){ 
@@ -709,8 +698,21 @@ void MultiLeptonMVAna::eventLoop()
 	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "SR", channelnFlags_SR, MCweight);
 	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, "FR", channelnFlags_FR, MCweight);
       }
-    } 
 
+      // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
+      if (isSR && skimObj_) {
+	TreeVariablesBoosted  varListB;
+	
+	varListB.MCweight               = MCweight;
+	varListB.Channel                = chTag;
+	varListB.pt_lep1                = lep1.pt;
+	varListB.pt_lep2                = lep2.pt;
+
+	skimObj_->fill(varListB, isResolved_WZ, isBoosted_WZ);
+      }
+      histf()->cd(); // Very Very Very Essential
+      // -------------------------------------------------------------------------------------------------- //
+    } 
     if (!isMC()) selEvLog() << evt.run << " " << evt.lumis << " " << evt.event << std::endl;
   } // Event loop ends
 }
