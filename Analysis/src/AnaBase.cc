@@ -368,6 +368,20 @@ bool AnaBase::init(){
       muonEgHltPtrList_.push_back(HLT);
     }
   }
+  for (auto& hlt : singleMuonHltForFakePathList_) {
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      singleMuonHltForFakePtrList_.push_back(HLT);
+    }
+  }
+  for (auto& hlt : singleElectronHltForFakePathList_) {
+    bool found = branchFound(hlt.c_str());
+    if (found) {
+      TTreeReaderValue< bool >* HLT = new TTreeReaderValue< bool >(*treeReader_, hlt.c_str());
+      singleElectronHltForFakePtrList_.push_back(HLT);
+    }
+  }
   
   return true;
 }
@@ -625,6 +639,10 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       AnaUtil::buildList(tokens, singleElectronHltPathList_);
     else if (key == "MuonEG") 
       AnaUtil::buildList(tokens, muonEgHltPathList_);
+    else if (key == "SingleMuonForFake") 
+      AnaUtil::buildList(tokens, singleMuonHltForFakePathList_);
+    else if (key == "SingleElectronForFake") 
+      AnaUtil::buildList(tokens, singleElectronHltForFakePathList_);
     else if (key == "eventId" && tokens.size() == 4) 
       AnaUtil::buildMap(tokens, eventIdMap_);
     else {

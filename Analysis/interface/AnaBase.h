@@ -163,12 +163,16 @@ public:
   const std::vector< std::string > getSingleElectronHLTpaths() const {return singleElectronHltPathList_;}
   const std::vector< std::string > getDoubleEgHLTpaths() const {return doubleEgHltPathList_;}
   const std::vector< std::string > getMuonEgHLTpaths() const {return muonEgHltPathList_;}
+  const std::vector< std::string > getSingleMuonHLTForFakepaths() const {return singleMuonHltForFakePathList_;}
+  const std::vector< std::string > getSingleElectronHLTForFakepaths() const {return singleElectronHltForFakePathList_;}
 
   std::vector< TTreeReaderValue<bool>* > getDoubleMuonHLTptrs() {return doubleMuonHltPtrList_;}
   std::vector< TTreeReaderValue<bool>* > getSingleMuonHLTptrs() {return singleMuonHltPtrList_;}
   std::vector< TTreeReaderValue<bool>* > getDoubleEgHLTptrs() {return doubleEgHltPtrList_;}
   std::vector< TTreeReaderValue<bool>* > getSingleElectronHLTptrs() {return singleElectronHltPtrList_;}
   std::vector< TTreeReaderValue<bool>* > getMuonEgHLTptrs() {return muonEgHltPtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getSingleElectronHLTForFakeptrs() {return singleElectronHltForFakePtrList_;}
+  std::vector< TTreeReaderValue<bool>* > getSingleMuonHLTForFakeptrs() {return singleMuonHltForFakePtrList_;}
 
 private:
   //  std::unique_ptr<TChain> chain_;      // chain contains a list of root files containing the same tree
@@ -194,12 +198,16 @@ private:
   std::vector<std::string> doubleMuonHltPathList_;
   std::vector<std::string> doubleEgHltPathList_;
   std::vector<std::string> muonEgHltPathList_;
+  std::vector<std::string> singleMuonHltForFakePathList_;
+  std::vector<std::string> singleElectronHltForFakePathList_;
 
   std::vector< TTreeReaderValue<bool>* >doubleMuonHltPtrList_;
   std::vector< TTreeReaderValue<bool>* >singleMuonHltPtrList_;
   std::vector< TTreeReaderValue<bool>* >doubleEgHltPtrList_;
   std::vector< TTreeReaderValue<bool>* >singleElectronHltPtrList_;
   std::vector< TTreeReaderValue<bool>* >muonEgHltPtrList_;
+  std::vector< TTreeReaderValue<bool>* >singleMuonHltForFakePtrList_;
+  std::vector< TTreeReaderValue<bool>* >singleElectronHltForFakePtrList_;
 
   int logOption_ {0};
   bool useTrigger_ {false};

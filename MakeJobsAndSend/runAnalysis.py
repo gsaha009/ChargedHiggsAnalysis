@@ -20,7 +20,7 @@ def replaceAll(file,searchExp,replaceExp):
         sys.stdout.write(line)
 
 def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists, 
-                  HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, 
+                  HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                   SFInfo, dataset, files, endInfoList, ismc, isdata, issignal):
     if ismc:
         jfile.write('START\n'+'era '+str(era)+'\n'+'dataType mc\n')
@@ -54,6 +54,10 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
         jfile.write('DoubleEG '+'HLT_'+item+'\n')
     for item in HLT_MuonEG:
         jfile.write('MuonEG '+'HLT_'+item+'\n')
+    for item in HLT_SingleMuonForFake:
+        jfile.write('SingleMuonForFake '+'HLT_'+item+'\n')
+    for item in HLT_SingleElectronForFake:
+        jfile.write('SingleElectronForFake '+'HLT_'+item+'\n')
     jfile.write('################ SF ###################'+'\n')
     for item in SFInfo:
         jfile.write(item+'\n')
@@ -86,19 +90,21 @@ def main():
 
     keyList = [str(key) for key in configDict.keys()]
     
-    era                = configDict.get('era')
-    lumi               = configDict.get('lumi')
-    tree               = configDict.get('tree')
-    commonInfoList     = configDict.get('commonInfo')
-    mvaInfoList        = configDict.get('mvaInfo')
-    endInfoList        = configDict.get('endInfo')
-    cutLists           = configDict.get('cutLists')    
-    HLT_DoubleMuon     = configDict.get('HLT_DoubleMuon')
-    HLT_DoubleEG       = configDict.get('HLT_DoubleEG')
-    HLT_MuonEG         = configDict.get('HLT_MuonEG')
-    HLT_SingleMuon     = configDict.get('HLT_SingleMuon')
-    HLT_SingleElectron = configDict.get('HLT_SingleElectron')
-    SFInfo             = configDict.get('ScaleFactorsInfo')
+    era                       = configDict.get('era')
+    lumi                      = configDict.get('lumi')
+    tree                      = configDict.get('tree')
+    commonInfoList            = configDict.get('commonInfo')
+    mvaInfoList               = configDict.get('mvaInfo')
+    endInfoList               = configDict.get('endInfo')
+    cutLists                  = configDict.get('cutLists')    
+    HLT_DoubleMuon            = configDict.get('HLT_DoubleMuon')
+    HLT_DoubleEG              = configDict.get('HLT_DoubleEG')
+    HLT_MuonEG                = configDict.get('HLT_MuonEG')
+    HLT_SingleMuon            = configDict.get('HLT_SingleMuon')
+    HLT_SingleElectron        = configDict.get('HLT_SingleElectron')
+    SFInfo                    = configDict.get('ScaleFactorsInfo')
+    HLT_SingleElectronForFake = configDict.get('HLT_SingleElectronForFake')
+    HLT_SingleMuonForFake     = configDict.get('HLT_SingleMuonForFake')
 
     logging.info('era  : {}'.format(era))
     logging.info('lumi : {} pb-1'.format(lumi))
@@ -162,7 +168,7 @@ def main():
                 jobFile = str(key)+'.job'
                 with open(os.path.join(jobDir,jobFile), 'w') as jfile:
                     dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists,
-                                  HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG,
+                                  HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                                   SFInfo, dataset, files, endInfoList, ismc, isdata, issignal)
                 jfile.close()
                 # jobfile production finished
@@ -197,7 +203,7 @@ def main():
                     with open(jobkey, 'w') as tmpl:
                         tmplKey = key+'_'+str(i)
                         dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
-                                      HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG,
+                                      HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                                       SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
                     tmpl.close()
                     

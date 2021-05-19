@@ -147,6 +147,8 @@ class PhysicsObjSelector: public AnaBase {
   std::vector< bool >getDoubleEgHLTscores();
   std::vector< bool >getSingleElectronHLTscores();
   std::vector< bool >getMuonEgHLTscores();
+  std::vector< bool >getSingleMuonHLTForFakescores();
+  std::vector< bool >getSingleElectronHLTForFakescores();
 
   bool findEventInfo();
   bool findGenPartInfo();

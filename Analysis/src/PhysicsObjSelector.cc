@@ -251,6 +251,24 @@ std::vector < bool > PhysicsObjSelector::getMuonEgHLTscores() {
     }
   return hltScores;
 }
+std::vector < bool > PhysicsObjSelector::getSingleMuonHLTForFakescores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleMuonHLTForFakeptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
+std::vector < bool > PhysicsObjSelector::getSingleElectronHLTForFakescores() {
+  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleElectronHLTForFakeptrs();
+  std::vector < bool > hltScores;
+  if (ptrs.size() > 0)
+    for (TTreeReaderValue<bool>* hlt : ptrs) {
+      hltScores.push_back(*hlt->Get());
+    }
+  return hltScores;
+}
 
 bool PhysicsObjSelector::findGenPartInfo() {
   histf()->cd();
@@ -349,14 +367,14 @@ void PhysicsObjSelector::muonSelector() {
     if (Muon_corrpt->At(i) < 10.0) continue;
     //if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
     AnaUtil::fillHist1DBasic ("muCutFlow", 2, 1.0);
+    // PF Isolation
+    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
+    AnaUtil::fillHist1DBasic ("muCutFlow", 3, 1.0);
     fakeableMuList_.push_back(mu);
 
     // Tight Muon selection
     //if (!Muon_TightId->At(i)) continue;
     if (!Muon_MediumId->At(i)) continue;
-    AnaUtil::fillHist1DBasic ("muCutFlow", 3, 1.0);
-    // PF Isolation
-    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
     AnaUtil::fillHist1DBasic ("muCutFlow", 4, 1.0);
 
     tightMuList_.push_back(mu);
