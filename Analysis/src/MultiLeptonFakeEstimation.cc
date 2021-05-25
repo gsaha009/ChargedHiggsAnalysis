@@ -100,8 +100,9 @@ void MultiLeptonFakeEstimation::bookHistograms()
   histf()->cd();
 
   // book basic histograms to be filled at different stages
-  new TH1D("evtCutFlow", "Event CutFlow", 8, -0.5, 7.5);
-  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 8, -0.5, 7.5);
+  new TH1D("evtCutFlow", "Event CutFlow", 10, -0.5, 9.5);
+  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 10, -0.5, 9.5);
+  if (isMC()) new TH1D("EventWtSum", "Event weight sum", 1, -0.5, 0.5);
 
   histf()->ls();
 }
@@ -277,6 +278,10 @@ void MultiLeptonFakeEstimation::eventLoop()
     const auto& tauColl            = getLepCleanTauList();
     const vhtm::MET& met           = getMETList().at(0);
 
+    std::vector<LeptonCand>preselLepColl;
+    if (preselMuColl.size() > 0) packLeptons <vhtm::Muon> (preselMuColl, preselLepColl, isMC());
+    if (preselElColl.size() > 0) packLeptons <vhtm::Electron> (preselElColl, preselLepColl, isMC());
+    std::sort(std::begin(preselLepColl), std::end(preselLepColl), PtComparator<LeptonCand>());
 
     if (fakeableElColl.size() != 1) continue;
     AnaUtil::fillHist1DBasic("evtCutFlow", 2);
@@ -287,33 +292,66 @@ void MultiLeptonFakeEstimation::eventLoop()
     AnaUtil::fillHist1DBasic("evtCutFlowWt", 3, MCweight*lumiFac, isMC());
 
     auto lep = fakeableElColl[0];
-
-    if (!trigSingleEleHLT) continue;
-    AnaUtil::fillHist1DBasic("evtCutFlow", 4);
-    AnaUtil::fillHist1DBasic("evtCutFlowWt", 4, MCweight*lumiFac, isMC());
-
-    if (!(lep.genFlv == 1  || lep.genFlv == 15 || lep.genFlv == 22))  continue;
-    AnaUtil::fillHist1DBasic("evtCutFlow", 5);
-    AnaUtil::fillHist1DBasic("evtCutFlowWt", 5, MCweight*lumiFac, isMC());
-
-    if (met.pt > 20) continue;
-    AnaUtil::fillHist1DBasic("evtCutFlow", 6);
-    AnaUtil::fillHist1DBasic("evtCutFlowWt", 6, MCweight*lumiFac, isMC());
-
     TLorentzVector metp4;
     metp4.SetPtEtaPhiE(met.pt,0.0,met.phi,met.pt);
 
-    double mT = Calculate_MT(AnaUtil::getP4(lep), metp4);
-    if (mT > 20) continue;
+    //if (!trigSingleEleHLT) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 4);
+    AnaUtil::fillHist1DBasic("evtCutFlowWt", 4, MCweight*lumiFac, isMC());
+
+    if (hasZcandidate(preselLepColl)) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 5);
+    AnaUtil::fillHist1DBasic("evtCutFlowWt", 5, MCweight*lumiFac, isMC());
+
+    //if (!(lep.genFlv == 1  || lep.genFlv == 15 || lep.genFlv == 22))  continue;
+    if (jetColl.size() == 0 || (jetColl[0].pt < 35 || AnaUtil::deltaR(AnaUtil::getP4(jetColl[0]), AnaUtil::getP4(lep)) < 0.7)) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 6);
+    AnaUtil::fillHist1DBasic("evtCutFlowWt", 6, MCweight*lumiFac, isMC());
+
+    if (met.pt > 20) continue;
     AnaUtil::fillHist1DBasic("evtCutFlow", 7);
     AnaUtil::fillHist1DBasic("evtCutFlowWt", 7, MCweight*lumiFac, isMC());
 
-    std::map <std::string, bool> channelFlags {};
-    channelFlags.insert(std::make_pair("Loose", true));
-    channelFlags.insert(std::make_pair("Tight", tightElColl.size() == 1));
+    double mT = Calculate_MT(AnaUtil::getP4(lep), metp4);
+    if (mT > 20) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 8);
+    AnaUtil::fillHist1DBasic("evtCutFlowWt", 8, MCweight*lumiFac, isMC());
 
-    AnaUtil::fillHist1D("pt", lep.pt, 100, 0, 300, "Control", channelFlags, 1.0);
-    AnaUtil::fillHist1D("eta", lep.eta, 20, -3.2, 3.2, "Control", channelFlags, 1.0);
+    if (tauColl.size() > 0) continue;
+    AnaUtil::fillHist1DBasic("evtCutFlow", 9);
+    AnaUtil::fillHist1DBasic("evtCutFlowWt", 9, MCweight*lumiFac, isMC());
+
+    std::map <std::string, bool> channelFlags {};
+    channelFlags.insert(std::make_pair("PassLosseId", true));
+    channelFlags.insert(std::make_pair("PassTightId", tightElColl.size() == 1));
+    channelFlags.insert(std::make_pair("FailTightId", tightElColl.size() == 0));
+
+    AnaUtil::fillHist1D("pt", lep.pt, 300, 0, 300, "FakeRegion", channelFlags, 1.0);
+    AnaUtil::fillHist1D("eta", lep.eta, 20, -3.2, 3.2, "FakeRegion", channelFlags, 1.0);
+
+    double mT_fix = AnaUtil::Calculate_MTfix(AnaUtil::getP4(lep), metp4);
+    
+    std::map <std::string, bool> ptetaFlags {};
+    ptetaFlags.insert(std::make_pair("pt10to15_barrel",   AnaUtil::within(lep.pt,10.,15.)   && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt15to20_barrel",   AnaUtil::within(lep.pt,15.,20.)   && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt20to30_barrel",   AnaUtil::within(lep.pt,20.,30.)   && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt30to45_barrel",   AnaUtil::within(lep.pt,30.,45.)   && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt45to65_barrel",   AnaUtil::within(lep.pt,45.,65.)   && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt65to100_barrel",  AnaUtil::within(lep.pt,65.,100.)  && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt100to200_barrel", AnaUtil::within(lep.pt,100.,200.) && std::fabs(lep.eta) <= 1.479));
+
+    ptetaFlags.insert(std::make_pair("pt10to15_endcap",   AnaUtil::within(lep.pt,10.,15.)   && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt15to20_endcap",   AnaUtil::within(lep.pt,15.,20.)   && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt20to30_endcap",   AnaUtil::within(lep.pt,20.,30.)   && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt30to45_endcap",   AnaUtil::within(lep.pt,30.,45.)   && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt45to65_endcap",   AnaUtil::within(lep.pt,45.,65.)   && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt65to100_endcap",  AnaUtil::within(lep.pt,65.,100.)  && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt100to200_endcap", AnaUtil::within(lep.pt,100.,200.) && std::fabs(lep.eta) > 1.479));
+
+    AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "PassLooseId", ptetaFlags, 1.0);
+    (tightElColl.size() == 1) ? 
+      AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "PassTightId", ptetaFlags, 1.0) : 
+      AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "FailTightId", ptetaFlags, 1.0);
 
     if (!isMC()) selEvLog() << evt.run << " " << evt.lumis << " " << evt.event << std::endl;
   } // Event loop ends
@@ -382,9 +420,11 @@ void MultiLeptonFakeEstimation::endJob() {
       "only 1 fakeable electron            : ",
       "no muons                            : ",
       "pass HLT                            : ",
-      "is prompt                           : ",
+      "Z-veto                              : ",
+      "leadJetPt > 35 GeV                  : ",
       "met < 20 GeV                        : ",
-      "mT < 20 GeV                         : "
+      "mT < 20 GeV                         : ",
+      "no tau_h                            : "
       };
   
   AnaUtil::showEfficiency("evtCutFlow", evLabels, "Event Selection [Unweighted]");  

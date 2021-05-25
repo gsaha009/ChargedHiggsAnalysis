@@ -60,6 +60,7 @@ namespace AnaUtil {
     } 
     os << endl; 
   }
+  // compute deltaPhi
   double deltaPhi(double phia, double phib) {
     double dphi = phia - phib;
     while (dphi > TMath::Pi()) dphi -= 2 * TMath::Pi();
@@ -69,15 +70,17 @@ namespace AnaUtil {
   double deltaPhi(const TLorentzVector& a, const TLorentzVector& b) {
     return deltaPhi(a.Phi(), b.Phi());
   }
+  // compute deltaR
   double deltaR(const TLorentzVector& a, const TLorentzVector& b) {
     double dphi = deltaPhi(a,b);
     double deta = a.Eta() - b.Eta();
     return std::sqrt(dphi * dphi + deta * deta);
   }
+  // check if 2 objects are same
   bool sameObject(const TLorentzVector& lv1, const TLorentzVector& lv2) {
-    //return (std::fabs(lv1.Pt() - lv2.Pt()) < 1e-10 && AnaUtil::deltaR(lv1, lv2) < 1e-10);
     return (std::fabs(lv1.Pt() - lv2.Pt()) < 1.0e-08 && lv1.DeltaR(lv2) < 1.0e-06);
   }
+  // needed for job card
   double cutValue(const map<string, double>& m, const string& mkey) {
     if (m.find(mkey) == m.end()) {
       cerr << ">>> key: " << mkey << " not found in the map!" << endl;
@@ -139,6 +142,7 @@ namespace AnaUtil {
   // Root object pool whenever necessary. This is the closest one can go to 
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
+  // dynamic approach 
   TH1* getHist1D(const char* hname, int nbins, float xlow, float xhigh, const char* region, const char* channel) {
     std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
@@ -158,7 +162,7 @@ namespace AnaUtil {
   TH1* getHist1D(const string& hname, int nbins, float xlow, float xhigh, const string& region, const string& channel) {
     return getHist1D(hname.c_str(), nbins, xlow, xhigh, region.c_str(), channel.c_str());
   }
-
+  // static approach
   TH1* getHist1DBasic(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (obj == nullptr) {
@@ -189,15 +193,34 @@ namespace AnaUtil {
   TH1* getHist1DBasic(const string& hname) {
     return getHist1DBasic(hname.c_str());
   }
-
-  
   // ---------------------------------------------
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
-  TH2* getHist2D(const char* hname) {
+  // dynamic approach
+  TH2* getHist2D(const char* hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const char* region, const char* channel) {
+    std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
+    TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
+    if (obj == nullptr) {
+      obj = new TH2D(hname_.c_str(), hname_.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh);
+    }
+    TH2* h = nullptr;
+    h = dynamic_cast<TH2D*>(obj);
+    if (h == nullptr) {
+      cerr << "**** getHist2D: <" << hname 
+  	 << "> may not be a 2D Histogram! (" 
+  	 << __FILE__ << ":" << __LINE__ << ")" 
+  	 << endl;
+    }
+    return h;
+  }
+  TH2* getHist2D(const string& hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const string& region, const string& channel) {
+    return getHist2D(hname.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, region.c_str(), channel.c_str());
+  }
+  // static approach
+  TH2* getHist2DBasic(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (obj == nullptr) {
-      cerr << "**** getHist2D: Histogram for <" << hname 
+      cerr << "**** getHist2DBasic: Histogram for <" << hname 
   	 << "> not found! (" 
   	 << __FILE__ << ":" << __LINE__ << ")" 
   	 << endl;
@@ -217,15 +240,15 @@ namespace AnaUtil {
       h = dynamic_cast<TH2F*>(obj);
     
     if (h == nullptr) {
-      cerr << "**** getHist2D: <" << hname 
+      cerr << "**** getHist2DBasic: <" << hname 
   	 << "> may not be a 2D Histogram! (" 
   	 << __FILE__ << ":" << __LINE__ << ")" 
   	 << endl;
     }
     return h;
   }
-  TH2* getHist2D(const string& hname) {
-    return getHist2D(hname.c_str());
+  TH2* getHist2DBasic(const string& hname) {
+    return getHist2DBasic(hname.c_str());
   }
   // ---------------------------------------------
   // Convenience routine for filling 3D histograms

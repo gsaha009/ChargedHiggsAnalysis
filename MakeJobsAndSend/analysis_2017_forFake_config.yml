@@ -46,12 +46,12 @@ HLT_SingleElectron:
   - Ele35_WPTight_Gsf
   - Ele32_WPTight_Gsf
 HLT_SingleElectronForFake:
-  - HLT_Ele8_CaloIdM_TrackIdM_PFJet30
-  - HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30
-  - HLT_Ele17_CaloIdM_TrackIdM_PFJet30
+  - Ele8_CaloIdM_TrackIdM_PFJet30
+  - Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30
+  - Ele17_CaloIdM_TrackIdM_PFJet30
 HLT_SingleMuonForFake:
-  - HLT_Mu8_TrkIsoVVL
-  - HLT_Mu17_TrkIsoVVL
+  - Mu8_TrkIsoVVL
+  - Mu17_TrkIsoVVL
 ScaleFactorsInfo:
   - muonIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/RunBCDEF_SF_ID.root
   - looseMuonIdSFhistName NUM_LooseID_DEN_genTracks_pt_abseta
@@ -69,11 +69,12 @@ endInfo:
 samplesDict:
   MC:
     ### DY-Jets
-    DYJetsToLL_M-50:
-      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/']
-      genEvtWtSum: 'genEventSumw'
-      xsec: 6077.22 # pb
-      filesPerJob: 2
+#    DYJetsToLL_M-50:
+#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/']
+#      genEvtWtSum: 'genEventSumw'
+#      xsec: 6077.22 # pb
+#      filesPerJob: 2
+#      group: 'DY'
 
     ### ttbar
     TTToSemiLeptonic: 
@@ -81,81 +82,95 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 365.52
       filesPerJob: 2
+      group: 'TT'
 
     TTTo2L2Nu:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/']
       genEvtWtSum: 'genEventSumw'
       xsec: 88.40
       filesPerJob: 2
+      group: 'TT'
 
     ST_s-channel_4f:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-mcatnlo-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 3.364
       filesPerJob: 2
+      group: 'ST'
 
     ST_tW_top_5f:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
       filesPerJob: 2
+      group: 'ST'
 
     ST_tW_antitop_5f:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
       filesPerJob: 2
+      group: 'ST'
 
     TTWJetsToLNu:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 0.1960
       filesPerJob: 3
+      group: 'TTV'
 
     TTGJets:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 4.215
       filesPerJob: 2
+      group: 'TTV'
 
     ST_t-channel_top_5f:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_top_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 136.02
       filesPerJob: 2
+      group: 'ST'
 
     ST_t-channel_antitop_5f:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_antitop_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
       genEvtWtSum: 'genEventSumw'
       xsec : 80.95
       filesPerJob: 2
+      group: 'ST'
 
   DATA:  
     ### era B
 #    SingleMuon_2017B:
 #      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
 #      filesPerJob: 2
+#      group: 'Data'
 
     SingleElectron_2017B:
       filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/SingleElectron/RunB']
       filesPerJob: 2
+      group: 'Data'
 
     SingleElectron_2017C:
       filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/SingleElectron/RunC']
       filesPerJob: 2
+      group: 'Data'
 
     SingleElectron_2017D:
       filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/SingleElectron/RunD']
       filesPerJob: 2
+      group: 'Data'
 
     SingleElectron_2017E:
       filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/SingleElectron/RunE']
       filesPerJob: 2
+      group: 'Data'
 
     SingleElectron_2017F:
       filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/SingleElectron/RunF']
       filesPerJob: 2
-
+      group: 'Data'
 
   SIGNAL:
 #    Signal_PPAP_v1:
@@ -163,3 +178,4 @@ samplesDict:
 #      xsec: 0.001929282841388
 #      genEvtWtSum: 'genEventSumw'
 #      filesPerJob: 100
+#      group: 'Signal_v1'

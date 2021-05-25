@@ -225,17 +225,17 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1DBasic("evtCutFlow", 1);
     AnaUtil::fillHist1DBasic("evtCutFlowWt", 1, MCweight*lumiFac, isMC());
 
-    bool trigDoubleMuonHLT {false};
-    bool trigSingleMuonHLT {false};
-    bool trigDoubleEgHLT {false};
-    bool trigSingleEleHLT {false};
-    bool trigMuonEgHLT {false};
+    bool passDoubleMuonHLT {false};
+    bool passSingleMuonHLT {false};
+    bool passDoubleEgHLT {false};
+    bool passSingleEleHLT {false};
+    bool passMuonEgHLT {false};
     // HLT Selection
     auto doubleMuHLTpaths  = AnaBase::getDoubleMuonHLTpaths();
     auto doubleMuHLTscores = PhysicsObjSelector::getDoubleMuonHLTscores();
     for (size_t i = 0; i < doubleMuHLTpaths.size(); ++i){
       if (doubleMuHLTscores[i]) {
-	trigDoubleMuonHLT = true;
+	passDoubleMuonHLT = true;
         break;
       }
     }
@@ -243,7 +243,7 @@ void MultiLeptonMVAna::eventLoop()
     auto doubleEgHLTscores = PhysicsObjSelector::getDoubleEgHLTscores();
     for (size_t i = 0; i < doubleEgHLTpaths.size(); ++i){
       if (doubleEgHLTscores[i]) {
-	trigDoubleEgHLT = true;
+	passDoubleEgHLT = true;
 	break;
       }
     }
@@ -251,7 +251,7 @@ void MultiLeptonMVAna::eventLoop()
     auto muonEgHLTscores = PhysicsObjSelector::getMuonEgHLTscores();
     for (size_t i = 0; i < muonEgHLTpaths.size(); ++i){
       if (muonEgHLTscores[i]) {
-	trigMuonEgHLT = true;
+	passMuonEgHLT = true;
 	break;
       }
     }
@@ -259,7 +259,7 @@ void MultiLeptonMVAna::eventLoop()
     auto singleMuHLTscores = PhysicsObjSelector::getSingleMuonHLTscores();
     for (size_t i = 0; i < singleMuHLTpaths.size(); ++i){
       if (singleMuHLTscores[i]) {
-	trigSingleMuonHLT = true;
+	passSingleMuonHLT = true;
 	break;
       }
     }
@@ -267,24 +267,35 @@ void MultiLeptonMVAna::eventLoop()
     auto singleEleHLTscores = PhysicsObjSelector::getSingleElectronHLTscores();
     for (size_t i = 0; i < singleEleHLTpaths.size(); ++i){
       if (singleEleHLTscores[i]) {
-	trigSingleEleHLT = true;
+	passSingleEleHLT = true;
 	break;
       }
     }
     // Duplicate Event removal [FOR DATA]
     if (!isMC()) {
-      bool HLT_Scores[5] = {trigDoubleMuonHLT, trigDoubleEgHLT, trigMuonEgHLT, trigSingleMuonHLT, trigSingleEleHLT};
+      std::map<std::string, bool>triggerOptions;
+      std::map<std::string, bool>::iterator it;
+      triggerOptions["DoubleMuon"]     =  passDoubleMuonHLT;
+      triggerOptions["DoubleEG"]       =  passDoubleEgHLT && !passDoubleMuonHLT;
+      triggerOptions["MuonEG"]         =  passMuonEgHLT && !(passDoubleMuonHLT || passDoubleEgHLT);
+      triggerOptions["SingleMuon"]     =  passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT);
+      triggerOptions["SingleElectron"] =  passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT);
+     
       std::string dataset = getDatasetName();
-      if (dataset == "DoubleMuon" && !HLT_Scores[0])
+      it = triggerOptions.find(dataset.c_str());
+      if (!it->second) continue;
+      /*
+      if (dataset == "DoubleMuon" && !passDoubleMuonHLT)
 	continue;
-      else if (dataset == "DoubleEG" && (!HLT_Scores[1] || HLT_Scores[0]))
+      else if (dataset == "DoubleEG" && (!passDoubleEgHLT || passDoubleMuonHLT))
 	continue;
-      else if (dataset == "MuonEG" && (!HLT_Scores[2] || (HLT_Scores[0] || HLT_Scores[1])))
+      else if (dataset == "MuonEG" && (!passMuonEgHLT || (passDoubleMuonHLT || passDoubleEgHLT)))
 	continue;
-      else if (dataset == "SingleMuon" && (!HLT_Scores[3] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2])))
+      else if (dataset == "SingleMuon" && (!passSingleMuonHLT || (passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT)))
 	continue;
-      else if (dataset == "SingleElectron" && (!HLT_Scores[4] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2] || HLT_Scores[3])))
+      else if (dataset == "SingleElectron" && (!passSingleEleHLT || (passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT)))
 	continue;
+      */
     }  
     //Making the object collections ready!!!
     findObjects();
@@ -342,15 +353,15 @@ void MultiLeptonMVAna::eventLoop()
     
     if (lep1.flavour == 1 && lep2.flavour == 1) {
       isMuMu = true;
-      if (trigDoubleMuonHLT || trigSingleMuonHLT) hltCounter++;
+      if (passDoubleMuonHLT || passSingleMuonHLT) hltCounter++;
     }
     else if (lep1.flavour == 2 && lep2.flavour == 2) {
       isEleEle = true;
-      if (trigDoubleEgHLT || trigSingleEleHLT) hltCounter++;
+      if (passDoubleEgHLT || passSingleEleHLT) hltCounter++;
     }
     else if ((lep1.flavour == 1 && lep2.flavour == 2) || (lep1.flavour == 2 && lep2.flavour == 1)) {
       isEleMu = true;
-      if (trigSingleMuonHLT || trigSingleEleHLT || trigMuonEgHLT) hltCounter++;
+      if (passSingleMuonHLT || passSingleEleHLT || passMuonEgHLT) hltCounter++;
     }
     
     if (hltCounter == 0) continue;

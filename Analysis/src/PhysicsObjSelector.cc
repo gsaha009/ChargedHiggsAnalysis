@@ -393,11 +393,11 @@ void PhysicsObjSelector::electronSelector() {
 
     if (Electron_pt->At(i) < 7) continue;
     if (std::fabs(Electron_eta->At(i)) > 2.5) continue;
-    if (std::fabs(Electron_dxy->At(i)) > 0.1) continue;
-    if (std::fabs(Electron_dz->At(i)) > 0.2) continue;
+    if (std::fabs(Electron_dxy->At(i)) > 0.05/*0.1*/) continue;
+    if (std::fabs(Electron_dz->At(i)) > 0.1/*0.2*/) continue;
     if (Electron_sip3d->At(i) > 8) continue;
-    if (!Electron_mvaFall17V2noIso_WPL->At(i)) continue;
-    if (Electron_lostHits->At(i) > 1) continue;
+    //if (!Electron_mvaFall17V2noIso_WPL->At(i)) continue;
+    //if (Electron_lostHits->At(i) > 1) continue;
 
     AnaUtil::fillHist1DBasic ("eleCutFlow", 1, 1.0);
 
@@ -636,8 +636,8 @@ void PhysicsObjSelector::subJetSelector() {
 
 bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
   TLorentzVector jp4(AnaUtil::getP4(jet));
-  for (const auto& mu: tightMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.4) return false;
-  for (const auto& el: tightEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) return false;
+  for (const auto& mu: fakeableMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.4) return false;
+  for (const auto& el: fakeableEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) return false;
   return true;
 }
 // fat-jet lepton cleaning
