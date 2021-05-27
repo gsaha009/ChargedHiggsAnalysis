@@ -143,8 +143,8 @@ namespace AnaUtil {
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
   // dynamic approach 
-  TH1* getHist1D(const char* hname, int nbins, float xlow, float xhigh, const char* region, const char* channel) {
-    std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
+  TH1* getHist1D(const char* hname, int nbins, float xlow, float xhigh, /*const char* region, */const char* channel) {
+    std::string hname_ = std::string(hname)+"_"/*+std::string(region)+"_"*/+std::string(channel);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       obj = new TH1D(hname_.c_str(), hname_.c_str(), nbins, xlow, xhigh);
@@ -159,8 +159,8 @@ namespace AnaUtil {
     }
     return h;
   }
-  TH1* getHist1D(const string& hname, int nbins, float xlow, float xhigh, const string& region, const string& channel) {
-    return getHist1D(hname.c_str(), nbins, xlow, xhigh, region.c_str(), channel.c_str());
+  TH1* getHist1D(const string& hname, int nbins, float xlow, float xhigh, /*const string& region,*/ const string& channel) {
+    return getHist1D(hname.c_str(), nbins, xlow, xhigh, /*region.c_str(),*/ channel.c_str());
   }
   // static approach
   TH1* getHist1DBasic(const char* hname) {
@@ -197,8 +197,8 @@ namespace AnaUtil {
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
   // dynamic approach
-  TH2* getHist2D(const char* hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const char* region, const char* channel) {
-    std::string hname_ = std::string(hname)+"_"+std::string(region)+"_"+std::string(channel);
+  TH2* getHist2D(const char* hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const char* region, */const char* channel) {
+    std::string hname_ = std::string(hname)+"_"/*+std::string(region)+"_"*/+std::string(channel);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       obj = new TH2D(hname_.c_str(), hname_.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh);
@@ -213,8 +213,8 @@ namespace AnaUtil {
     }
     return h;
   }
-  TH2* getHist2D(const string& hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const string& region, const string& channel) {
-    return getHist2D(hname.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, region.c_str(), channel.c_str());
+  TH2* getHist2D(const string& hname, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const string& region, */const string& channel) {
+    return getHist2D(hname.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, /*region.c_str(), */channel.c_str());
   }
   // static approach
   TH2* getHist2DBasic(const char* hname) {
