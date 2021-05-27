@@ -3,10 +3,10 @@ from subprocess import Popen, PIPE
 import logging
 
 basepath  = '/eos/user/g/gsaha3/Exotic/DATA_UL2017'
-workdirs  = ['DoubleMuon/RunB','DoubleMuon/RunC','DoubleMuon/RunD','DoubleMuon/RunE','DoubleMuon/RunF']
+workdirs  = ['SingleElectron/RunB','SingleElectron/RunC','SingleElectron/RunD','SingleElectron/RunE','SingleElectron/RunF']
 nMerge    = 100 
 
-logging.basicConfig(filename=os.path.join(basepath,workdirs[0].split('/')[0]+'_hadd.log'), filemode='w',level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
 
 for workdir in workdirs:
     logging.info('hadd the root files in >>>------> {}'.format(workdir))
@@ -28,11 +28,11 @@ for workdir in workdirs:
         for file in filestoadd:
             cmdlist.append(file)
         logging.info('Merging {} files and producing {}'.format(len(filestoadd), outfile))
+        logging.info('File nos to Add : {}'.format([x.split('/')[-1].split('.')[0].split('_')[-1] for x in filestoadd]))
+
         logging.info('hadding : >>>----->')
-        for item in filestoadd:
-            logging.info('--- {}'.format(item))
-        #logging.info('nFiles : {}'.format(len(filestoadd)))
-        logging.info('Starting hadding >>>------> {}'.format(cmdlist))
+        #logging.info('Starting hadding >>>------> {}'.format(cmdlist))
         process    = Popen(cmdlist, stdout=PIPE)                                                                                  
         report     = process.communicate()[0]                                                                                                     
         logging.info(report)    
+
