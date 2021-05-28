@@ -86,6 +86,8 @@ public:
   bool hasZcandidate(const std::vector<LeptonCand>& LepColl);
   bool hasLowMassResonance(const std::vector<LeptonCand>& LepColl);
   bool isPrompt(LeptonCand lep);
+  bool isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT, bool passSingleMuonHLT, bool passSingleEleHLT,
+		   std::string dataset);
 
 private:
   double lumiFac {0.0};

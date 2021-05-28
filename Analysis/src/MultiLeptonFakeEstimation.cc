@@ -221,43 +221,13 @@ void MultiLeptonFakeEstimation::eventLoop()
     AnaUtil::fillHist1DBasic("evtCutFlow", 1);
     AnaUtil::fillHist1DBasic("evtCutFlowWt", 1, MCweight*lumiFac, isMC());
 
-    bool trigSingleMuonHLT {false};
-    bool trigSingleEleHLT {false};
+    //bool trigSingleMuonHLT {false};
+    //bool trigSingleEleHLT {false};
+    bool trigSingleMuonHLT = AnaUtil::isTriggered(AnaBase::getSingleMuonHLTForFakepaths(), 
+						  PhysicsObjSelector::getSingleMuonHLTForFakescores());
+    bool trigSingleEleHLT  = AnaUtil::isTriggered(AnaBase::getSingleElectronHLTForFakepaths(),
+						  PhysicsObjSelector::getSingleElectronHLTForFakescores());
 
-    auto singleMuHLTpaths  = AnaBase::getSingleMuonHLTForFakepaths();
-    auto singleMuHLTscores = PhysicsObjSelector::getSingleMuonHLTForFakescores();
-    for (size_t i = 0; i < singleMuHLTpaths.size(); ++i){
-      if (singleMuHLTscores[i]) {
-	trigSingleMuonHLT = true;
-	break;
-      }
-    }
-    auto singleEleHLTpaths  = AnaBase::getSingleElectronHLTForFakepaths();
-    auto singleEleHLTscores = PhysicsObjSelector::getSingleElectronHLTForFakescores();
-    for (size_t i = 0; i < singleEleHLTpaths.size(); ++i){
-      if (singleEleHLTscores[i]) {
-	trigSingleEleHLT = true;
-	break;
-      }
-    }
-
-    // Duplicate Event removal [FOR DATA]
-    /*
-    if (!isMC()) {
-      bool HLT_Scores[2] = {trigSingleMuonHLT, trigSingleEleHLT};
-      std::string dataset = getDatasetName();
-      if (dataset == "DoubleMuon" && !HLT_Scores[0])
-	continue;
-      else if (dataset == "DoubleEG" && (!HLT_Scores[1] || HLT_Scores[0]))
-	continue;
-      else if (dataset == "MuonEG" && (!HLT_Scores[2] || (HLT_Scores[0] || HLT_Scores[1])))
-	continue;
-      else if (dataset == "SingleMuon" && (!HLT_Scores[3] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2])))
-	continue;
-      else if (dataset == "SingleElectron" && (!HLT_Scores[4] || (HLT_Scores[0] || HLT_Scores[1] || HLT_Scores[2] || HLT_Scores[3])))
-	continue;
-    } 
-    */
     //Making the object collections ready!!!
     findObjects();
 
@@ -326,32 +296,34 @@ void MultiLeptonFakeEstimation::eventLoop()
     channelFlags.insert(std::make_pair("PassTightId", tightElColl.size() == 1));
     channelFlags.insert(std::make_pair("FailTightId", tightElColl.size() == 0));
 
-    AnaUtil::fillHist1D("pt", lep.pt, 300, 0, 300, "FakeRegion", channelFlags, 1.0);
-    AnaUtil::fillHist1D("eta", lep.eta, 20, -3.2, 3.2, "FakeRegion", channelFlags, 1.0);
+    AnaUtil::fillHist1D("pt", lep.pt, 300, 0, 300, channelFlags, 1.0);
+    AnaUtil::fillHist1D("eta", lep.eta, 20, -3.2, 3.2, channelFlags, 1.0);
 
     double mT_fix = AnaUtil::Calculate_MTfix(AnaUtil::getP4(lep), metp4);
-    
+
+    bool isBarrel = (std::fabs(lep.eta) <= 1.479) ? true : false;
+    bool isEndcap = isBarrel ? false : true;
+
     std::map <std::string, bool> ptetaFlags {};
-    ptetaFlags.insert(std::make_pair("pt10to15_barrel",   AnaUtil::within(lep.pt,10.,15.)   && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt15to20_barrel",   AnaUtil::within(lep.pt,15.,20.)   && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt20to30_barrel",   AnaUtil::within(lep.pt,20.,30.)   && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt30to45_barrel",   AnaUtil::within(lep.pt,30.,45.)   && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt45to65_barrel",   AnaUtil::within(lep.pt,45.,65.)   && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt65to100_barrel",  AnaUtil::within(lep.pt,65.,100.)  && std::fabs(lep.eta) <= 1.479));
-    ptetaFlags.insert(std::make_pair("pt100to200_barrel", AnaUtil::within(lep.pt,100.,200.) && std::fabs(lep.eta) <= 1.479));
+    ptetaFlags.insert(std::make_pair("pt10to15_barrel",   AnaUtil::within(lep.pt,10.,15.)   && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt15to20_barrel",   AnaUtil::within(lep.pt,15.,20.)   && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt20to30_barrel",   AnaUtil::within(lep.pt,20.,30.)   && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt30to45_barrel",   AnaUtil::within(lep.pt,30.,45.)   && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt45to65_barrel",   AnaUtil::within(lep.pt,45.,65.)   && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt65to100_barrel",  AnaUtil::within(lep.pt,65.,100.)  && isBarrel));
+    ptetaFlags.insert(std::make_pair("pt100to200_barrel", AnaUtil::within(lep.pt,100.,200.) && isBarrel));
 
-    ptetaFlags.insert(std::make_pair("pt10to15_endcap",   AnaUtil::within(lep.pt,10.,15.)   && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt15to20_endcap",   AnaUtil::within(lep.pt,15.,20.)   && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt20to30_endcap",   AnaUtil::within(lep.pt,20.,30.)   && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt30to45_endcap",   AnaUtil::within(lep.pt,30.,45.)   && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt45to65_endcap",   AnaUtil::within(lep.pt,45.,65.)   && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt65to100_endcap",  AnaUtil::within(lep.pt,65.,100.)  && std::fabs(lep.eta) > 1.479));
-    ptetaFlags.insert(std::make_pair("pt100to200_endcap", AnaUtil::within(lep.pt,100.,200.) && std::fabs(lep.eta) > 1.479));
+    ptetaFlags.insert(std::make_pair("pt10to15_endcap",   AnaUtil::within(lep.pt,10.,15.)   && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt15to20_endcap",   AnaUtil::within(lep.pt,15.,20.)   && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt20to30_endcap",   AnaUtil::within(lep.pt,20.,30.)   && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt30to45_endcap",   AnaUtil::within(lep.pt,30.,45.)   && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt45to65_endcap",   AnaUtil::within(lep.pt,45.,65.)   && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt65to100_endcap",  AnaUtil::within(lep.pt,65.,100.)  && isEndcap));
+    ptetaFlags.insert(std::make_pair("pt100to200_endcap", AnaUtil::within(lep.pt,100.,200.) && isEndcap));
 
-    AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "PassLooseId", ptetaFlags, 1.0);
-    (tightElColl.size() == 1) ? 
-      AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "PassTightId", ptetaFlags, 1.0) : 
-      AnaUtil::fillHist1D("mT_fix", mT_fix, 20, 0, 40, "FailTightId", ptetaFlags, 1.0);
+    AnaUtil::fillHist1D("mT_fix_PassLooseId", mT_fix, 20, 0, 40, ptetaFlags, 1.0);
+    AnaUtil::fillHist1D("mT_fix_PassTightId", mT_fix, 20, 0, 40, ptetaFlags, 1.0, tightElColl.size() == 1); 
+    AnaUtil::fillHist1D("mT_fix_FailTightId", mT_fix, 20, 0, 40, ptetaFlags, 1.0, tightElColl.size() == 0);
 
     if (!isMC()) selEvLog() << evt.run << " " << evt.lumis << " " << evt.event << std::endl;
   } // Event loop ends

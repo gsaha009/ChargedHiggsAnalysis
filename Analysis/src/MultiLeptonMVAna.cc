@@ -225,84 +225,22 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1DBasic("evtCutFlow", 1);
     AnaUtil::fillHist1DBasic("evtCutFlowWt", 1, MCweight*lumiFac, isMC());
 
-    bool passDoubleMuonHLT {false};
-    bool passSingleMuonHLT {false};
-    bool passDoubleEgHLT {false};
-    bool passSingleEleHLT {false};
-    bool passMuonEgHLT {false};
-    // HLT Selection
-    auto doubleMuHLTpaths  = AnaBase::getDoubleMuonHLTpaths();
-    auto doubleMuHLTscores = PhysicsObjSelector::getDoubleMuonHLTscores();
-    for (size_t i = 0; i < doubleMuHLTpaths.size(); ++i){
-      if (doubleMuHLTscores[i]) {
-	passDoubleMuonHLT = true;
-        break;
-      }
-    }
-    auto doubleEgHLTpaths  = AnaBase::getDoubleEgHLTpaths();
-    auto doubleEgHLTscores = PhysicsObjSelector::getDoubleEgHLTscores();
-    for (size_t i = 0; i < doubleEgHLTpaths.size(); ++i){
-      if (doubleEgHLTscores[i]) {
-	passDoubleEgHLT = true;
-	break;
-      }
-    }
-    auto muonEgHLTpaths  = AnaBase::getMuonEgHLTpaths();
-    auto muonEgHLTscores = PhysicsObjSelector::getMuonEgHLTscores();
-    for (size_t i = 0; i < muonEgHLTpaths.size(); ++i){
-      if (muonEgHLTscores[i]) {
-	passMuonEgHLT = true;
-	break;
-      }
-    }
-    auto singleMuHLTpaths  = AnaBase::getSingleMuonHLTpaths();
-    auto singleMuHLTscores = PhysicsObjSelector::getSingleMuonHLTscores();
-    for (size_t i = 0; i < singleMuHLTpaths.size(); ++i){
-      if (singleMuHLTscores[i]) {
-	passSingleMuonHLT = true;
-	break;
-      }
-    }
-    auto singleEleHLTpaths  = AnaBase::getSingleElectronHLTpaths();
-    auto singleEleHLTscores = PhysicsObjSelector::getSingleElectronHLTscores();
-    for (size_t i = 0; i < singleEleHLTpaths.size(); ++i){
-      if (singleEleHLTscores[i]) {
-	passSingleEleHLT = true;
-	break;
-      }
-    }
-    // Duplicate Event removal [FOR DATA]
-    if (!isMC()) {
-      std::map<std::string, bool>triggerOptions;
-      std::map<std::string, bool>::iterator it;
-      triggerOptions["DoubleMuon"]     =  passDoubleMuonHLT;
-      triggerOptions["DoubleEG"]       =  passDoubleEgHLT && !passDoubleMuonHLT;
-      triggerOptions["MuonEG"]         =  passMuonEgHLT && !(passDoubleMuonHLT || passDoubleEgHLT);
-      triggerOptions["SingleMuon"]     =  passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT);
-      triggerOptions["SingleElectron"] =  passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT);
-     
-      std::string dataset = getDatasetName();
-      it = triggerOptions.find(dataset.c_str());
-      if (!it->second) continue;
-      /*
-      if (dataset == "DoubleMuon" && !passDoubleMuonHLT)
-	continue;
-      else if (dataset == "DoubleEG" && (!passDoubleEgHLT || passDoubleMuonHLT))
-	continue;
-      else if (dataset == "MuonEG" && (!passMuonEgHLT || (passDoubleMuonHLT || passDoubleEgHLT)))
-	continue;
-      else if (dataset == "SingleMuon" && (!passSingleMuonHLT || (passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT)))
-	continue;
-      else if (dataset == "SingleElectron" && (!passSingleEleHLT || (passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT)))
-	continue;
-      */
-    }  
+    // Here one will only get to know if any of the <Type> triggers give true or false
+    // If you want to know the HLT_path also, you can modify the isTriggered function in such a way
+    // so that it returns the HLT_paths as well as the values which are giving true values
+    bool passDoubleMuonHLT = AnaUtil::isTriggered(AnaBase::getDoubleMuonHLTpaths(),PhysicsObjSelector::getDoubleMuonHLTscores());
+    bool passSingleEleHLT  = AnaUtil::isTriggered(AnaBase::getSingleElectronHLTpaths(),PhysicsObjSelector::getSingleElectronHLTscores());
+    bool passDoubleEgHLT   = AnaUtil::isTriggered(AnaBase::getDoubleEgHLTpaths(),PhysicsObjSelector::getDoubleEgHLTscores());
+    bool passSingleMuonHLT = AnaUtil::isTriggered(AnaBase::getSingleMuonHLTpaths(),PhysicsObjSelector::getSingleMuonHLTscores());
+    bool passMuonEgHLT     = AnaUtil::isTriggered(AnaBase::getMuonEgHLTpaths(),PhysicsObjSelector::getMuonEgHLTscores());
+
+    // Duplicate Event removal [FOR DATA ONLY]
+    if (isDuplicate (passDoubleMuonHLT, passSingleEleHLT, passDoubleEgHLT, 
+		     passSingleMuonHLT, passMuonEgHLT, getDatasetName())) continue;
     //Making the object collections ready!!!
     findObjects();
 
-    //if (ev < 100) dumpEverything (ev, fLog()); // need to fix this function !
     histf()->cd(); //required
-
     //Access Selected Objects
     const auto& preselElColl       = getPreSelEleList();
     const auto& preselMuColl       = getPreSelMuList();
@@ -411,8 +349,6 @@ void MultiLeptonMVAna::eventLoop()
     // correct weight for events of every possible category.
     // -------------------------------------------------------------------- //
     // nomatch : not yet genMatched : prompt or nonprompt -> Not decided yet
-    bool isSR_nomatch {false}; // to define main SR, where both of the fakeable leptons are tight
-    bool isFR_nomatch {false}; // to define FR, opposite of main SR
     size_t ntmu = 0;
     size_t ntel = 0;
     bool leadIsTightMuon {false};
@@ -437,8 +373,8 @@ void MultiLeptonMVAna::eventLoop()
       }
     }
     
-    isSR_nomatch = ((ntmu + ntel) == 2) ? true : false;
-    isFR_nomatch = (isSR_nomatch) ? false : true;
+    bool isSR_nomatch = ((ntmu + ntel) == 2) ? true : false;
+    bool isFR_nomatch = (isSR_nomatch) ? false : true;
 
     // ---------------------------------------------------------------------------------------------------------------- //
     // --------------------------------------- !!! Weight Factory and Flags !!! --------------------------------------- //
@@ -731,6 +667,23 @@ void MultiLeptonMVAna::eventLoop()
   } // Event loop ends
 }
 
+bool MultiLeptonMVAna::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT,
+				   bool passSingleMuonHLT, bool passSingleEleHLT, std::string dataset) {
+  if (isMC()) return false;
+  else {
+    std::map<std::string, bool>triggerOptions;
+    std::map<std::string, bool>::iterator it;
+    triggerOptions["DoubleMuon"]     =  passDoubleMuonHLT;
+    triggerOptions["DoubleEG"]       =  passDoubleEgHLT && !passDoubleMuonHLT;
+    triggerOptions["MuonEG"]         =  passMuonEgHLT && !(passDoubleMuonHLT || passDoubleEgHLT);
+    triggerOptions["SingleMuon"]     =  passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT);
+    triggerOptions["SingleElectron"] =  passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT);
+    
+    it = triggerOptions.find(dataset.c_str());
+    if (it->second) return true;
+  }
+  return false;
+}
 
 bool MultiLeptonMVAna::hasZcandidate(const std::vector<LeptonCand>& lepColl) {
   bool hasZToLL {false};

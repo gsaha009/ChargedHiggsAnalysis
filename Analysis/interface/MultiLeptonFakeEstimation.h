@@ -87,6 +87,7 @@ public:
   bool hasLowMassResonance(const std::vector<LeptonCand>& LepColl);
   bool isPrompt(LeptonCand lep);
 
+
 private:
   double lumiFac {0.0};
   double evtWeightSum_ {0.0};

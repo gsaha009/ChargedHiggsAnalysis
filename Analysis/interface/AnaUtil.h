@@ -63,6 +63,13 @@ namespace AnaUtil {
     return std::sqrt(std::pow(mt_1, 2) + std::pow(mt_2, 2) +
 		     std::pow(mt_ll, 2));
   }
+  // if an event has paased HLT condition or not
+  template<typename T1, typename T2>
+    bool isTriggered(const std::vector<T1>& paths, const std::vector<T2>& scores){
+    for (size_t i = 0; i < paths.size(); ++i)
+      if (scores[i]) return true;
+    return false;
+  }
 
   double deltaPhi(double phia, double phib);
   double deltaPhi(const TLorentzVector& a, const TLorentzVector& b);
