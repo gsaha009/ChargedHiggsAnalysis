@@ -12,8 +12,10 @@ import sys
 import ROOT
 import stat
 from subprocess import Popen, PIPE
+from collections import defaultdict
 import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
+from plotter import plotter
 
 def getCommonInfoDict():
     '''
@@ -84,6 +86,9 @@ def main():
         dictToDump = dict()
         dictToDump.update(getCommonInfoDict())
         print(dictToDump)
+
+    resultDict = defaultdict(list)
+    xsecDict   = dict()
     # mc samples
     logging.info('Doing hadd ===>')
     for dataType, valDict in samplesDict.items():
@@ -128,6 +133,7 @@ def main():
                 group: 'TT'
                 '''
                 logging.info(' Sample : {}'.format(key))
+                xsec = val.get('xsec')
                 filePathList = val.get('filedirs')
                 filesPerJob  = int(val.get('filesPerJob'))
                 files        = []
@@ -142,38 +148,43 @@ def main():
                 tobehadd     = []
                 posthaddfile = os.path.join(histDir, str(key)+'_hist.root')
                 haddcmd_     = ['hadd', posthaddfile]
-                for i in range(nJobs) :
-                    rootfile = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
-                    tobehadd.append(rootfile)
-                
+
                 if args.dohadd:
-                    haddcmd = haddcmd_ + tobehadd
-                    process = Popen(haddcmd, stdout=PIPE)
-                    print process.communicate()[0]
-                    
-                    # removing the job root files because
-                    # we have the hadded root files now
-                    rmcmd = ['rm'] + tobehadd
-                    process2 = Popen(rmcmd, stdout=PIPE)
-                    print process2.communicate()[0]
-                '''
+                    if os.path.exists(posthaddfile):
+                        print('hadded file ---> {} : already exists!'.format(posthaddfile))
+                    else:
+                        for i in range(nJobs) :
+                            rootfile = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
+                            if os.path.exists(rootfile):
+                                tobehadd.append(rootfile)   
+                            else:
+                                print('{} >>-----> Missing'.format(rootfile))
+
+                        if len(tobehadd) == 0:
+                            print('{} job output root files are not present'.format(key))
+                        else:
+                            haddcmd = haddcmd_ + tobehadd
+                            process = Popen(haddcmd, stdout=PIPE)
+                            print process.communicate()[0]                    
+                            # removing the job root files because
+                            # we have the hadded root files now
+                            rmcmd = ['rm'] + tobehadd
+                            process2 = Popen(rmcmd, stdout=PIPE)
+                            print process2.communicate()[0]
+
                 group = val.get('group')
-                if ismc or issignal:
-                    xsec    = val.get('xsec') 
-                    histFile  = ROOT.TFile.Open(posthaddfile, 'READ')
-                    evWtSum_hist = histFile.Get('pt__PassTightId')
-                    evWtSum = evWtSum_hist.Integral()
-                elif isdata:
-                    xsec    = 1.0
-                    evWtSum = 1.0
-                
-    if args.producePlotYaml:
-        print(dictToDump)
-        json_object = json.dumps(dictToDump, indent = 4)
-        plotJson = os.path.join(histDir, 'plot_'+str(era)+'.json')
-        with open(plotJson, 'w') as file:
-            plotJson.write(json_object)
-                '''
+                if os.path.exists(posthaddfile):
+                    resultDict[str(group)].append(posthaddfile)
+                    xsecDict[str(posthaddfile)]=xsec
+                else:
+                    print('hadded file |{}| is absent'.format(posthaddfile))
+
+
+    print(resultDict)
+    plotterObj = plotter(resultDict,xsecDict,os.path.join(histDir,'histlist.yml'))
+    histograms = plotterObj.getListOfHistograms()
+    print(histograms)
+    plotterObj.doStackPlots(histograms)
 
 if __name__ == "__main__":
     main()

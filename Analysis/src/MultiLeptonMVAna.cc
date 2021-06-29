@@ -104,8 +104,8 @@ void MultiLeptonMVAna::bookHistograms()
   if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 15, -0.5, 14.5);
   new TH1D("SR_yield", "Yield in Signal Region", 9, -0.5, 8.5);
   if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 9, -0.5, 8.5);
-  new TH1D("FR_yield", "Yield in Fake Extrapolated Region", 9, -0.5, 8.5);
-  if (isMC()) new TH1D("FR_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
+  new TH1D("SB_yield", "Yield in Fake Extrapolated Region", 9, -0.5, 8.5);
+  if (isMC()) new TH1D("SB_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
   if (isMC()) new TH1D("EventWtSum", "Event Weight Sum", 1, -0.5, 0.5);
 
   histf()->ls();
@@ -348,7 +348,7 @@ void MultiLeptonMVAna::eventLoop()
     // one of them fails. Thats why several bools have been taken to define
     // correct weight for events of every possible category.
     // -------------------------------------------------------------------- //
-    // nomatch : not yet genMatched : prompt or nonprompt -> Not decided yet
+    // beforeGenMatch : not yet genMatched : prompt or nonprompt -> Not decided yet
     size_t ntmu = 0;
     size_t ntel = 0;
     bool leadIsTightMuon {false};
@@ -373,14 +373,14 @@ void MultiLeptonMVAna::eventLoop()
       }
     }
     
-    bool isSR_nomatch = ((ntmu + ntel) == 2) ? true : false;
-    bool isFR_nomatch = (isSR_nomatch) ? false : true;
+    bool isSR_beforeGenMatch = ((ntmu + ntel) == 2) ? true : false;
+    bool isSB_beforeGenMatch = (isSR_beforeGenMatch) ? false : true;
 
     // ---------------------------------------------------------------------------------------------------------------- //
     // --------------------------------------- !!! Weight Factory and Flags !!! --------------------------------------- //
     // ---------------------------------------------------------------------------------------------------------------- //
     // For Signal region
-    if (isMC() && isSR_nomatch) {
+    if (isMC() && isSR_beforeGenMatch) {
       if (isEleEle)     MCweight = MCweight 
 			  * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
 			  * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
@@ -399,8 +399,8 @@ void MultiLeptonMVAna::eventLoop()
 	       * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
       }
     }
-    // For Fake extrapolated region
-    else if (isMC() && isFR_nomatch) {
+    // For Sideband region
+    else if (isMC() && isSB_beforeGenMatch) {
       if (isEleEle) {
 	if (ntel == 0) MCweight = - MCweight 
 			* 0.01 
@@ -473,10 +473,20 @@ void MultiLeptonMVAna::eventLoop()
     // --------------------------------------------------------------------------------------------------------//
     //                                   Regions and Flags : Very Essential                                    //
     // --------------------------------------------------------------------------------------------------------//
-    // isSR : Signal Region, isFR : Fake or Sideband Region, isNPFR : Non-Prompt and Fake Region
-    bool isSR   = hasOnlyPrompt && isSR_nomatch; 
-    bool isFR   = hasOnlyPrompt && isFR_nomatch;
-    bool isNPFR = hasNonPrompt && isFR_nomatch;
+    //    SR : Both Leptons are prompt & tight          |     SB : Prompt but atleast one fails tight Id       //
+    //                                                  |        DataSB has both prompt and non-prompt         //
+    //                                                  |            FFx(DataSB-McSB) = FFxNPSB                //
+    //                                                  |                        |                             //
+    //---------------------------------------------------------------------------V-----------------------------//
+    //     FR : Both tight but non-prompt               |   NPSB : Non-prompt and atleast one fails tight Id   //
+    //     aka MCfake : Fake from MC simulation         |   aka MC-Closure region ( NPSB from MC x FF )        //
+    //                  (using MC only)                 |                                                      //
+    //             [data-driven : Fake Band] <----------|-------------- FFxNPSB : Data driven                  //
+    //---------------------------------------------------------------------------------------------------------//
+    bool isSR          = hasOnlyPrompt && isSR_beforeGenMatch;
+    bool isSB          = hasOnlyPrompt && isSB_beforeGenMatch;
+    bool isMCclosure   = hasNonPrompt && isSB_beforeGenMatch; 
+    bool isMCfake      = hasNonPrompt && isSR_beforeGenMatch; 
 
     if (dumpIdx < 10) {
       std::cout<<"Event : "<<ev<<"\n";
@@ -487,50 +497,47 @@ void MultiLeptonMVAna::eventLoop()
 	       <<"leadIsTightMuon :"<<leadIsTightMuon<<"\t"
 	       <<"leadIsTightEle :"<<leadIsTightEle<<"\n";
       std::cout<<"isSR :"<<isSR<<"\t"
-	       <<"isFR :"<<isFR<<"\t"
-	       <<"isNPFR :"<<isNPFR<<"\n"
+	       <<"isSB :"<<isSB<<"\t"
+	       <<"isMCclosure :"<<isMCclosure<<"\n"
 	       <<"isEleEle :"<<isEleEle<<"\t"
 	       <<"isEleMu  :"<<isEleMu<<"\t"
 	       <<"isMuMu   :"<<isMuMu<<"\n"
 	       <<"isSR_EleEle :"<<(isSR && isEleEle)<<"\t"
 	       <<"isSR_EleMu  :"<<(isSR && isEleMu)<<"\t"
 	       <<"isSR_MuMu   :"<<(isSR && isMuMu)<<"\n"
-	       <<"isFR_EleEle :"<<(isFR && isEleEle)<<"\t"
-	       <<"isFR_EleMu  :"<<(isFR && isEleMu)<<"\t"
-	       <<"isFR_MuMu   :"<<(isFR && isMuMu)<<"\n"
-	       <<"isNPFR_EleEle :"<<(isNPFR && isEleEle)<<"\t"
-	       <<"isNPFR_EleMu  :"<<(isNPFR && isEleMu)<<"\t"
-	       <<"isNPFR_MuMu   :"<<(isNPFR && isMuMu)<<"\n";
+	       <<"isSB_EleEle :"<<(isSB && isEleEle)<<"\t"
+	       <<"isSB_EleMu  :"<<(isSB && isEleMu)<<"\t"
+	       <<"isSB_MuMu   :"<<(isSB && isMuMu)<<"\n"
+	       <<"isMCclosure_EleEle :"<<(isMCclosure && isEleEle)<<"\t"
+	       <<"isMCclosure_EleMu  :"<<(isMCclosure && isEleMu)<<"\t"
+	       <<"isMCclosure_MuMu   :"<<(isMCclosure && isMuMu)<<"\n"
+	       <<"isMCfake_EleEle :"<<(isMCfake && isEleEle)<<"\t"
+	       <<"isMCfake_EleMu  :"<<(isMCfake && isEleMu)<<"\t"
+	       <<"isMCfake_MuMu   :"<<(isMCfake && isMuMu)<<"\n";
       std::cout<<setprecision(10)<<"MC_weight : "<<MCweight<<"\t"<<"Lumi_weight : "<<MCweight*lumiFac<<"\n"<<"\n";
     }
     dumpIdx++;
 
     // Channel Flags ... very important
     std::map <std::string, bool> channelFlags {}; 
-    // Signal Region :: 
-    // 1. both of the leading and sub-leading fakeable leptons are prompt (GenMatched)
-    // 2. both of the fakeable leptons are tight
-    // 3. channel name specified
+    // Signal Region
     channelFlags.insert(std::make_pair("EleEle_SR", (isSR && isEleEle)));
     channelFlags.insert(std::make_pair("EleMu_SR",  (isSR && isEleMu)));
     channelFlags.insert(std::make_pair("MuMu_SR",   (isSR && isMuMu)));
-    // Sideband region (/Fake application region) ::
-    // 1. both of the leading and sub-leading fakeable leptons are prompt (GenMatched)
-    // 2. at least one of the two leptons fail tightId
-    // 3. channel name specified 
-    // 4. not necessasry for signal samples
-    channelFlags.insert(std::make_pair("EleEle_FR", (isFR && isEleEle && !isSignal())));
-    channelFlags.insert(std::make_pair("EleMu_FR",  (isFR && isEleMu  && !isSignal())));
-    channelFlags.insert(std::make_pair("MuMu_FR",   (isFR && isMuMu   && !isSignal())));
-    // Fake Extrapolated region :: This will be estimated from data driven fake factor estimation
-    // 1. At least one of the leading and sub-leading fakeable leptons is not prompt (GenMatched)
-    // 2. at least one of the two leptons fail tightId 
-    // 3. channel name specified 
-    // 4. Only for MC : Non-Prompt & Fake Region for MC only
-    // 5. not necessasry for signal samples  
-    channelFlags.insert(std::make_pair("EleEle_NPFR", (isNPFR && isEleEle && isMC() && !isSignal())));
-    channelFlags.insert(std::make_pair("EleMu_NPFR",  (isNPFR && isEleMu  && isMC() && !isSignal())));
-    channelFlags.insert(std::make_pair("MuMu_NPFR",   (isNPFR && isMuMu   && isMC() && !isSignal())));
+    // Sideband Region
+    channelFlags.insert(std::make_pair("EleEle_SB", (isSB && isEleEle && !isSignal())));
+    channelFlags.insert(std::make_pair("EleMu_SB",  (isSB && isEleMu  && !isSignal())));
+    channelFlags.insert(std::make_pair("MuMu_SB",   (isSB && isMuMu   && !isSignal())));
+    // MC-Closure Region :: TODO [need to tune the conditions here : 
+    // https://gitlab.cern.ch/cms-hh-bbww/cms-hh-to-bbww/-/blob/master/Legacy/MC_closure.md]
+    channelFlags.insert(std::make_pair("EleEle_MCclosure", (isMCclosure && isEleEle && isMC() && !isSignal())));
+    channelFlags.insert(std::make_pair("EleMu_MCclosure",  (isMCclosure && isEleMu  && isMC() && !isSignal())));
+    channelFlags.insert(std::make_pair("MuMu_MCclosure",   (isMCclosure && isMuMu   && isMC() && !isSignal())));
+    // MC-Fake Region
+    channelFlags.insert(std::make_pair("EleEle_MCfake", (isMCfake && isEleEle && isMC() && !isSignal())));
+    channelFlags.insert(std::make_pair("EleMu_MCfake",  (isMCfake && isEleMu  && isMC() && !isSignal())));
+    channelFlags.insert(std::make_pair("MuMu_MCfake",   (isMCfake && isMuMu   && isMC() && !isSignal())));
+    // Comment the last six lines out if you don't want to produce the plots for MC-Closure and MC-fakes
 
     // ----------------------------------------------------------------------------------------------------------------------- //
     // ----------------------------------------------------------------------------------------------------------------------- //
@@ -555,12 +562,12 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1DBasic("SR_yield", 2, (isSR && isMuMu));
     AnaUtil::fillHist1DBasic("SR_yieldWt", 2, MCweight*lumiFac, (isSR && isMuMu && isMC()));
 
-    AnaUtil::fillHist1DBasic("FR_yield", 0, (isFR && isEleEle && !isSignal()));
-    AnaUtil::fillHist1DBasic("FR_yieldWt", 0, MCweight*lumiFac, (isFR && isEleEle && isMC() && !isSignal()));
-    AnaUtil::fillHist1DBasic("FR_yield", 1, (isFR && isEleMu && !isSignal()));
-    AnaUtil::fillHist1DBasic("FR_yieldWt", 1, MCweight*lumiFac, (isFR && isEleMu && isMC() && !isSignal()));
-    AnaUtil::fillHist1DBasic("FR_yield", 2, (isFR && isMuMu && !isSignal()));
-    AnaUtil::fillHist1DBasic("FR_yieldWt", 2, MCweight*lumiFac, (isFR && isMuMu && isMC() && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yield", 0, (isSB && isEleEle && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yieldWt", 0, MCweight*lumiFac, (isSB && isEleEle && isMC() && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yield", 1, (isSB && isEleMu && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yieldWt", 1, MCweight*lumiFac, (isSB && isEleMu && isMC() && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yield", 2, (isSB && isMuMu && !isSignal()));
+    AnaUtil::fillHist1DBasic("SB_yieldWt", 2, MCweight*lumiFac, (isSB && isMuMu && isMC() && !isSignal()));
 
     bool isResolved_WZ = (jetColl.size() >= 3 && fatJetColl.size() == 0 && bJetColl.size()==0) ? true : false;
     bool isBoosted_WZ  = (fatJetColl.size() >= 1 && bJetColl.size()==0 && fatbJetColl.size()==0) ? true : false;
@@ -586,12 +593,12 @@ void MultiLeptonMVAna::eventLoop()
       AnaUtil::fillHist1DBasic("SR_yield",      5,                   (isSR && isMuMu));
       AnaUtil::fillHist1DBasic("SR_yieldWt",    5, MCweight*lumiFac, (isMC() && isSR && isMuMu));
 
-      AnaUtil::fillHist1DBasic("FR_yield",      3,                   (isFR && isEleEle && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    3, MCweight*lumiFac, (isMC() && isFR && isEleEle && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yield",      4,                   (isFR && isEleMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    4, MCweight*lumiFac, (isMC() && isFR && isEleMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yield",      5,                   (isFR && isMuMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    5, MCweight*lumiFac, (isMC() && isFR && isMuMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      3,                   (isSB && isEleEle && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    3, MCweight*lumiFac, (isMC() && isSB && isEleEle && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      4,                   (isSB && isEleMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    4, MCweight*lumiFac, (isMC() && isSB && isEleMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      5,                   (isSB && isMuMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    5, MCweight*lumiFac, (isMC() && isSB && isMuMu && !isSignal()));
 
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", jetColl.size(), 10, -0.5, 9.5, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", jetColl[0].pt, 20, 0, 300, channelFlags, MCweight);
@@ -636,12 +643,12 @@ void MultiLeptonMVAna::eventLoop()
       AnaUtil::fillHist1DBasic("SR_yield",      8,                   (isSR && isMuMu));
       AnaUtil::fillHist1DBasic("SR_yieldWt",    8, MCweight*lumiFac, (isMC() && isSR && isMuMu));
 
-      AnaUtil::fillHist1DBasic("FR_yield",      6,                   (isFR && isEleEle && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    6, MCweight*lumiFac, (isMC() && isFR && isEleEle && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yield",      7,                   (isFR && isEleMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    7, MCweight*lumiFac, (isMC() && isFR && isEleMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yield",      8,                   (isFR && isMuMu && !isSignal()));
-      AnaUtil::fillHist1DBasic("FR_yieldWt",    8, MCweight*lumiFac, (isMC() && isFR && isMuMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      6,                   (isSB && isEleEle && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    6, MCweight*lumiFac, (isMC() && isSB && isEleEle && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      7,                   (isSB && isEleMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    7, MCweight*lumiFac, (isMC() && isSB && isEleMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yield",      8,                   (isSB && isMuMu && !isSignal()));
+      AnaUtil::fillHist1DBasic("SB_yieldWt",    8, MCweight*lumiFac, (isMC() && isSB && isMuMu && !isSignal()));
 
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5,channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, channelFlags, MCweight, jetColl_ak8Cleaned.size() >= 1);
@@ -772,7 +779,9 @@ void MultiLeptonMVAna::endJob() {
   
   AnaUtil::showEfficiency("evtCutFlow", evLabels, "Event Selection [Unweighted]");  
   AnaUtil::showYield("SR_yield",   yieldLabels, "Prompt Contribution in Signal Region [unweighted]", "Yield");
-  if (!isSignal()) AnaUtil::showYield("FR_yield",   yieldLabels, "Fake Extrapolation in Signal Region [unweighted]", "Yield");
+  if (!isSignal()) {
+    AnaUtil::showYield("SB_yield",   yieldLabels, "Fake Extrapolation in Signal Region [unweighted]", "Yield");
+  }
   if (isMC()) {
     cout << endl
          << "evtWeightSum: " << setw(10) << setprecision(0) << evtWeightSum_ << endl
@@ -780,7 +789,9 @@ void MultiLeptonMVAna::endJob() {
          << endl;
     //AnaUtil::showEfficiency("evtCutFlowWt", evLabels, "Event Selection (Weighted)", "Events");
     AnaUtil::showYield("SR_yieldWt",   yieldLabels, "Prompt Contribution in Signal Region [Lumi weighted]", "Yield");
-    if (!isSignal()) AnaUtil::showYield("FR_yieldWt",   yieldLabels, "Fake Extrapolation in Signal Region [Lumi weighted]", "Yield");
+    if (!isSignal()) {
+      AnaUtil::showYield("SB_yieldWt",   yieldLabels, "Fake Extrapolation in Signal Region [Lumi weighted]", "Yield");
+    }
   }
 }
 
