@@ -39,7 +39,7 @@ Here comes the 2nd part `MakeJobsAndSend`. It contains a python script which aut
 There is also an `yaml` with all relevant information to produce the jobs. Be careful with the names of the directories i.e. jobDir, outDir etc.
 Let's consider `analysis_2017_config.yml`. User should check `appDir`, `jobDir`, `exeToRun` and `outDir`. A python script `runAnalysis.py` uses
 an `yaml` to produce the jobCards.
-The following command can produce the jobCards for the datasets mentioned in the `yaml`. It also enables to sumbit condor jobs directly. 
+The following command can produce the jobCards for the datasets mentioned in the `yaml`. It also enables condor job submission directly. 
 ```
 cd MakeJobsAndSend/
 python runAnalysis.py --configName analysisBLA.yml --suffix Foo [--send]
