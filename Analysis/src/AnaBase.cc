@@ -181,7 +181,7 @@ bool AnaBase::init(){
   if (branchFound("Muon_isPFcand")) Muon_isPFcand                      = new TTreeReaderArray< bool >(*treeReader_, "Muon_isPFcand");
   if (branchFound("Muon_isTracker")) Muon_isTracker                    = new TTreeReaderArray< bool >(*treeReader_, "Muon_isTracker");
   if (branchFound("Muon_dxy")) Muon_dxy                                = new TTreeReaderArray< float >(*treeReader_, "Muon_dxy");
-  if (branchFound("Muon_dxy")) Muon_dz                                 = new TTreeReaderArray< float >(*treeReader_, "Muon_dz");
+  if (branchFound("Muon_dz")) Muon_dz                                  = new TTreeReaderArray< float >(*treeReader_, "Muon_dz");
   if (branchFound("Muon_tightCharge")) Muon_tightCharge                = new TTreeReaderArray< int >(*treeReader_, "Muon_tightCharge");
   if (branchFound("Muon_miniPFRelIso_all")) Muon_miniPFRelIso_all      = new TTreeReaderArray< float >(*treeReader_, "Muon_miniPFRelIso_all");
 
