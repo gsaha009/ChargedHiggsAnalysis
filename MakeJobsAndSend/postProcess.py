@@ -17,38 +17,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
 from plotter import plotter
 
-def getCommonInfoDict():
-    '''
-    dict_ = {
-        "configuration": {
-            "blinded-range-fill-color": "#FDFBFB",
-            "blinded-range-fill-style": "4050",
-            "eras": ["2017"],
-            "experiment": "CMS",
-            "extra-label": "Preliminary results",
-            "height": '600',
-            "luminosity": {
-                '2018': "59740.565201546"
-            },
-            "luminosity-label": "%1$.2f fb^{-1} (13 TeV)",
-            "margin-bottom": "0.13",
-            "margin-left": "0.15",
-            "margin-right": "0.03",
-            "margin-top": "0.05",
-            "root": "results",
-            "show-overflow": "true",
-            "width": "800",
-            "yields-table-align": "v"
-        }
-    }
-    '''
-    dict_ = {
-        "blinded-range-fill-color": "#FDFBFB",
-        "blinded-range-fill-style": 4050
-    }
-    
-    return dict_
-
 def main():
     parser = argparse.ArgumentParser(description='Make Jobs and Send')
     
@@ -86,11 +54,15 @@ def main():
         dictToDump = dict()
         dictToDump.update(getCommonInfoDict())
         print(dictToDump)
-
+    
+    legendPosDict = configDict.get('legendPos')
     resultDict = defaultdict(list)
     xsecDict   = dict()
     # mc samples
     logging.info('Doing hadd ===>')
+    groupLegendDict = dict()
+    groupLegendInfo = dict()
+    combinedDictForYaml = dict()
     for dataType, valDict in samplesDict.items():
         '''
         e.g. dataType : MC
@@ -131,6 +103,9 @@ def main():
                 xsec: 365.52
                 filesPerJob: 2
                 group: 'TT'
+                fill-color: '#1a83a1'
+                legend: 'tt+jets'
+                order: 2
                 '''
                 logging.info(' Sample : {}'.format(key))
                 xsec = val.get('xsec')
@@ -165,26 +140,59 @@ def main():
                         else:
                             haddcmd = haddcmd_ + tobehadd
                             process = Popen(haddcmd, stdout=PIPE)
-                            print process.communicate()[0]                    
+                            print(process.communicate()[0])                    
                             # removing the job root files because
                             # we have the hadded root files now
                             rmcmd = ['rm'] + tobehadd
                             process2 = Popen(rmcmd, stdout=PIPE)
-                            print process2.communicate()[0]
+                            print(process2.communicate()[0])
 
                 group = val.get('group')
                 if os.path.exists(posthaddfile):
                     resultDict[str(group)].append(posthaddfile)
-                    xsecDict[str(posthaddfile)]=xsec
+                    xsecDict[str(posthaddfile)]=[xsec, dataType]
                 else:
                     print('hadded file |{}| is absent'.format(posthaddfile))
-
-
+                if not group == 'data':
+                    groupLegendInfo[group] = {
+                        "fill-color": val.get('fill-color'),
+                        "legend": val.get('legend'),
+                        "order": val.get('order')
+                    }
+                else:
+                    groupLegendInfo[group] = {
+                        "legend":'data'
+                    }
+                groupLegendDict['groups'] = groupLegendInfo
+                    
     print(resultDict)
-    plotterObj = plotter(resultDict,xsecDict,os.path.join(histDir,'histlist.yml'))
+    plotterObj = plotter(era,lumi,resultDict,xsecDict,os.path.join(histDir,'plots.yml'))
     histograms = plotterObj.getListOfHistograms()
     print(histograms)
-    plotterObj.doStackPlots(histograms)
+    commonInfoDict = plotterObj.getCommonInfoDict()
+    print('commonInfo :: to be dumped inside plots.yml')
+    print(commonInfoDict)
+    print(type(commonInfoDict))
+    combinedDictForYaml.update(commonInfoDict)
+    fileInfoDict = plotterObj.getFileInfoDict()
+    print('fileInfo :: to be dumped inside plots.yml')
+    print(fileInfoDict)
+    print(type(fileInfoDict))
+    combinedDictForYaml.update(fileInfoDict)
+    print('legendInfo :: to be dumped inside plots.yml')
+    print(groupLegendDict)
+    combinedDictForYaml.update(groupLegendDict)
+    print('legendPosInfo :: to be dumped inside plots.yml')
+    print(legendPosDict)
+    combinedDictForYaml.update(legendPosDict)
+
+    print(combinedDictForYaml)
+    json_object = json.dumps(combinedDictForYaml, indent = 4)
+    with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
+        outfile.write(json_object)
+
+    with open(os.path.join(histDir, 'plots.yml'), 'w') as ymlfile:
+        documents = yaml.dump(combinedDictForYaml, ymlfile, default_flow_style=False)
 
 if __name__ == "__main__":
     main()
