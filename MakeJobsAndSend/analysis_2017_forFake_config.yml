@@ -87,7 +87,7 @@ samplesDict:
       xsec: 365.52
       filesPerJob: 2
       group: 'TT'
-      fill-color: '#1a83a1'
+      fill-color: '#00FFCC'
       legend: 'tt+jets'
       order: 2
 
@@ -98,7 +98,7 @@ samplesDict:
       xsec: 88.40
       filesPerJob: 2
       group: 'TT'
-      fill-color: '#1a83a1'
+      fill-color: '#00FFCC'
       legend: 'tt+jets'
       order: 2
 
@@ -108,7 +108,7 @@ samplesDict:
       xsec : 3.364
       filesPerJob: 2
       group: 'ST'
-      fill-color: '#1a83a1'
+      fill-color: '#CC9999'
       legend: 'single top'
       order: 2
 
@@ -119,7 +119,7 @@ samplesDict:
       xsec : 35.85
       filesPerJob: 2
       group: 'ST'
-      fill-color: '#1a83a1'
+      fill-color: '#CC9999'
       legend: 'single top'
       order: 2
 
@@ -130,7 +130,7 @@ samplesDict:
       xsec : 35.85
       filesPerJob: 2
       group: 'ST'
-      fill-color: '#1a83a1'
+      fill-color: '#CC9999'
       legend: 'single top'
       order: 2
 
@@ -140,7 +140,7 @@ samplesDict:
       xsec : 136.02
       filesPerJob: 2
       group: 'ST'
-      fill-color: '#1a83a1'
+      fill-color: '#CC9999'
       legend: 'single top'
       order: 2
 
@@ -151,7 +151,7 @@ samplesDict:
       xsec : 80.95
       filesPerJob: 2
       group: 'ST'
-      fill-color: '#1a83a1'
+      fill-color: '#CC9999'
       legend: 'single top'
       order: 2
 

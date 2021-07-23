@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--histdir', action='store', required=True, type=str, help='just name of the output directory')
     parser.add_argument('--dohadd', action='store_true',required=False,default=False,help="")
     parser.add_argument('--producePlotYaml',action='store_true',required=False,default=False,help="")
+    parser.add_argument('--runPlotIt',action='store_true',required=False,default=False,help="")
 
     args = parser.parse_args()
 
@@ -166,33 +167,50 @@ def main():
                 groupLegendDict['groups'] = groupLegendInfo
                     
     print(resultDict)
-    plotterObj = plotter(era,lumi,resultDict,xsecDict,os.path.join(histDir,'plots.yml'))
-    histograms = plotterObj.getListOfHistograms()
+    plotterObj = plotter(era,lumi,resultDict,xsecDict,os.path.join(histDir,'plots.yml'),histDir)
+    histograms, histTitles = plotterObj.getListOfHistograms()
     print(histograms)
     commonInfoDict = plotterObj.getCommonInfoDict()
-    print('commonInfo :: to be dumped inside plots.yml')
-    print(commonInfoDict)
-    print(type(commonInfoDict))
+    #print('commonInfo :: to be dumped inside plots.yml')
+    #print(yaml.dump(commonInfoDict,default_flow_style=False))
     combinedDictForYaml.update(commonInfoDict)
+
     fileInfoDict = plotterObj.getFileInfoDict()
     print('fileInfo :: to be dumped inside plots.yml')
-    print(fileInfoDict)
-    print(type(fileInfoDict))
     combinedDictForYaml.update(fileInfoDict)
+
     print('legendInfo :: to be dumped inside plots.yml')
-    print(groupLegendDict)
+    print(yaml.dump(groupLegendDict,default_flow_style=False))
     combinedDictForYaml.update(groupLegendDict)
+
     print('legendPosInfo :: to be dumped inside plots.yml')
-    print(legendPosDict)
+    print(yaml.dump(legendPosDict,default_flow_style=False))
     combinedDictForYaml.update(legendPosDict)
 
-    print(combinedDictForYaml)
+    plotInfoDict = plotterObj.getHistogramDict(histograms, histTitles)
+    combinedDictForYaml.update(plotInfoDict)
+
+    #print(combinedDictForYaml)
     json_object = json.dumps(combinedDictForYaml, indent = 4)
     with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
         outfile.write(json_object)
 
     with open(os.path.join(histDir, 'plots.yml'), 'w') as ymlfile:
         documents = yaml.dump(combinedDictForYaml, ymlfile, default_flow_style=False)
+
+    if args.runPlotIt:
+        plotDir = os.path.join(histDir, 'plots')
+        if not os.path.exists(plotDir):
+            os.mkdir(plotDir)
+        
+        if not os.path.exists(os.path.join(histDir, 'plots.yml')):
+            raise RuntimeError('plots.yml doesnt exist !!!')
+        # run plotIt
+        plotItCmds = ['plotIt','-o',plotDir,os.path.join(histDir, 'plots.yml')]
+        proc       = Popen(plotItCmds, stdout=PIPE)
+        report     = proc.communicate()[0]
+        print(report)
+
 
 if __name__ == "__main__":
     main()

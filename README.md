@@ -45,3 +45,23 @@ cd MakeJobsAndSend/
 python runAnalysis.py --configName analysisBLA.yml --suffix Foo [--send]
 ```
 N.B. `--send` is used to send jobs to condor directly. If you want to produce the jobCards only, do not use `--send`. 
+
+## Plotting
+A `postprocess.py` script is present inside `MakeJobsAndSend`. After running condor, one would get all the job out root files in the out dir and 
+this postproces script helps to hadd those root files, make a condor jobId list, make `plots.yml` file and do the plotting.
+The `yml` file is used by [plotIt](http://cp3-llbb.github.io/plotit/). So the entire plotting is done by `plotIt`.
+
+## PlotIt Installation
+There might be many ways to install it in lxplus, but the way I followed is: 
+  - source /cvmfs/sft.cern.ch/lcg/views/LCG_98python3/x86_64-centos7-gcc9-opt/setup.sh
+  - python -m venv plotvenv
+  - source plotvenv/bin/activate
+One can keep these three lines in a sh script and source it everytime while using postprocess
+  - git clone -o upstream https://github.com/cp3-llbb/plotIt.git /path/to/your/plotitclone
+  - mkdir build-plotit
+  - cd build-plotit
+  - cmake -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV /path/to/your/plotitclone
+  - make -j2 install
+  - cd -
+
+This installation technique is taken from [here](https://bamboo-hep.readthedocs.io/en/latest/install.html#installation)
