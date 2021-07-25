@@ -90,8 +90,10 @@ bool AnaBase::beginJob()
   TFile* f = TFile::Open(histFile_.c_str(), "RECREATE");
   histf_.reset(std::move(f));
   // Open the output FakeExtrapolated ROOT file
-  //TFile* fakef = TFile::Open(fakehistFile_.c_str(), "RECREATE");
-  //fakehistf_.reset(std::move(fakef));
+  //if (!isSignal()) {
+  //  TFile* ff = TFile::Open(fakehistFile_.c_str(), "RECREATE");
+  //  fakehistf_.reset(std::move(ff));
+  //}
 
   nEvents_ = static_cast<int>(chain_->GetEntries()); 
   if (nEvents_ <= 0) {
@@ -397,10 +399,13 @@ void AnaBase::closeHistFile() //Called by closeFiles
   histf_->cd();
   histf_->Write();
   histf_->Close();
-  //fakehistf_->cd();
-  //fakehistf_->Write();
-  //fakehistf_->Close();
 }
+//void AnaBase::closeFakeHistFile()
+//{
+//  fakehistf_->cd();
+//  fakehistf_->Write();
+//  fakehistf_->Close();
+//}
 double AnaBase::lumiWt(double evtWeightSum, bool verbose) const 
 {
   double nevt = (evtWeightSum > -1) ? evtWeightSum : AnaUtil::cutValue(lumiWtMap(), "nevents");
@@ -484,6 +489,7 @@ void AnaBase::closeFiles()
     selEvLog_.close();
   }
   closeHistFile();
+  //if (!isSignal()) closeFakeHistFile();
   if (chain_) delete chain_;
   if (chainRun_) delete chainRun_;
   if (treeReader_) delete treeReader_;

@@ -102,6 +102,7 @@ public:
   virtual bool openFiles();
   virtual void closeFiles();
   virtual void closeHistFile();
+  //virtual void closeFakeHistFile();
 
   int setInputFile(const std::string& fname);
   bool branchFound(const std::string& b);
@@ -112,7 +113,7 @@ public:
   int getEntry(int lflag) const;
 
   std::unique_ptr<TFile>& histf() {return histf_;}
-  //std::unique_ptr<TFile>& fakehistf() {return fakehistf_;}
+  //std::unique_ptr<TFile>& fhistf() {return fakehistf_;}
   TTreeReader* treeReader() {return treeReader_;}
   TTreeReader* treeReaderRun() {return treeReaderRun_;}
   TChain* chain() {return chain_;}

@@ -24,7 +24,7 @@ DEBUG_FLAG = -g0 -O3
 CXX      = g++
 LDFLAGS  = $(DEBUG_FLAG)
 SOFLAGS  = -shared 
-CXXFLAGS = $(DEBUG_FLAG) -std=c++14 -Wall -Wextra -Wno-deprecated -pedantic -I./interface  -I./
+CXXFLAGS = $(DEBUG_FLAG) -std=c++17 -Wall -Wextra -Wno-deprecated -pedantic -I./interface  -I./
 LIBS = 
 
 # Add names of the header files which you do not want to create dictionary of

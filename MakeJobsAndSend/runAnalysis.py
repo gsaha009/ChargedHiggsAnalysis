@@ -39,6 +39,7 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
     if not isdata:
         jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
     jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
+    #jfile.write('fakehistFile '+histDir+'/'+str(key)+'_FakeExtrapolation.root'+'\n')
     #jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
     jfile.write('############ Cut lists ###############'+'\n')
     for item in cutLists:
@@ -75,7 +76,7 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
 def main():
     parser = argparse.ArgumentParser(description='Make Jobs and Send')
     
-    parser.add_argument('--configName', action='store', required=True, type=str, help='Name of the config')
+    parser.add_argument('--configname', action='store', required=True, type=str, help='Name of the config')
     parser.add_argument('--suffix', action='store', required=True, type=str, help='set jobdir name')
     parser.add_argument('--send', action='store_true', required=False, help='send jobs to HT-Condor')
     
@@ -85,7 +86,7 @@ def main():
     logging.info(' >>>--------------| JobCard Producer |-------------->')
     logging.info('present working dir : {}'.format(pwd))
     
-    with open(args.configName, 'r') as config:
+    with open(args.configname, 'r') as config:
         configDict = yaml.safe_load(config)
 
     keyList = [str(key) for key in configDict.keys()]
@@ -131,9 +132,9 @@ def main():
         os.mkdir(histDir)
         logging.info('{} : out directory created'.format(histDir))
 
-    if args.send :
-        logging.info('{} : list of JobIds'.format(os.path.join(histDir, 'JobIds.txt')))
-        JobIdList   = open(os.path.join(histDir, 'JobIds.txt'), 'w')
+    #if args.send :
+        #logging.info('{} : list of JobIds'.format(os.path.join(histDir, 'JobIds.txt')))
+        #JobIdList   = open(os.path.join(histDir, 'JobIds.txt'), 'w')
     
     logging.info('Start making job cards ............... ')
     for dataType, valDict in samplesDict.items():
@@ -232,14 +233,21 @@ def main():
                         condorJobCommandList = ['condor_submit',subkey]
                         st = os.stat(shkey)
                         os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                        process = Popen(condorJobCommandList, stdout=PIPE)
-                        report = process.communicate()[0]
-                        print report
-                        JobIdList.write(report.split('cluster ')[-1])
+                        proc = Popen(condorJobCommandList, stdout=PIPE)
+                        #report = process.communicate()[0]
+                        #print(report)
+                        #JobIdList.write(report.split('cluster ')[-1])
+                        while True:
+                            output = proc.stdout.readline()
+                            if proc.poll() is not None:
+                                break
+                            if output:
+                                print(output.strip().decode("utf-8"))
+                        rc = proc.poll()
 
 
-    if args.send:
-        JobIdList.close()
+    #if args.send:
+    #    JobIdList.close()
 
 
 if __name__ == "__main__":

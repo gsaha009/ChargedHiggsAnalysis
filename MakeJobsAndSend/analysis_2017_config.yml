@@ -1,9 +1,9 @@
 tree: Events
 era: 2017
-lumi: 41529.152 
+lumi: 41529.152
 appDir: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/CMSSW_11_1_8/src
 jobDir: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis
-exeToRun: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/multileptonFake
+exeToRun: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/multileptonMVA
 outDir: /eos/user/g/gsaha5/Exotic
 commonInfo:
   - readGenInfo 0
@@ -66,51 +66,80 @@ ScaleFactorsInfo:
 endInfo:
   - useEventList 1
   - eventId 1 895751 20
+legendPos:
+  legend:
+    position:
+    - 0.7
+    - 0.6
+    - 0.91
+    - 0.91
 samplesDict:
   MC:
     ### DY-Jets
-#    DYJetsToLL_M-50:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec: 6077.22 # pb
-#      filesPerJob: 2
-#      group: 'DY'
+    DYJetsToLL_M-50:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/']
+      genEvtWtSum: 'genEventSumw'
+      xsec: 6077.22 # pb
+      filesPerJob: 4
+      group: 'DY'
+      legend: 'DY+jets'
 
     ### ttbar
     TTToSemiLeptonic: 
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
       genEvtWtSum: 'genEventSumw'
       xsec: 365.52
-      filesPerJob: 2
+      filesPerJob: 3
       group: 'TT'
+      legend: 'tt+jets'
 
-#    TTTo2L2Nu:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec: 88.40
-#      filesPerJob: 2
-#      group: 'TT'
+    TTTo2L2Nu:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/']
+      genEvtWtSum: 'genEventSumw'
+      xsec: 88.40
+      filesPerJob: 3
+      group: 'TT'
+      legend: 'tt+jets'
 
-#    ST_s-channel_4f:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-mcatnlo-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 3.364
-#      filesPerJob: 2
-#      group: 'ST'
+    ST_s-channel_4f:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-mcatnlo-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 3.364
+      filesPerJob: 2
+      group: 'ST'
+      legend: 'Single top'
 
-#    ST_tW_top_5f:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 35.85
-#      filesPerJob: 2
-#      group: 'ST'
+    ST_tW_top_5f:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 35.85
+      filesPerJob: 2
+      group: 'ST'
+      legend: 'Single top'
 
-#    ST_tW_antitop_5f:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 35.85
-#      filesPerJob: 2
-#      group: 'ST'
+    ST_tW_antitop_5f:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 35.85
+      filesPerJob: 2
+      group: 'ST'
+      legend: 'Single top'
+
+    ST_t-channel_top_5f:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_top_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 136.02
+      filesPerJob: 2
+      group: 'ST'
+      legend: 'Single top'
+
+    ST_t-channel_antitop_5f:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_antitop_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 80.95
+      filesPerJob: 2
+      group: 'ST'
+      legend: 'Single top'
 
     TTWJetsToLNu:
       filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
@@ -118,69 +147,57 @@ samplesDict:
       xsec : 0.1960
       filesPerJob: 3
       group: 'TTV'
+      legend: 'ttV'
 
-#    TTGJets:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 4.215
-#      filesPerJob: 2
-#      group: 'TTV'
-
-#    ST_t-channel_top_5f:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_top_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 136.02
-#      filesPerJob: 2
-#      group: 'ST'
-
-#    ST_t-channel_antitop_5f:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/ST_t-channel_antitop_5f_InclusiveDecays_TuneCP5_13TeV-powheg-pythia8']
-#      genEvtWtSum: 'genEventSumw'
-#      xsec : 80.95
-#      filesPerJob: 2
-#      group: 'ST'
+    TTGJets:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8']
+      genEvtWtSum: 'genEventSumw'
+      xsec : 4.215
+      filesPerJob: 2
+      group: 'TTV'
+      legend: 'ttV'
 
   DATA:  
     ### era B
-#    SingleMuon_2017B:
-#      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
-#      filesPerJob: 2
-#      group: 'Data'
+#   SingleMuon_2017B:
+#     filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleMuon2016/EraB/']
+#     filesPerJob: 2
+#     group: 'data'
 
-#    DoubleMuon_2017B:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017B-UL2017_MiniAODv1_NanoAODv2-v1/']
-#      filesPerJob: 2
-#      group: 'Data'
+    DoubleMuon_2017B:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017B-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 20
+      group: 'data'
 
-#    DoubleMuon_2017C:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017C-UL2017_MiniAODv1_NanoAODv2-v1/']
-#      filesPerJob: 2
-#      group: 'Data'
+    DoubleMuon_2017C:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017C-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 20
+      group: 'data'
 
-#    DoubleMuon_2017D:
-#      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017D-UL2017_MiniAODv1_NanoAODv2-v1/']
-#      filesPerJob: 2
-#      group: 'Data'
+    DoubleMuon_2017D:
+      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017D-UL2017_MiniAODv1_NanoAODv2-v1/']
+      filesPerJob: 20
+      group: 'data'
 
 #    DoubleMuon_2017E:
 #      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017E-UL2017_MiniAODv1_NanoAODv2-v1/']
-#      filesPerJob: 2
-#      group: 'Data'
+#      filesPerJob: 20
+#      group: 'data'
 
 #    DoubleMuon_2017F:
 #      filedirs: ['/eos/user/g/gsaha3/Exotic/DATA_UL2017/DoubleMuon/Run2017F-UL2017_MiniAODv1_NanoAODv2-v1/']
-#      filesPerJob: 2
-#      group: 'Data'
+#      filesPerJob: 20
+#      group: 'data'
 
-#    MuonEG_2017B:
-#      filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleEG2016/EraB/']
-#      filesPerJob: 2
-#      group: 'Data'
+#   MuonEG_2017B:
+#     filedirs: ['/eos/user/p/ppalit3/Exotic/DATA/DoubleEG2016/EraB/']
+#     filesPerJob: 2
+#     group: 'data'
 
   SIGNAL:
-#    Signal_PPAP_v1:
-#      filedirs: ['/eos/user/p/ppalit3/Exotic/Signal_PPAP_BP1/']
-#      xsec: 0.001929282841388
-#      genEvtWtSum: 'genEventSumw'
-#      filesPerJob: 100
-#      group: 'Signal_v1'
+    Signal_PPAP_v1:
+      filedirs: ['/eos/user/p/ppalit3/Exotic/Signal_PPAP_BP1/']
+      xsec: 0.001929282841388
+      genEvtWtSum: 'genEventSumw'
+      filesPerJob: 100
+      group: 'Signal_v1'
