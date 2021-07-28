@@ -53,15 +53,18 @@ The `yml` file is used by [plotIt](http://cp3-llbb.github.io/plotit/). So the en
 
 ## PlotIt Installation
 There might be many ways to install it in lxplus, but the way I followed is: 
+```
   - source /cvmfs/sft.cern.ch/lcg/views/LCG_98python3/x86_64-centos7-gcc9-opt/setup.sh
   - python -m venv plotvenv
   - source plotvenv/bin/activate
+```
 One can keep these three lines in a sh script and source it everytime while using postprocess
+```
   - git clone -o upstream https://github.com/cp3-llbb/plotIt.git /path/to/your/plotitclone
   - mkdir build-plotit
   - cd build-plotit
   - cmake -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV /path/to/your/plotitclone
   - make -j2 install
   - cd -
-
-This installation technique is taken from [here](https://bamboo-hep.readthedocs.io/en/latest/install.html#installation)
+```
+These instructions are taken from [here](https://bamboo-hep.readthedocs.io/en/latest/install.html#installation)

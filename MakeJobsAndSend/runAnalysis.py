@@ -10,6 +10,8 @@ import fileinput
 import sys
 import stat
 from subprocess import Popen, PIPE
+from alive_progress import alive_bar
+from time import sleep
 import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
 
@@ -111,7 +113,8 @@ def main():
     logging.info('lumi : {} pb-1'.format(lumi))
     logging.info('tree : {}'.format(tree))
     
-    appdir            = configDict.get('appDir')
+    #appdir            = configDict.get('appDir')
+    envpath           = configDict.get('envPath')
     jobdir            = configDict.get('jobDir')
     exeToRun          = configDict.get('exeToRun')
     outdir            = configDict.get('outDir')
@@ -197,6 +200,7 @@ def main():
                     os.mkdir(os.path.join(conDir,'runlogs'))
                 infileListPerJob = [files[i:i+filesPerJob] for i in range(0, len(files), filesPerJob)]
                 logging.info('\t nFiles : {} || nJobs : {}'.format(len(files),len(infileListPerJob)))
+
                 for i, filesList in enumerate(infileListPerJob):
                     jobkey = os.path.join(conDir,str(key)+'_'+str(i)+'.job')
                     subkey = os.path.join(conDir,str(key)+'_'+str(i)+'.sub')
@@ -221,7 +225,8 @@ def main():
                                'log    = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
                     # edit the sh.tmpl file
                     replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
-                    replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
+                    #replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
+                    replaceAll(shkey, 'ENVPATH=NameOfPathEnvironment', 'ENVPATH='+envpath)
                     replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
                     replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
                     replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', 

@@ -158,7 +158,7 @@ def main():
                 if os.path.exists(posthaddfile):
                     logger.info('hadded file ---> {} : already exists!'.format(posthaddfile))
                 else:
-                    with alive_bar() as bar:
+                    with alive_bar(title='adding files', length=60, enrich_print=True) as bar:
                         for i in range(nJobs) :
                             rootfile  = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
                             tfile    = ROOT.TFile(rootfile,"READ")
