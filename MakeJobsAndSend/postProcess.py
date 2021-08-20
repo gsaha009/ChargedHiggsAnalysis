@@ -16,7 +16,7 @@ from collections import defaultdict
 from alive_progress import alive_bar
 from time import sleep
 import logging
-from plotter import plotter
+from yamlMaker import yamlMaker
 import makeFakeFileSeparate
 
 def realTimeLogging(proc):
@@ -207,28 +207,28 @@ def main():
                     legendDict['Fake'] = 'Fake'
                     
     logger.debug(resultDict)
-    plotterObj = plotter(era,lumi,resultDict,xsecDict,legendDict,os.path.join(histDir,'plots.yml'),histDir,args.norm)
-    histograms, histTitles = plotterObj.getListOfHistograms()
+    yamlObj = yamlMaker(era,lumi,resultDict,xsecDict,legendDict,os.path.join(histDir,'plots.yml'),histDir,args.norm)
+    histograms, histTitles = yamlObj.getListOfHistograms()
     logger.info(f'List of histograms : \n {histograms} \n')
-    commonInfoDict = plotterObj.getCommonInfoDict()
+    commonInfoDict = yamlObj.getCommonInfoDict()
     logger.info('commonInfo >>----> plots.yml')
     #print(yaml.dump(commonInfoDict,default_flow_style=False))
     combinedDictForYaml.update(commonInfoDict)
 
-    fileInfoDict = plotterObj.getFileInfoDict()
+    fileInfoDict = yamlObj.getFileInfoDict()
     logger.info('fileInfo >>----> plots.yml')
     combinedDictForYaml.update(fileInfoDict)
 
     logger.info('legendInfo >>----> plots.yml')
     #logging.info(yaml.dump(groupLegendDict,default_flow_style=False))
-    groupLegendDict = plotterObj.getLegendInfoDict()
+    groupLegendDict = yamlObj.getLegendInfoDict()
     combinedDictForYaml.update(groupLegendDict)
 
     logger.info('legendPosInfo >>----> plots.yml')
     #logging.info(yaml.dump(legendPosDict,default_flow_style=False))
     combinedDictForYaml.update(legendPosDict)
 
-    plotInfoDict = plotterObj.getHistogramDict(histograms, histTitles)
+    plotInfoDict = yamlObj.getHistogramDict(histograms, histTitles)
     logger.info('plotsInfo >>----> plots.yml')
     combinedDictForYaml.update(plotInfoDict)
 

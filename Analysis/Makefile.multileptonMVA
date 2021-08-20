@@ -13,10 +13,11 @@ SRCS   = src/PhysicsObjects.cc \
 	 src/AnaUtil.cc \
        	 src/AnaBase.cc \
 	 src/PhysicsObjSelector.cc \
-	 src/multileptonMVAna.cc \
+	 src/ScaleFactorHandler.cc \
 	 src/MultiLeptonMVAna.cc \
 	 src/MVASkim.cc \
-	 src/MVAnalysis.cc
+	 src/MVAnalysis.cc \
+	 src/multileptonMVAna.cc
  
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 

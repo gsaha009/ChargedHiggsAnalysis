@@ -2,60 +2,50 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <iterator>
-#include <functional>
-#include <numeric>
-#include <string>
-#include <climits>
-#include <cassert>
-#include <cstdlib>
 #include <sstream>
-#include <utility> 
-#include <typeinfo>
+#include <fstream>
+
+#include "PhysicsObjSelector.h"
+#include "AnaUtil.h"
 
 #include "TFile.h"
-#include "TH1K.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TH3.h"
-#include "TProfile.h"
-#include "TVector2.h"
-#include <TTreeReader.h>
-#include <TTreeReaderValue.h>
-#include <TTreeReaderArray.h>
-
-#include "AnaUtil.h"
-#include "PhysicsObjSelector.h"
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::ostream;
 using std::ostringstream;
 using std::vector;
 using std::map;
 using std::pair;
 using std::setprecision;
 using std::setw;
+using std::fabs;
 
 PhysicsObjSelector::PhysicsObjSelector()
   : AnaBase()
 {}
-
 bool PhysicsObjSelector::beginJob() {
   if (!AnaBase::beginJob()) return false;
-
-  // Set Branch Addresses :: VERY VERY IMPORTANT
-  if (!AnaBase::init()) {
-    std::cout<<"ERROR: Branches not Found!!!"<<std::endl;
-  }
 
   histf()->cd();
   histf()->mkdir("ObjectSelection");
     
   return true;
 }
+void PhysicsObjSelector::bookHistograms() {
+  histf()->cd();
+  histf()->cd("ObjectSelection");
 
+  new TH1D("muCutFlow", "Muon CutFlow", 10, -0.5, 9.5);
+  new TH1D("eleCutFlow", "Electron CutFlow", 11, -0.5, 10.5);
+  new TH1D("jetCutFlow", "Jet CutFlow", 6, -0.5, 5.5);
+  new TH1D("tauCutFlow", "Tau CutFlow", 9, -0.5, 8.5);
+  new TH1D("fatJetCutFlow", "FatJet CutFlow", 9, -0.5, 8.5);
+}
 void PhysicsObjSelector::endJob() {
   objectEfficiency();
   AnaBase::endJob();
@@ -70,119 +60,205 @@ void PhysicsObjSelector::objectEfficiency() {
   histf()->cd();
   histf()->cd("ObjectSelection");
 
-  // $  : objects are saved at these levels
-  // -- : to show the cutflow
+  // show object selection cutflow
   // Muon
-  vector<string> muLabels {
-    "nRawMuons",
-    "preSel cuts",
-    "pT>10",
-    "pass MediumId",
-    "pfRelIso <= 0.15"
-  };
-  AnaUtil::showEfficiency("muCutFlow", muLabels, "Muon Selection", "Muons");  
+  {
+    ostringstream ptCutTag;
+    ptCutTag << "pT >= " << AnaUtil::cutValue(muonCutMap(), "pt") << " GeV";
 
+    ostringstream etaCutTag;
+    etaCutTag << "|eta| < " << AnaUtil::cutValue(muonCutMap(), "eta");
+
+    ostringstream dxyCutTag;
+    dxyCutTag << "|dxy| < " << AnaUtil::cutValue(muonCutMap(), "dxy") << " cm";
+
+    ostringstream dzCutTag;
+    dzCutTag << "|dz| < " << AnaUtil::cutValue(muonCutMap(), "dz") << " cm";
+
+    ostringstream sipCutTag;
+    sipCutTag << "|sip3d| <= " << AnaUtil::cutValue(muonCutMap(), "SIP3D");
+
+    ostringstream ptFakeCutTag;
+    ptFakeCutTag << "pTFake >= " << AnaUtil::cutValue(muonCutMap(), "ptFake") << " GeV";
+
+    ostringstream isoCutTag;
+    isoCutTag << "pfRelIso <  " << AnaUtil::cutValue(muonCutMap(), "reliso");
+
+    vector<string> muLabels {
+      "nMuonCand",
+      ptCutTag.str(),
+      etaCutTag.str(),
+      dxyCutTag.str(),
+      dzCutTag.str(),
+      sipCutTag.str(),
+      "LooseId",
+      ptFakeCutTag.str(),
+      isoCutTag.str(),
+      "MediumId"
+    };
+    AnaUtil::showEfficiency("muCutFlow", muLabels, "Muon Selection", "Muons");  
+  }
   // Electron
-  vector<string> eleLabels {
-    "nRawElectrons",
-    "preSel cuts",
-    "cleaning against tight muons",
-    "pT>10,ConvVeto,NoLostHits",
-    "pass mvaFall17V2Iso_WP90"
-  };
-  AnaUtil::showEfficiency("eleCutFlow", eleLabels, "Electron Selection", "Electrons");  
+  {
+    ostringstream ptCutTag;
+    ptCutTag << "pT >= " << AnaUtil::cutValue(electronCutMap(), "pt") << " GeV";
+    ostringstream etaCutTag;
+    etaCutTag << "|eta| < " << AnaUtil::cutValue(electronCutMap(), "eta");
 
+    ostringstream dxyCutTag;
+    dxyCutTag << "|dxy| < " << AnaUtil::cutValue(electronCutMap(), "dxy") << " cm";
+
+    ostringstream dzCutTag;
+    dzCutTag << "|dz| < " << AnaUtil::cutValue(electronCutMap(), "dz") << " cm";
+
+    ostringstream sipCutTag;
+    sipCutTag << "|sip3d| <= " << AnaUtil::cutValue(electronCutMap(), "SIP3D");
+
+    ostringstream ptFakeCutTag;
+    ptFakeCutTag << "pTFake >= " << AnaUtil::cutValue(electronCutMap(), "ptFake") << " GeV";
+
+    vector<string> eleLabels {
+      "nElectronCand",
+      ptCutTag.str(),
+      etaCutTag.str(),
+      dxyCutTag.str(),
+      dzCutTag.str(),
+      sipCutTag.str(),
+      "cleaned against tight muons",
+      ptFakeCutTag.str(),
+      "ConvVeto",
+      "no LostHits",
+      "mvaFall17V2Iso_WP90"
+    };
+    AnaUtil::showEfficiency("eleCutFlow", eleLabels, "Electron Selection", "Electrons");  
+  }
   // Jet
-  vector<string> jetLabels {
-    "nRawJets",
-    "tight JetId",
-    "jet_pt > 25 & eta < 2.5",
-    "puId cut",
-    "lepton cleaning",
-    "is bTagged"
-  };
-  AnaUtil::showEfficiency("jetCutFlow", jetLabels, "Jet Selection", "Jets");  
+  {
+    ostringstream ptCutTag;
+    ptCutTag << "pT >= " << AnaUtil::cutValue(jetCutMap(), "pt") << " GeV";
 
+    ostringstream etaCutTag;
+    etaCutTag << "|eta| < " << AnaUtil::cutValue(jetCutMap(), "eta");
+
+    vector<string> jetLabels {
+      "nJetCand",
+      ptCutTag.str(),
+      etaCutTag.str(),
+      "puId cut",
+      "lepton cleaned",
+      "b-Tagged"
+    };
+    AnaUtil::showEfficiency("jetCutFlow", jetLabels, "Jet Selection", "Jets");  
+  }
   // Tau
-  vector<string> tauLabels {
-    "nRawTaus",
-    "tauSelCuts",
-    "lepClean"
-  };
-  AnaUtil::showEfficiency("tauCutFlow", tauLabels, "Tau Selection", "Taus");  
+  {
+    ostringstream ptCutTag;
+    ptCutTag << "pT >= " << AnaUtil::cutValue(tauCutMap(), "pt") << " GeV";
 
+    ostringstream etaCutTag;
+    etaCutTag << "|eta| < " << AnaUtil::cutValue(tauCutMap(), "eta");
+
+    ostringstream dxyCutTag;
+    dxyCutTag << "|dxy| < " << AnaUtil::cutValue(tauCutMap(), "dxy") << " cm";
+
+    ostringstream dzCutTag;
+    dzCutTag << "|dz| < " << AnaUtil::cutValue(tauCutMap(), "dz") << " cm";
+
+    vector<string> tauLabels {
+      "nTauCand",
+      ptCutTag.str(),
+      etaCutTag.str(),
+      dxyCutTag.str(),
+      dzCutTag.str(),
+      "Hadronic Tau decay mode",
+      "Allowed decay modes",
+      "lepton and jet veto",
+      "lepCleaned"
+    };
+    AnaUtil::showEfficiency("tauCutFlow", tauLabels, "Tau Selection", "Taus");  
+  }
   // FatJet
-  vector<string> fatJetLabels {
-    "nRawFatJets",
-    "after jetId, pT & eta cuts",
-    "hasValidSubJets",
-    "30 < mSoftDrop < 210",
-    "tau21 < 0.75",
-    "leptonCleaning",
-    "isBTagged"  
-  };
-  AnaUtil::showEfficiency("fatJetCutFlow", fatJetLabels, "FatJet Selection", "FatJets");  
+  {
+    ostringstream ptCutTag;
+    ptCutTag << "pT >= " << AnaUtil::cutValue(fatJetCutMap(), "pt") << " GeV";
 
+    ostringstream etaCutTag;
+    etaCutTag << "|eta| < " << AnaUtil::cutValue(fatJetCutMap(), "eta");
 
+    ostringstream msdCutTag;
+    msdCutTag << AnaUtil::cutValue(fatJetCutMap(), "msoftdropMin") << " <= msoftdtop <= " 
+              << AnaUtil::cutValue(fatJetCutMap(), "msoftdropMax") << " GeV";
+
+    ostringstream trCutTag;
+    trCutTag << " fjetTauRatio <= " << AnaUtil::cutValue(fatJetCutMap(), "fjetRatio");
+
+    vector<string> fatJetLabels {
+      "nFatJetCand",
+      "jetId",
+      ptCutTag.str(),
+      etaCutTag.str(),
+      "hasValidSubJets",
+      msdCutTag.str(),
+      trCutTag.str(),
+      "leptonCleaning",
+      "b-Tagged"  
+    };
+    AnaUtil::showEfficiency("fatJetCutFlow", fatJetLabels, "FatJet Selection", "FatJets");  
+  }
 }
-void PhysicsObjSelector::bookHistograms() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-
-  new TH1D("muCutFlow", "Muon CutFlow", 5, -0.5, 4.5);
-  new TH1D("eleCutFlow", "Electron CutFlow", 5, -0.5, 4.5);
-  new TH1D("jetCutFlow", "Jet CutFlow", 6, -0.5, 5.5);
-  new TH1D("tauCutFlow", "Tau CutFlow", 3, -0.5, 2.5);
-  new TH1D("fatJetCutFlow", "FatJet CutFlow", 7, -0.5, 6.5);
-}
-
 // clear lists
 void PhysicsObjSelector::clear() {
   eventList_.clear();
   metList_.clear();
 
+  // Muons
   preSelMuList_.clear();
   fakeableMuList_.clear();
   tightMuList_.clear();
 
+  // Electrons
   preSelEleList_.clear();
   fakeableEleList_.clear();
   tightEleList_.clear();
 
+  // Jets
   preSelJetList_.clear();
   leptonCleanJetList_.clear();
   leptonCleanJetListOutsideAk8_.clear();
   looseBJetList_.clear();
   bJetList_.clear();
 
+  // Taus
   tauList_.clear();
   leptonCleanTauList_.clear();
 
+  // fat Jets
   fatJetList_.clear();
   cleanFatJetList_.clear();
   bTaggedFatJetList_.clear();
 
+  // subject
   subJetList_.clear();
 
+  // Truth
   genParticleList_.clear();
   lheParticleList_.clear();
 
+  // other flags
   searchedMu_  = false; 
   searchedEle_ = false; 
   searchedJet_ = false;
   searchedFatJet_ = false;
 }
-
-double PhysicsObjSelector::getGenSumW(){
-  return *genEventSumw_ -> Get();
+double PhysicsObjSelector::getGenSumW() {
+  return *genEventSumw_->Get();
 }
-
 bool PhysicsObjSelector::findEventInfo() {
   vhtm::Event ev;
   ev.run    = *run_->Get();
   ev.event  = *event_->Get();
   ev.lumis  = *lumis_->Get();
-  if (isMC()){
+  if (isMC()) {
     ev.genEvWt = *genEvWt->Get();
     ev.PUWeight = *PU_Weight->Get();
     if (readGenInfo()) {
@@ -205,611 +281,633 @@ bool PhysicsObjSelector::findEventInfo() {
 
   return true;
 }
-
-std::vector < bool > PhysicsObjSelector::getDoubleMuonHLTscores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getDoubleMuonHLTptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getSingleMuonHLTscores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleMuonHLTptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getDoubleEgHLTscores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getDoubleEgHLTptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getSingleElectronHLTscores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleElectronHLTptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getMuonEgHLTscores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getMuonEgHLTptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getSingleMuonHLTForFakescores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleMuonHLTForFakeptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-std::vector < bool > PhysicsObjSelector::getSingleElectronHLTForFakescores() {
-  std::vector < TTreeReaderValue<bool>* > ptrs   = AnaBase::getSingleElectronHLTForFakeptrs();
-  std::vector < bool > hltScores;
-  if (ptrs.size() > 0)
-    for (TTreeReaderValue<bool>* hlt : ptrs) {
-      hltScores.push_back(*hlt->Get());
-    }
-  return hltScores;
-}
-
 bool PhysicsObjSelector::findGenPartInfo() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-
-  if (isMC() && readGenInfo()) {
-    for (size_t j = 0; j < (*nGenPart->Get()); ++j){      
-      vhtm::GenParticle gp;
-      
-      gp.index = j;
-      gp.pt   = GenPart_pt->At(j);
-      gp.eta  = GenPart_eta->At(j);
-      gp.phi  = GenPart_phi->At(j);
-      gp.mass = GenPart_mass->At(j);
-      gp.pdgId= GenPart_pdgId->At(j);
-      gp.motherIdx = GenPart_motherIdx->At(j);
-      gp.status = GenPart_status->At(j);
-      gp.statusFlags = GenPart_statusFlags->At(j);
+  for (size_t j = 0; j < *nGenPart->Get(); ++j) {      
+    vhtm::GenParticle gp;
     
-      genParticleList_.push_back(gp);
-    }
+    gp.index = j;
+    gp.pt   = GenPart_pt->At(j);
+    gp.eta  = GenPart_eta->At(j);
+    gp.phi  = GenPart_phi->At(j);
+    gp.mass = GenPart_mass->At(j);
+    gp.pdgId       = GenPart_pdgId->At(j);
+    gp.motherIdx   = GenPart_motherIdx->At(j);
+    gp.status      = GenPart_status->At(j);
+    gp.statusFlags = GenPart_statusFlags->At(j);
+    
+    genParticleList_.push_back(gp);
   }
   return true;
 }
-
 bool PhysicsObjSelector::findLHEPartInfo() {
+  for (size_t j = 0; j < *nLHEPart->Get(); ++j) {
+    vhtm::LHEParticle gp;
+      
+    gp.index = j;
+    gp.pt    = LHEPart_pt->At(j);
+    gp.eta   = LHEPart_eta->At(j);
+    gp.phi   = LHEPart_phi->At(j);
+    gp.mass  = LHEPart_mass->At(j);
+    gp.pdgId = LHEPart_pdgId->At(j);
+    
+    lheParticleList_.push_back(gp);
+  }
+  return true;
+}
+void PhysicsObjSelector::findObjects() {
   histf()->cd();
   histf()->cd("ObjectSelection");
 
-  if (isMC() && readGenInfo()){
-    for (size_t j = 0; j < (*nLHEPart->Get()); ++j){
-      vhtm::LHEParticle gp;
-      
-      gp.index = j;
-      gp.pt   = LHEPart_pt->At(j);
-      gp.eta  = LHEPart_eta->At(j);
-      gp.phi  = LHEPart_phi->At(j);
-      gp.mass = LHEPart_mass->At(j);
-      gp.pdgId= LHEPart_pdgId->At(j);
-      
-      lheParticleList_.push_back(gp);
-    }
-  }
-  return true;
-}
-
-
-void PhysicsObjSelector::findObjects() {
-  muonSelector();  
+  // the order is usually important
+  muonSelector();
   electronSelector();
-  fatJetSelector();
+  fatJetSelector(); // order important
   jetSelector();
   subJetSelector();
   metSelector();
   tauSelector();
 }
-
-// Muon selection
+// Muon selection (already sorted in pT)
 void PhysicsObjSelector::muonSelector() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-  for (size_t i = 0; i < (*nMuon->Get()); ++i){
-    AnaUtil::fillHist1D ("muCutFlow", 0, 1.0);
-    // Loose muon selection
-    if (Muon_corrpt->At(i) < 5.0) continue;
-    if (std::fabs(Muon_eta->At(i)) > 2.4) continue;
-    if (std::fabs(Muon_dxy->At(i)) > 0.2) continue;
-    if (std::fabs(Muon_dz->At(i))  > 0.5) continue;
-    //if (Muon_miniPFRelIso_all->At(i) > 0.4) continue;
-    if (std::fabs(Muon_sip3d->At(i)) > 8) continue;
-    if (!Muon_LooseId->At(i)) continue;
+  static double ptMin     = AnaUtil::cutValue(muonCutMap(), "pt"),
+                etaMax    = AnaUtil::cutValue(muonCutMap(), "eta"),
+                dxyMax    = AnaUtil::cutValue(muonCutMap(), "dxy"),
+                dzMax     = AnaUtil::cutValue(muonCutMap(), "dz"),
+                sip3dMax  = AnaUtil::cutValue(muonCutMap(), "SIP3D"),
+                ptFakeMin = AnaUtil::cutValue(muonCutMap(), "ptFake"),
+                relisoMax = AnaUtil::cutValue(muonCutMap(), "reliso");
 
-    AnaUtil::fillHist1D ("muCutFlow", 1, 1.0);
+  for (size_t j = 0; j < *nMuon->Get(); ++j) {
+    AnaUtil::fillHist1D("muCutFlow", 0);
+  
+    if (Muon_corrpt->At(j) <= ptMin) continue;
+    AnaUtil::fillHist1D("muCutFlow", 1);
+
+    if (fabs(Muon_eta->At(j)) >= etaMax) continue;
+    AnaUtil::fillHist1D("muCutFlow", 2);
+
+    if (fabs(Muon_dxy->At(j)) >= dxyMax) continue;
+    AnaUtil::fillHist1D("muCutFlow", 3);
+
+    if (fabs(Muon_dz->At(j)) >= dzMax) continue;
+    AnaUtil::fillHist1D("muCutFlow", 4);
+
+    if (fabs(Muon_sip3d->At(j)) > sip3dMax) continue;
+    AnaUtil::fillHist1D("muCutFlow", 5);
+
+    if (!Muon_LooseId->At(j)) continue;
+    AnaUtil::fillHist1D("muCutFlow", 6);
 
     vhtm::Muon mu;
-    mu.index   = i;
-    mu.pt      = Muon_corrpt->At(i);
-    mu.eta     = Muon_eta->At(i);
-    mu.phi     = Muon_phi->At(i);
-    mu.mass    = Muon_mass->At(i);
-    mu.charge  = Muon_charge->At(i);
-    mu.jetIdx  = Muon_jetIdx->At(i);
-    if (isMC()){
-      mu.genIdx = Muon_genPartIdx->At(i);
-      mu.genFlv = Muon_genPartFlv->At(i); // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
+    mu.index   = j;
+    mu.pt      = Muon_corrpt->At(j);
+    mu.eta     = Muon_eta->At(j);
+    mu.phi     = Muon_phi->At(j);
+    mu.mass    = Muon_mass->At(j);
+    mu.charge  = Muon_charge->At(j);
+    mu.jetIdx  = Muon_jetIdx->At(j);
+    if (isMC() && readGenInfo()) {
+      mu.genIdx = Muon_genPartIdx->At(j);
+      mu.genFlv = Muon_genPartFlv->At(j); // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
     }
-    mu.mediumId  = Muon_MediumId->At(i);
-    mu.tightId   = Muon_TightId->At(i);
-    mu.highPtId  = Muon_highPtId->At(i);
-    mu.pfRelIso03_all = Muon_pfRelIso03_all->At(i);
-    mu.pfRelIso04_all = Muon_pfRelIso04_all->At(i);
+    mu.mediumId  = Muon_MediumId->At(j);
+    mu.tightId   = Muon_TightId->At(j);
+    mu.highPtId  = Muon_highPtId->At(j);
+    mu.pfRelIso03_all = Muon_pfRelIso03_all->At(j);
+    mu.pfRelIso04_all = Muon_pfRelIso04_all->At(j);
 
     preSelMuList_.push_back(mu);
 
     // Fakeable Muon Selection
-    if (Muon_corrpt->At(i) < 10.0) continue;
-    //if (Muon_jetIdx->At(i) != -1) continue; // cleaning against jets
-    AnaUtil::fillHist1D ("muCutFlow", 2, 1.0);
+    if (Muon_corrpt->At(j) < ptFakeMin) continue;
+    //if (Muon_jetIdx->At(j) != -1) continue; // cleaning against jets
+    AnaUtil::fillHist1D("muCutFlow", 7);
+
     // PF Isolation
-    if (Muon_pfRelIso04_all->At(i) > 0.15) continue;
-    AnaUtil::fillHist1D ("muCutFlow", 3, 1.0);
+    if (Muon_pfRelIso04_all->At(j) > relisoMax) continue;
+    AnaUtil::fillHist1D("muCutFlow", 8);
     fakeableMuList_.push_back(mu);
 
     // Tight Muon selection
-    //if (!Muon_TightId->At(i)) continue;
-    if (!Muon_MediumId->At(i)) continue;
-    AnaUtil::fillHist1D ("muCutFlow", 4, 1.0);
+    //if (!Muon_TightId->At(j)) continue;
+    if (!Muon_MediumId->At(j)) continue;
+    AnaUtil::fillHist1D("muCutFlow", 9);
 
     tightMuList_.push_back(mu);
   }
   searchedMu_ = true;
 }
-
-
-// Electron selecton
+// Electron selecton (already sorted in pT)
 void PhysicsObjSelector::electronSelector() {
-  if (!searchedMu_) std::cout<<">>>Muons are not selected yet!!!\n";
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-  for (size_t i = 0; i < (*nElectron->Get()); ++i){
-    AnaUtil::fillHist1D ("eleCutFlow", 0, 1.0);
+  if (!searchedMu_) {
+    cout << ">>> Muons are not selected yet!" << endl;
+    muonSelector();
+  }
+  static double ptMin     = AnaUtil::cutValue(electronCutMap(), "pt"),
+                etaMax    = AnaUtil::cutValue(electronCutMap(), "eta"),
+                dxyMax    = AnaUtil::cutValue(electronCutMap(), "dxy"),
+                dzMax     = AnaUtil::cutValue(electronCutMap(), "dz"),
+                sip3dMax  = AnaUtil::cutValue(electronCutMap(), "SIP3D"),
+                ptFakeMin = AnaUtil::cutValue(electronCutMap(), "ptFake");
 
-    if (Electron_pt->At(i) < 7) continue;
-    if (std::fabs(Electron_eta->At(i)) > 2.5) continue;
-    if (std::fabs(Electron_dxy->At(i)) > 0.05/*0.1*/) continue;
-    if (std::fabs(Electron_dz->At(i)) > 0.1/*0.2*/) continue;
-    if (Electron_sip3d->At(i) > 8) continue;
-    //if (!Electron_mvaFall17V2noIso_WPL->At(i)) continue;
-    //if (Electron_lostHits->At(i) > 1) continue;
+  for (size_t j = 0; j < *nElectron->Get(); ++j) {
+    AnaUtil::fillHist1D("eleCutFlow", 0);
 
-    AnaUtil::fillHist1D ("eleCutFlow", 1, 1.0);
+    if (Electron_pt->At(j) < ptMin) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 1);
+
+    if (fabs(Electron_eta->At(j)) > etaMax) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 2);
+
+    if (fabs(Electron_dxy->At(j)) > dxyMax) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 3);
+
+    if (fabs(Electron_dz->At(j)) > dzMax) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 4);
+
+    if (Electron_sip3d->At(j) > sip3dMax) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 5);
 
     vhtm::Electron el;
-    el.index   = i;
-    el.pt      = Electron_pt->At(i);
-    el.eta     = Electron_eta->At(i);
-    el.SCdEta  = Electron_deltaEtaSC->At(i);
-    el.SCeta   = Electron_eta->At(i)+Electron_deltaEtaSC->At(i);
-    el.phi     = Electron_phi->At(i);
-    el.mass    = Electron_mass->At(i);
-    el.charge  = Electron_charge->At(i);
-    el.jetIdx  = Electron_jetIdx->At(i);
-    el.phoIdx  = Electron_phoIdx->At(i);
-    if (isMC()){
-      el.genIdx = Electron_genPartIdx->At(i);
-      el.genFlv = Electron_genPartFlv->At(i);
+    el.index   = j;
+    el.pt      = Electron_pt->At(j);
+    el.eta     = Electron_eta->At(j);
+    el.SCdEta  = Electron_deltaEtaSC->At(j);
+    el.SCeta   = Electron_eta->At(j) + Electron_deltaEtaSC->At(j); /// ???
+    el.phi     = Electron_phi->At(j);
+    el.mass    = Electron_mass->At(j);
+    el.charge  = Electron_charge->At(j);
+    el.jetIdx  = Electron_jetIdx->At(j);
+    el.phoIdx  = Electron_phoIdx->At(j);
+    if (isMC() && readGenInfo()) {
+      el.genIdx = Electron_genPartIdx->At(j);
+      el.genFlv = Electron_genPartFlv->At(j);
     }
 
     if (thisElectronIsMuon(el, false, true)) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 6, 1.0); 
     preSelEleList_.push_back(el);
-    AnaUtil::fillHist1D ("eleCutFlow", 2, 1.0); 
 
-    if (Electron_pt->At(i) < 10) continue;
-    if (!Electron_convVeto->At(i)) continue;;
-    if (Electron_lostHits->At(i) != 0) continue;
-    AnaUtil::fillHist1D ("eleCutFlow", 3, 1.0); 
+    if (Electron_pt->At(j) < ptFakeMin) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 7); 
+
+    if (!Electron_convVeto->At(j)) continue;;
+    AnaUtil::fillHist1D("eleCutFlow", 8); 
+
+    if (Electron_lostHits->At(j) != 0) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 9); 
     fakeableEleList_.push_back(el);
-    if (!Electron_mvaFall17V2Iso_WP90->At(i)) continue;
-    AnaUtil::fillHist1D ("eleCutFlow", 4, 1.0);
+
+    if (!Electron_mvaFall17V2Iso_WP90->At(j)) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 10);
     tightEleList_.push_back(el);
   }
   searchedEle_ = true;
 }
-
 // Jet selection
 void PhysicsObjSelector::jetSelector() {
-  if (!(searchedMu_ && searchedEle_)) std::cout<<">>> Muon and Electron are not selected yet !!!\n";
-  if (!searchedFatJet_) std::cout<<">>> Ak4 Jets have not been selected yet !!!\n";
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-  for (size_t i = 0; i < (*nJet->Get()); ++i){
-    AnaUtil::fillHist1D ("jetCutFlow", 0, 1.0);
-    
-    if (!(Jet_jetId->At(i) & 2)) continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 1, 1.0);
-    if (!(Jet_nomPt->At(i) >= 25 && std::fabs(Jet_eta->At(i)) <= 2.5)) continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 2, 1.0);
+  if (!searchedMu_) {
+    cerr << ">>> Muons have not been selected yet!" << endl;
+    muonSelector();
+  }  
+  if (!searchedEle_) {
+    cerr << ">>> Electron have not been selected yet!" << endl;
+    electronSelector();
+  }
+  if (!searchedFatJet_) {
+    cerr << ">>> Ak4 Jets have not been selected yet!" << endl;
+    fatJetSelector();
+  }
+  static double ptMin      = AnaUtil::cutValue(jetCutMap(), "pt"),
+                etaMax     = AnaUtil::cutValue(jetCutMap(), "eta"),
+                lbjetScore = AnaUtil::cutValue(jetCutMap(), "lbjetScore"),
+                bjetScore  = AnaUtil::cutValue(jetCutMap(), "bjetScore"),
+                deltaRMax  = AnaUtil::cutValue(jetCutMap(), "deltaR");
 
-    //Apply PuID on Jets with pT < 50 GeV (Need to be discussed!!!)
-    if (Jet_nomPt->At(i) <= 50 && !((Jet_puId->At(i) >> 2) & 1))  continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 3, 1.0);
+  for (size_t j = 0; j < *nJet->Get(); ++j) {
+    AnaUtil::fillHist1D("jetCutFlow", 0);
+
+    if (!(Jet_jetId->At(j) & 0x2)) continue;
+    AnaUtil::fillHist1D("jetCutFlow", 1);
+
+    if (Jet_nomPt->At(j) < ptMin) continue;
+    AnaUtil::fillHist1D("jetCutFlow", 2);
+
+    if (fabs(Jet_eta->At(j)) > etaMax) continue;
+    AnaUtil::fillHist1D("jetCutFlow", 3);
+
+    // Apply PuID on Jets with pT < 50 GeV (Need to be discussed!!!)
+    if (Jet_nomPt->At(j) <= 50 && !(Jet_puId->At(j) >> 2 & 0x1))  continue;
+    AnaUtil::fillHist1D("jetCutFlow", 4);
 
     vhtm::Jet jet;
-    jet.index   = i;
-    jet.pt      = Jet_nomPt->At(i);
-    jet.eta     = Jet_eta->At(i);
-    jet.phi     = Jet_phi->At(i);
-    jet.mass    = Jet_mass->At(i);
-    jet.muIdx1  = Jet_muIdx1->At(i);
-    jet.muIdx2  = Jet_muIdx2->At(i);
-    jet.elIdx1  = Jet_elIdx1->At(i);
-    jet.elIdx2  = Jet_elIdx2->At(i);
-    jet.btagDeepFlavB   = Jet_btagDeepFlavB->At(i);
-    jet.btagCSVV2  = Jet_btagCSVV2->At(i);
+    jet.index   = j;
+    jet.pt      = Jet_nomPt->At(j);
+    jet.eta     = Jet_eta->At(j);
+    jet.phi     = Jet_phi->At(j);
+    jet.mass    = Jet_mass->At(j);
+    jet.muIdx1  = Jet_muIdx1->At(j);
+    jet.muIdx2  = Jet_muIdx2->At(j);
+    jet.elIdx1  = Jet_elIdx1->At(j);
+    jet.elIdx2  = Jet_elIdx2->At(j);
+    jet.btagDeepFlavB = Jet_btagDeepFlavB->At(j);
+    jet.btagCSVV2 = Jet_btagCSVV2->At(j);
 
     preSelJetList_.push_back(jet);
 
     if (!jetLeptonCleaning(jet)) continue;
-    AnaUtil::fillHist1D ("jetCutFlow", 4, 1.0);
+    AnaUtil::fillHist1D("jetCutFlow", 5);
     leptonCleanJetList_.push_back(jet);
 
-    //making b_jet collection
-    if (Jet_btagDeepFlavB->At(i) >= 0.0521) looseBJetList_.push_back(jet);
-    if (Jet_btagDeepFlavB->At(i) >= 0.3033) {
-      bJetList_.push_back(jet); 
-      AnaUtil::fillHist1D ("jetCutFlow", 5, 1.0);
+    // making b_jet collection
+    if (Jet_btagDeepFlavB->At(j) >= lbjetScore)
+      looseBJetList_.push_back(jet);
+
+    if (Jet_btagDeepFlavB->At(j) >= bjetScore) {
+      bJetList_.push_back(jet);
+      AnaUtil::fillHist1D("jetCutFlow", 6);
     }
     // ak8 cleaned jet list
     TLorentzVector jetp4 = AnaUtil::getP4(jet);
-    if (cleanFatJetList_.size() == 1) { 
-      if (jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[0])) > 0.8)   leptonCleanJetListOutsideAk8_.push_back(jet);
+    if (cleanFatJetList_.size() == 1) {
+      if (jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[0])) > deltaRMax)
+	leptonCleanJetListOutsideAk8_.push_back(jet);
     }
-    else if (cleanFatJetList_.size() >= 2) { 
-      if (jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[0])) > 0.8 && jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[1])) > 0.8) leptonCleanJetListOutsideAk8_.push_back(jet);
+    else if (cleanFatJetList_.size() >= 2) {
+      if (jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[0])) > deltaRMax &&
+	  jetp4.DeltaR(AnaUtil::getP4(cleanFatJetList_[1])) > deltaRMax)
+	leptonCleanJetListOutsideAk8_.push_back(jet);
     }
   }
   searchedJet_ = true;
 }
-
-
 // MET selection
 void PhysicsObjSelector::metSelector() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-
   vhtm::MET met;
-  met.pt    = (isSignal()) ? *Met_nomPt->Get() : *Met_pt->Get();
-  met.phi   = (isSignal()) ? *Met_nomPhi->Get() : *Met_phi->Get();
+  met.pt    = isSignal() ? *Met_nomPt->Get()  : *Met_pt->Get();
+  met.phi   = isSignal() ? *Met_nomPhi->Get() : *Met_phi->Get();
   met.signf = *Met_significance->Get();
   met.sumEt = *Met_sumEt->Get();
 
   metList_.push_back(met);
 }
-
 // Tau selection
 void PhysicsObjSelector::tauSelector() {
   if (!searchedJet_) jetSelector();
-  histf()->cd();
-  histf()->cd("ObjectSelection");
+  static double ptMin  = AnaUtil::cutValue(tauCutMap(), "pt"),
+                etaMax = AnaUtil::cutValue(tauCutMap(), "eta"),
+                dxyMax = AnaUtil::cutValue(tauCutMap(), "dxy"),
+                dzMax  = AnaUtil::cutValue(tauCutMap(), "dz");
 
-  for (size_t it = 0; it < (*nTau->Get()); ++it){
-    AnaUtil::fillHist1D ("tauCutFlow", 0, 1.0);
+  for (size_t j = 0; j < *nTau->Get(); ++j) {
+    AnaUtil::fillHist1D("tauCutFlow", 0);
 
-    if (Tau_pt->At(it) < 20) continue;
-    if (std::fabs(Tau_eta->At(it)) > 2.3) continue;
-    if (std::fabs(Tau_dxy->At(it)) > 0.1) continue;
-    if (std::fabs(Tau_dz->At(it)) > 0.2) continue;
-    if (!Tau_idDecayModeNewDMs->At(it)) continue;
-    if (!(Tau_decayMode->At(it) == 0 || Tau_decayMode->At(it) == 1 || Tau_decayMode->At(it) == 2 || Tau_decayMode->At(it) == 10 || Tau_decayMode->At(it) == 11)) continue;
+    if (Tau_pt->At(j) < ptMin) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 1);
+
+    if (fabs(Tau_eta->At(j)) > etaMax) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 2);
+
+    if (fabs(Tau_dxy->At(j)) > dxyMax) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 3);
+
+    if (fabs(Tau_dz->At(j)) > dzMax) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 4);
+
+    if (!Tau_idDecayModeNewDMs->At(j)) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 5);
+
+    vector<int> dmodes {0, 1, 2, 10, 11};
+    if (std::find(dmodes.begin(), dmodes.end(), Tau_decayMode->At(j)) == dmodes.end()) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 6);
+
     if (isSignal()) {
-      if (!(Tau_idDeepTau2017v2VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2VSmu->At(it) >> 0 & 0x1)) continue;
+      if (!(Tau_idDeepTau2017v2VSjet->At(j) >> 4 & 0x1 &&
+	    Tau_idDeepTau2017v2VSe->At(j)   & 0x1 &&
+	    Tau_idDeepTau2017v2VSmu->At(j)  & 0x1)) continue;
     }
     else {
-      if (!(Tau_idDeepTau2017v2p1VSjet->At(it) >> 4 & 0x1 && Tau_idDeepTau2017v2p1VSe->At(it) >> 0 & 0x1 && Tau_idDeepTau2017v2p1VSmu->At(it) >> 0 & 0x1)) continue;
+      if (!(Tau_idDeepTau2017v2p1VSjet->At(j) >> 4 & 0x1 &&
+	    Tau_idDeepTau2017v2p1VSe->At(j)   & 0x1 &&
+	    Tau_idDeepTau2017v2p1VSmu->At(j)  & 0x1)) continue;
     }
-    AnaUtil::fillHist1D ("tauCutFlow", 1, 1.0);
-    
-    vhtm::Tau ta;
-    ta.index   = it;
-    ta.pt      = Tau_pt->At(it);
-    ta.eta     = Tau_eta->At(it);
-    ta.phi     = Tau_phi->At(it);
-    ta.charge  = Tau_charge->At(it);
-    ta.mass    = Tau_mass->At(it);
-    ta.jetIdx  = Tau_jetIdx->At(it);
+    AnaUtil::fillHist1D("tauCutFlow", 7);
 
-    tauList_.push_back(ta);
+    vhtm::Tau obj;
+    obj.index   = j;
+    obj.pt      = Tau_pt->At(j);
+    obj.eta     = Tau_eta->At(j);
+    obj.phi     = Tau_phi->At(j);
+    obj.charge  = Tau_charge->At(j);
+    obj.mass    = Tau_mass->At(j);
+    obj.jetIdx  = Tau_jetIdx->At(j);
+
+    tauList_.push_back(obj);
     
-    if (!tauLeptonCleaning(ta)) continue;
-    AnaUtil::fillHist1D ("tauCutFlow", 2, 1.0);
-    leptonCleanTauList_.push_back(ta);
+    if (!tauLeptonCleaning(obj)) continue;
+    AnaUtil::fillHist1D("tauCutFlow", 8);
+    leptonCleanTauList_.push_back(obj);
   }
 }
-
-
 // FatJet selection
 void PhysicsObjSelector::fatJetSelector() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-  for (size_t i = 0; i < (*nFatJet->Get()); ++i){
-    bool hasValidSubJets {false};
-    AnaUtil::fillHist1D ("fatJetCutFlow", 0, 1.0);
-    // preSelection
-    if (!(FatJet_jetId->At(i) & 2)) continue;
-    if (FatJet_pt->At(i) < 200) continue;
-    if (std::fabs(FatJet_eta->At(i)) > 2.4) continue;
-    AnaUtil::fillHist1D ("fatJetCutFlow", 1, 1.0);
-    if ((FatJet_subJetIdx1->At(i) <= static_cast<int>(*nSubJet->Get()) && 
-	 (SubJet_pt->At(FatJet_subJetIdx1->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx1->At(i))) <= 2.4)	&& 
-	(FatJet_subJetIdx2->At(i) <= static_cast<int>(*nSubJet->Get()) && 
-	 (SubJet_pt->At(FatJet_subJetIdx2->At(i)) >= 20) && std::fabs(SubJet_eta->At(FatJet_subJetIdx2->At(i))) <= 2.4)) 
-      hasValidSubJets = true;
+  static double ptMin    = AnaUtil::cutValue(fatJetCutMap(), "pt"),
+         etaMax          = AnaUtil::cutValue(fatJetCutMap(), "eta"),
+         subJetPtMin     = AnaUtil::cutValue(fatJetCutMap(), "subJetPt"),
+         subJetEtaMax    = AnaUtil::cutValue(fatJetCutMap(), "subJetEta"),
+         msdMin          = AnaUtil::cutValue(fatJetCutMap(), "msoftdropMin"),
+         msdMax          = AnaUtil::cutValue(fatJetCutMap(), "msoftdropMax"),
+         fjetRatioMax    = AnaUtil::cutValue(fatJetCutMap(), "fjetRatio"),
+         bSubJetPtMin    = AnaUtil::cutValue(fatJetCutMap(), "bSubJetPt"),
+         bSubJetScoreMin = AnaUtil::cutValue(fatJetCutMap(), "bSubJetScore");
+
+  for (size_t j = 0; j < *nFatJet->Get(); ++j) {
+    AnaUtil::fillHist1D("fatJetCutFlow", 0);
+
+    if (!(FatJet_jetId->At(j) & 0x2)) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 1);
+
+    if (FatJet_pt->At(j) < ptMin) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 2);
+
+    if (fabs(FatJet_eta->At(j)) > etaMax) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 3);
+
+    int nsjet = static_cast<int>(*nSubJet->Get());
+    int idx1 = FatJet_subJetIdx1->At(j);
+    int idx2 = FatJet_subJetIdx2->At(j);
+    bool hasValidSubJets = (
+          (idx1 <= nsjet && SubJet_pt->At(idx1) >= subJetPtMin 
+	                 && fabs(SubJet_eta->At(idx1)) <= subJetEtaMax)
+       && (idx2 <= nsjet && SubJet_pt->At(idx2) >= subJetPtMin 
+	                 && fabs(SubJet_eta->At(idx2)) <= subJetEtaMax)
+    );
     if (!hasValidSubJets) continue;
-    AnaUtil::fillHist1D ("fatJetCutFlow", 2, 1.0);
-    if (FatJet_msoftdrop->At(i) < 30 || FatJet_msoftdrop->At(i) > 210) continue;
-    AnaUtil::fillHist1D ("fatJetCutFlow", 3, 1.0);
-    if (FatJet_tau2->At(i)/FatJet_tau1->At(i) > 0.75) continue;
-    AnaUtil::fillHist1D ("fatJetCutFlow", 4, 1.0);
+    AnaUtil::fillHist1D("fatJetCutFlow", 4);
 
-    vhtm::FatJet fj;
-    fj.index                       = i;
-    fj.pt                          = FatJet_pt->At(i);
-    fj.eta                         = FatJet_eta->At(i);
-    fj.phi                         = FatJet_phi->At(i);
-    fj.mass                        = FatJet_mass->At(i);
-    fj.softDropMass                = FatJet_msoftdrop->At(i);
-    fj.n2b1                        = FatJet_n2b1->At(i);
-    fj.n3b1                        = FatJet_n3b1->At(i);
-    //fj.hadronFlavour               = FatJet_hadronFlavour->At(i);
-    //fj.nBHadrons                   = FatJet_nBHadrons->At(i);
-    //fj.nCHadrons                   = FatJet_nCHadrons->At(i);
-    fj.rawFactor                   = FatJet_rawFactor->At(i);
-    fj.subJetIdx1                  = FatJet_subJetIdx1->At(i);
-    fj.subJetIdx2                  = FatJet_subJetIdx2->At(i);
-    fj.btagDeepB                   = FatJet_btagDeepB->At(i);    
-    fj.btagCSVV2                   = FatJet_btagCSVV2->At(i);
-    fj.tau1                        = FatJet_tau1->At(i);
-    fj.tau2                        = FatJet_tau2->At(i);
-    fj.tau3                        = FatJet_tau3->At(i);
-    fj.tau4                        = FatJet_tau4->At(i);
-    fj.deepTag_WvsQCD              = FatJet_deepTag_WvsQCD->At(i);
-    fj.deepTag_ZvsQCD              = FatJet_deepTag_ZvsQCD->At(i);
-    fj.deepTag_TvsQCD              = FatJet_deepTag_TvsQCD->At(i);
-    fj.deepTagMD_WvsQCD            = FatJet_deepTagMD_WvsQCD->At(i);
-    fj.deepTagMD_ZvsQCD            = FatJet_deepTagMD_ZvsQCD->At(i);
-    fj.deepTagMD_TvsQCD            = FatJet_deepTagMD_TvsQCD->At(i);
-    //fj.electronIdx3SJ              = FatJet_electronIdx3SJ->At(i);
-    //fj.muonIdx3SJ                  = FatJet_muonIdx3SJ->At(i);
+    float msd = FatJet_msoftdrop->At(j);
+    if (msd < msdMin || msd > msdMax) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 5);
+
+    // will the ratio be always valid?
+    if (FatJet_tau2->At(j)/FatJet_tau1->At(j) > fjetRatioMax) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 6);
+
+    vhtm::FatJet jet;
+    jet.index   = j;
+    jet.pt      = FatJet_pt->At(j);
+    jet.eta     = FatJet_eta->At(j);
+    jet.phi     = FatJet_phi->At(j);
+    jet.mass    = FatJet_mass->At(j);
+    jet.softDropMass  = msd;
+    jet.n2b1    = FatJet_n2b1->At(j);
+    jet.n3b1    = FatJet_n3b1->At(j);
+    // jet.hadronFlavour = FatJet_hadronFlavour->At(j);
+    // jet.nBHadrons = FatJet_nBHadrons->At(j);
+    // jet.nCHadrons = FatJet_nCHadrons->At(j);
+    jet.rawFactor = FatJet_rawFactor->At(j);
+    jet.subJetIdx1 = FatJet_subJetIdx1->At(j);
+    jet.subJetIdx2 = FatJet_subJetIdx2->At(j);
+    jet.btagDeepB = FatJet_btagDeepB->At(j);
+    jet.btagCSVV2 = FatJet_btagCSVV2->At(j);
+    jet.tau1 = FatJet_tau1->At(j);
+    jet.tau2 = FatJet_tau2->At(j);
+    jet.tau3 = FatJet_tau3->At(j);
+    jet.tau4 = FatJet_tau4->At(j);
+    jet.deepTag_WvsQCD = FatJet_deepTag_WvsQCD->At(j);
+    jet.deepTag_ZvsQCD = FatJet_deepTag_ZvsQCD->At(j);
+    jet.deepTag_TvsQCD = FatJet_deepTag_TvsQCD->At(j);
+    jet.deepTagMD_WvsQCD = FatJet_deepTagMD_WvsQCD->At(j);
+    jet.deepTagMD_ZvsQCD = FatJet_deepTagMD_ZvsQCD->At(j);
+    jet.deepTagMD_TvsQCD = FatJet_deepTagMD_TvsQCD->At(j);
+    //jet.electronIdx3SJ = FatJet_electronIdx3SJ->At(j);
+    //jet.muonIdx3SJ     = FatJet_muonIdx3SJ->At(j);
     
-    fatJetList_.push_back(fj);
-
     // fatJet cleaning wrt leptons
-    if (!fatJetLeptonCleaning(fj)) continue;
-    AnaUtil::fillHist1D ("fatJetCutFlow", 5, 1.0);
-    cleanFatJetList_.push_back(fj);
+    if (!fatJetLeptonCleaning(jet)) continue;
+    AnaUtil::fillHist1D("fatJetCutFlow", 7);
+    cleanFatJetList_.push_back(jet);
 
     // these fatJets have b-tagged jets
-    bool is_bTagged = ((SubJet_pt->At(FatJet_subJetIdx1->At(i)) >= 30 && SubJet_btagDeepB->At(FatJet_subJetIdx1->At(i)) > 0.4941) 
-		       || (SubJet_pt->At(FatJet_subJetIdx2->At(i)) >= 30 && SubJet_btagDeepB->At(FatJet_subJetIdx2->At(i)) > 0.4941)) ? true : false;
+    bool is_bTagged = (
+       (SubJet_pt->At(idx1) >= bSubJetPtMin && SubJet_btagDeepB->At(idx1) > bSubJetScoreMin) ||
+       (SubJet_pt->At(idx2) >= bSubJetPtMin && SubJet_btagDeepB->At(idx2) > bSubJetScoreMin) 
+    ) ? true : false;
     if (!is_bTagged) continue; 
-    AnaUtil::fillHist1D ("fatJetCutFlow", 6, 1.0);
-    bTaggedFatJetList_.push_back(fj);
+    AnaUtil::fillHist1D("fatJetCutFlow", 8);
+    bTaggedFatJetList_.push_back(jet);
   }
   searchedFatJet_ = true;
 }
-
-// FatJet selection
+// SubJet selection
 void PhysicsObjSelector::subJetSelector() {
-  histf()->cd();
-  histf()->cd("ObjectSelection");
-
-  for (size_t i = 0; i < (*nSubJet->Get()); ++i){
-    vhtm::SubJet sj;
-    sj.index     = i;
-    sj.pt        = SubJet_pt->At(i);
-    sj.eta       = SubJet_eta->At(i);
-    sj.phi       = SubJet_phi->At(i);
-    sj.mass      = SubJet_mass->At(i);
-    sj.btagDeepB = SubJet_btagDeepB->At(i);
-    sj.rawFactor = SubJet_rawFactor->At(i);
+  for (size_t j = 0; j < *nSubJet->Get(); ++j) {
+    vhtm::SubJet jet;
+    jet.index     = j;
+    jet.pt        = SubJet_pt->At(j);
+    jet.eta       = SubJet_eta->At(j);
+    jet.phi       = SubJet_phi->At(j);
+    jet.mass      = SubJet_mass->At(j);
+    jet.btagDeepB = SubJet_btagDeepB->At(j);
+    jet.rawFactor = SubJet_rawFactor->At(j);
     
-    subJetList_.push_back(sj);
+    subJetList_.push_back(jet);
   }
 }
-
-bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet) const {
+bool PhysicsObjSelector::jetLeptonCleaning(const vhtm::Jet& jet, double minDR) const {
   TLorentzVector jp4(AnaUtil::getP4(jet));
-  for (const auto& mu: fakeableMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.4) return false;
-  for (const auto& el: fakeableEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.4) return false;
+  for (const auto& mu: fakeableMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return false;
+  for (const auto& el: fakeableEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= minDR) return false;
+
   return true;
 }
 // fat-jet lepton cleaning
-bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet) const {
+bool PhysicsObjSelector::fatJetLeptonCleaning(const vhtm::FatJet& jet, double minDR) const {
   TLorentzVector jp4(AnaUtil::getP4(jet));
-  for (const auto& mu: tightMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= 0.8) return false;
-  for (const auto& el: tightEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= 0.8) return false;
+  for (const auto& mu: tightMuList_)  if (jp4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return false;
+  for (const auto& el: tightEleList_) if (jp4.DeltaR(AnaUtil::getP4(el)) <= minDR) return false;
 
   return true;
 }
-
-bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau) const {
+bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau, double minDR) const {
   TLorentzVector tp4(AnaUtil::getP4(tau));
-  for (const auto& mu: tightMuList_)  if (tp4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) return false;
-  for (const auto& el: tightEleList_) if (tp4.DeltaR(AnaUtil::getP4(el)) <= 0.3) return false;
+  for (const auto& mu: tightMuList_)  if (tp4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return false;
+  for (const auto& el: tightEleList_) if (tp4.DeltaR(AnaUtil::getP4(el)) <= minDR) return false;
 
   return true;
 }
-
-bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons,  bool VsTightMuons) const {
+bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons, bool VsTightMuons, double minDR) const {
   TLorentzVector elep4(AnaUtil::getP4(ele));
   if (VsLooseMuons) {
-    for (const auto& mu: preSelMuList_) if (elep4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) return true;
+    for (const auto& mu: preSelMuList_) if (elep4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return true;
   }
   else if (VsTightMuons) {
-    for (const auto& mu: tightMuList_)  if (elep4.DeltaR(AnaUtil::getP4(mu)) <= 0.3) return true;
+    for (const auto& mu: tightMuList_)  if (elep4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return true;
   }
   return false;
 }
-
-/*
-void PhysicsObjSelector::dumpEverything(int evNo, ostream& os) const {
+void PhysicsObjSelector::dumpEvent(int evNo, ostream& os) const {
   os << std::setprecision(3);
 
   // Event                                     
-  os <<">>>Event Number: "<<evNo<<"\n";
+  os << ">>> Event Number: " << evNo << endl;
 
-  // Muons    
-  if (*nMu->Get() > 0) {
-    os << " -- # Muons: " << *nMu->Get() << endl;
-    os << "  indx      pT     eta     phi  charge      dxy       dz  global tracker      PF         SIP   tightCharge   Loose    Medium    Tight   HighPtId   relIso_chr   relIso_all"
+  // Primary Vertex
+  os << " -- Primary Vertex information: " << endl;
+  os << "   nPV  nGoodPV  PVscore   PVchi2    PVndf      PVx      PVy      PVz" << endl;
+  os << setw(6) << *nPV->Get()
+     << setw(9) << *nGoodPV->Get()
+     << setw(9) << static_cast<int>(*PV_score->Get())
+     << setw(9) << *PV_chi2->Get()
+     << setw(9) << *PV_ndf->Get()
+     << setw(9) << *PV_xPos->Get()
+     << setw(9) << *PV_yPos->Get()
+     << setw(9) << *PV_zPos->Get()
+     << endl;
+
+  // Muons 
+  size_t nMuonCand = *nMuon->Get();
+  if (nMuonCand > 0) {
+    os << " -- #Muons: " << nMuonCand << endl;
+    os << "  indx      pT     eta     phi  charge      dxy       dz  global tracker      PF      SIP3D tightChg Loose"
+       << " Medium Tight HighPt   IsoChg   IsoAll jetIdx"
        << endl;
-    for (size_t i = 0; i < (*nMu->Get()); ++i) {
-      os << setw(6)  << i
-         << setw(8)  << Mu_corrpt->At(i)
-         << setw(8)  << Mu_eta->At(i)
-         << setw(8)  << Mu_phi->At(i)
-         << setw(8)  << Mu_charge->At(i)
-         << setw(9)  << Mu_dxy->At(i)
-         << setw(9)  << Mu_dz->At(i)
-         << setw(8)  << (Mu_isGlobal->At(i) ? "T" : "F")
-         << setw(8)  << (Mu_isPFcand->At(i) ? "T" : "F")
-         << setw(8)  << (Mu_isTracker->At(i) ? "T" : "F")
-         << setw(14) << Mu_sip3d->At(i)
-	 << setw(8) << Mu_tightCharge->At(i)
-         << setw(10) << (Mu_LooseId->At(i) ? "T" : "F")
-         << setw(10) << (Mu_MediumId->At(i) ? "T" : "F")
-         << setw(10) << (Mu_TightId->At(i) ? "T" : "F")
-         << setw(10) << (Mu_highPtId->At(i) ? "T" : "F")
-	 << setw(12) << Mu_pfRelIso03_chg->At(i)
-         << setw(10) << Mu_pfRelIso03_all->At(i)
+    for (size_t j = 0; j < nMuonCand; ++j) {
+      os << setw(6)  << j
+         << setw(8)  << Muon_corrpt->At(j)
+         << setw(8)  << Muon_eta->At(j)
+         << setw(8)  << Muon_phi->At(j)
+         << setw(8)  << Muon_charge->At(j)
+         << setw(9)  << Muon_dxy->At(j)
+         << setw(9)  << Muon_dz->At(j)
+         << setw(8)  << (Muon_isGlobal->At(j) ? "T" : "F")
+         << setw(8)  << (Muon_isPFcand->At(j) ? "T" : "F")
+         << setw(8)  << (Muon_isTracker->At(j) ? "T" : "F")
+         << setw(11) << Muon_sip3d->At(j)
+	 << setw(9)  << Muon_tightCharge->At(j)
+         << setw(6)  << (Muon_LooseId->At(j) ? "T" : "F")
+         << setw(7)  << (Muon_MediumId->At(j) ? "T" : "F")
+         << setw(6)  << (Muon_TightId->At(j) ? "T" : "F")
+         << setw(7)  << (Muon_highPtId->At(j) ? "T" : "F")
+	 << setw(9)  << Muon_pfRelIso03_chg->At(j)
+         << setw(9)  << Muon_pfRelIso03_all->At(j)
+         << setw(7)  << Muon_jetIdx->At(j)
          << endl;
     }
-    os <<"   Muon |||https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2?rev=26|||"
-       <<"\n"
-       <<"   |||---------------------------------------------------------------------------|||"
-       <<endl;
   }
-
   // Electrons                                                                                 
-  if (*nEle->Get() > 0) {
-    os << " -- # Electrons: " << *nEle->Get() << endl;
-    os << "  indx      pT     eta     phi  charge     dxy      dz     misHit       SIP3D   Loose(WP90) Tight(WP80)  relIso_chr  relIso_all"
+  size_t nElectronCand = *nElectron->Get();
+  if (nElectronCand > 0) {
+    os << " -- #Electrons: " << nElectronCand << endl;
+    os << "  indx      pT     eta     phi  charge     dxy      dz  lostHit      SIP3D  LWP90  TWP80   IsoChg   IsoAll"
        << endl;
-    for (size_t ie = 0; ie < (*nEle->Get()); ++ie) {
-      os << setw(6)  << ie
-         << setw(8)  << Ele_pt->At(ie)
-         << setw(8)  << Ele_eta->At(ie)
-         << setw(8)  << Ele_phi->At(ie)
-         << setw(8)  << Ele_charge->At(ie)
-         << setw(8)  << Ele_dxy->At(ie)
-         << setw(8)  << Ele_dz->At(ie)
-         << setw(8)  << static_cast<int>(Ele_missHits->At(ie))
-         << setw(16) << Ele_sip3d->At(ie)
-         << setw(8)  << (Ele_mvaSpring16GP_WP90->At(ie) ? "T" : "F")
-         << setw(13) << (Ele_mvaSpring16GP_WP80->At(ie) ? "T" : "F")
-         << setw(13)  << Ele_pfRelIso03_chg->At(ie)
-         << setw(12)  << Ele_pfRelIso03_all->At(ie)
+    for (size_t j = 0; j < nElectronCand; ++j) {
+      os << setw(6)  << j
+         << setw(8)  << Electron_pt->At(j)
+         << setw(8)  << Electron_eta->At(j)
+         << setw(8)  << Electron_phi->At(j)
+         << setw(8)  << Electron_charge->At(j)
+         << setw(8)  << Electron_dxy->At(j)
+         << setw(8)  << Electron_dz->At(j)
+         << setw(9)  << static_cast<int>(Electron_lostHits->At(j))
+         << setw(11) << Electron_sip3d->At(j)
+         << setw(7)  << (Electron_mvaFall17V2Iso_WP90->At(j) ? "T" : "F")
+         << setw(7)  << (Electron_mvaFall17V2Iso_WP80->At(j) ? "T" : "F")
+         << setw(9)  << Electron_pfRelIso03_chg->At(j)
+         << setw(9)  << Electron_pfRelIso03_all->At(j)
          << endl;
     }
-    os <<"   Electron |||https://twiki.cern.ch/twiki/bin/view/CMS/EgammaRunIIRecommendations#Spring16_mva_Summer16_cut_based|||"
-       <<"\n"
-       <<"   Electron |||https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun2#MVA_recipes_for_2016_data_and_Sp|||"
-       <<"\n"
-       <<"   Electron |||https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2?rev=%2039|||"
-       <<"\n"
-       <<"   |||---------------------------------------------------------------------------|||"
-       <<endl;
-
   }
-
-  // Taus                                                                            
-  if (*nTau->Get()> 0) {
-    os << " -- # Taus: " << *nTau->Get() << endl;
-    os << "  indx       pT      eta      phi charge decayMode idDecayMode   isolation LmuVeto LeleVeto TmuVeto TeleVeto"
+  // Taus                                                 
+  size_t nTauCand = *nTau->Get();
+  if (nTauCand > 0) {
+    os << " -- #Taus: " << nTauCand << endl;
+    os << "  indx       pT      eta      phi charge      dxy      dz    DM   idDM  jetVeto   muVeto  eleVeto"
        << endl;
-    for (size_t it = 0; it < (*nTau->Get()); ++it) {
-      os << setw(6) << it
-         << setw(9) << Tau_pt->At(it)
-         << setw(9) << Tau_eta->At(it)
-         << setw(9) << Tau_phi->At(it)
-         << setw(7) << Tau_charge->At(it)
-	 << setw(10)<< Tau_decayMode->At(it)
-         << setw(10) << ((Tau_idDecayMode->At(it)) ? "T" : "F")
-         << setw(10) << static_cast<int>(Tau_idMVAoldDM->At(it))
-         << setw(9) << ((Tau_idAntiMu->At(it) == 1) ? "T" : "F")
-         << setw(8) << ((Tau_idAntiEle->At(it) == 2) ? "T" : "F")
-         << setw(9) << ((Tau_idAntiMu->At(it) == 2) ? "T" : "F")
-         << setw(8) << ((Tau_idAntiEle->At(it) == 8) ? "T" : "F")
+    for (size_t j = 0; j < nTauCand; ++j) {
+      os << setw(6) << j
+         << setw(9) << Tau_pt->At(j)
+         << setw(9) << Tau_eta->At(j)
+         << setw(9) << Tau_phi->At(j)
+         << setw(7) << Tau_charge->At(j)
+         << setw(9) << Tau_dxy->At(j)
+         << setw(9) << Tau_dz->At(j)
+         << setw(6) << Tau_idDecayMode->At(j)
+	 << setw(6) << Tau_idDecayModeNewDMs->At(j)
+         << setw(9) << (isSignal() ? (Tau_idDeepTau2017v2VSjet->At(j) >> 4 & 0x1) : (Tau_idDeepTau2017v2p1VSjet->At(j) >> 4 & 0x1))
+         << setw(9) << (isSignal() ? (Tau_idDeepTau2017v2VSe->At(j)        & 0x1) : (Tau_idDeepTau2017v2p1VSe->At(j)        & 0x1))
+         << setw(9) << (isSignal() ? (Tau_idDeepTau2017v2VSmu->At(j)       & 0x1) : (Tau_idDeepTau2017v2p1VSmu->At(j)       & 0x1))
          << endl;
     }
-    os <<"   Tau |||IsolationMVArun2v1DBoldDMwLT ID wp (2015): 1 = VLoose, 2 = Loose, 4 = Medium, 8 = Tight, 16 = VTight, 32 = VVTight |||"
-       <<"\n"
-       <<"   Tau |||Anti-electron MVA discriminator V6: bitmask 1 = VLoose, 2 = Loose, 4 = Medium, 8 = Tight, 16 = VTight|||"
-       <<"\n"
-       <<"   Tau |||Anti-muon discriminator V3: : bitmask 1 = Loose, 2 = Tight|||"
-       <<"\n"
-       <<"   |||---------------------------------------------------------------------------|||"
-       <<endl;
-
   }
-
-  //Jets
-  if (*nJet->Get() > 0) {
-    os << " -- # Jets: " << *nJet->Get() << endl;
-    os << "  indx       pT      eta      phi NConst   nMu      nEle     CHF   CEMF      NHF     NEMF     puID   bDisc  looseId  tightId tightLepVeto"
+  // Jets
+  size_t nJetCand = *nJet->Get();
+  if (nJetCand > 0) {
+    os << " -- #Jets: " << nJetCand << endl;
+    os << "  indx       pT      eta      phi  puId     mass  muIdx1  muIdx2  elIdx1  elIdx2  bTagCSVV2  bTagDFB"
        << endl;
-    for (size_t j = 0; j < (*nJet->Get()); ++j) {
+    for (size_t j = 0; j < nJetCand; ++j) {
       os << setw(6)  << j
          << setw(9)  << Jet_nomPt->At(j)
          << setw(9)  << Jet_eta->At(j)
          << setw(9)  << Jet_phi->At(j)
-         << setw(7)  << Jet_nConstituents->At(j)
-         << setw(7)  << Jet_nMuons->At(j)
-         << setw(7)  << Jet_nElectrons->At(j)
-         << setw(9)  << Jet_chHEF->At(j)
-         << setw(9)  << Jet_chEmEF->At(j)
-         << setw(9)  << Jet_neHEF->At(j)
-         << setw(9)  << Jet_neEmEF->At(j)
-         << setw(5)  << Jet_puId->At(j)
-         << setw(8)  << Jet_btagCSVV2->At(j) 
-         << setw(9)  << ((Jet_jetId->At(j) >= 1) ? "T" : "F")
-	 << setw(9)  << ((Jet_jetId->At(j) >= 3) ? "T" : "F")
-         << setw(5)  << ((Jet_jetId->At(j) == 7) ? "T" : "F")
+         << setw(6)  << Jet_puId->At(j)
+         << setw(9)  << Jet_mass->At(j)
+         << setw(8)  << Jet_muIdx1->At(j)
+         << setw(8)  << Jet_muIdx2->At(j)
+         << setw(8)  << Jet_elIdx1->At(j)
+         << setw(8)  << Jet_elIdx2->At(j)
+         << setw(11) << Jet_btagCSVV2->At(j)
+         << setw(9)  << Jet_btagDeepFlavB->At(j) 
          << endl;
     }
-    os <<"   Jet |||https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID#Recommendations_for_13_TeV_2016|||"
-       <<"\n"
-       <<"   Jet |||https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD#Jets|||"
-       <<"\n"
-       <<"   Jet |||jetId==1: pass loose ID, fail tight, fail tightLepVeto|||"
-       <<"\n"
-       <<"   Jet |||jetId==3 means: pass loose and tight ID, fail tightLepVeto|||"
-       <<"\n"
-       <<"   Jet |||jetId==7 means: pass loose, tight, tightLepVeto ID|||"
-       <<"\n"
-       <<"   Jet ||| puId is valid when jetPt < 50 GeV {0: fail all PU ID | 4: pass loose ID, fail medium, fail tight | 6: pass loose and medium ID, fail tight | 7: pass all"
-       <<"\n"
-       <<"   |||---------------------------------------------------------------------------|||"
-       <<"\n"
-       <<endl;
-
   }
+  // FatJets
+  size_t nFatJetCand = *nFatJet->Get();
+  if (nFatJetCand > 0) {
+    os << " -- #FatJets: " << nFatJetCand << endl;
+    os << "  indx  jetId       pT      eta      phi  nsubjet  sjIdx1  sjIdx2   sdmass     tau1     tau2  bTagCSVV2  bTagDeepB"
+       << endl;
+    for (size_t j = 0; j < nFatJetCand; ++j) {
+      os << setw(6)  << j
+         << setw(7)  << FatJet_jetId->At(j)
+         << setw(9)  << FatJet_pt->At(j)
+         << setw(9)  << FatJet_eta->At(j)
+         << setw(9)  << FatJet_phi->At(j)
+         << setw(9)  << static_cast<int>(*nSubJet->Get()) 
+         << setw(8)  << FatJet_subJetIdx1->At(j)
+         << setw(8)  << FatJet_subJetIdx2->At(j)
+         << setw(9)  << FatJet_msoftdrop->At(j)
+         << setw(9)  << FatJet_tau1->At(j)
+         << setw(9)  << FatJet_tau2->At(j)
+         << setw(11) << FatJet_btagCSVV2->At(j)
+         << setw(11) << FatJet_btagDeepB->At(j) 
+         << endl;
+    }
+  }
+  // FatJets
+  size_t nSubJetCand = *nSubJet->Get();
+  if (nFatJetCand > 0) {
+    os << " -- #SubJets: " << nSubJetCand << endl;
+    os << "  indx       pT      eta      phi     mass  bTagDeepB  rawFactor"
+       << endl;
+    for (size_t j = 0; j < nSubJetCand; ++j) {
+      os << setw(6)  << j
+         << setw(9)  << SubJet_pt->At(j)
+         << setw(9)  << SubJet_eta->At(j)
+         << setw(9)  << SubJet_phi->At(j)
+         << setw(9)  << SubJet_mass->At(j)
+         << setw(11) << SubJet_btagDeepB->At(j) 
+         << setw(11) << SubJet_rawFactor->At(j) 
+         << endl;
+    }
+  }
+  // Add MET
+  os << " -- Met information: " << endl;
+  os << "       pT      phi      sig    sumEt" << endl;
+  os << setw(9) << (isSignal() ? *Met_nomPt->Get()  : *Met_pt->Get())
+     << setw(9) << (isSignal() ? *Met_nomPhi->Get() : *Met_phi->Get())
+     << setw(9) << *Met_significance->Get()
+     << setw(9) << *Met_sumEt->Get()
+     << endl;
 }
-*/

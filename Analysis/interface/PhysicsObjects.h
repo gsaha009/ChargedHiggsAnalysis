@@ -1,10 +1,6 @@
 #ifndef __PhysicsObjects_h
 #define __PhysicsObjects_h
 
-#include <vector>
-#include <map>
-#include <string>
-#include "TLorentzVector.h"
 #include "TObject.h"
 
 namespace vhtm {
@@ -13,16 +9,18 @@ namespace vhtm {
     Event();
     ~Event() {}
 
-    //info
+    // basic info
     unsigned int run;
     unsigned long long event;
     unsigned int lumis;
-    //Weight
+
+    // Weight
     float genEvWt;
     float PUWeight;
     float btagWeight_CSVV2;
     float btagWeight_CMVA;
-    //Primary Vetrex
+
+    // Primary Vetrex
     int nPV;
     int nGoodPV;
     float PVscore;
@@ -31,21 +29,16 @@ namespace vhtm {
     float PVx;
     float PVy;
     float PVz;
-    //LHE Info
+
+    // LHE Info
     int nLHEParticles;
     int nLHEJets;
-    //Gen Info
+
+    // Gen Info
     int nGenParticles;
-    //UserDefined
-    char HLT_SingleMu;
-    char HLT_SingleEle;
-    char HLT_DoubleMu;
-    char HLT_DoubleEle;
-    int evType;
 
     ClassDef(Event, 1)
   };
-
   class GenParticle: public TObject {
   public:
     GenParticle();
@@ -63,7 +56,6 @@ namespace vhtm {
   
     ClassDef(GenParticle, 1)
   };
-
   class LHEParticle: public TObject {
   public:
     LHEParticle();
@@ -78,7 +70,6 @@ namespace vhtm {
 
     ClassDef(LHEParticle, 1)
   };
-
   class Muon: public TObject {
   public:
     Muon();
@@ -102,8 +93,6 @@ namespace vhtm {
 
     ClassDef(Muon, 1)
   };
-
-
   class Electron: public TObject {
   public:
     Electron();
@@ -124,7 +113,6 @@ namespace vhtm {
 
     ClassDef(Electron, 1)
   };
-
   class MET: public TObject {
   public:
     MET();
@@ -149,10 +137,8 @@ namespace vhtm {
     float mass;
     int charge;
     int jetIdx;
-  
     ClassDef(Tau, 1)
   };
-
   class Jet: public TObject {
   public:
     Jet();
@@ -172,7 +158,6 @@ namespace vhtm {
   
     ClassDef(Jet, 1)
   };
-
   class FatJet: public TObject {
   public:
     FatJet();
@@ -209,7 +194,6 @@ namespace vhtm {
 
     ClassDef(FatJet, 1)
   };
-
   class SubJet: public TObject {
   public:
     SubJet();
@@ -225,6 +209,5 @@ namespace vhtm {
 
     ClassDef(SubJet, 1)
   };
-
 }
 #endif

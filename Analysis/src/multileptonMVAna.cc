@@ -3,10 +3,12 @@
 #include <memory> 
 #include <utility>
 #include <functional>
-#include "TROOT.h"
-#include "TStopwatch.h"
 
 #include "MultiLeptonMVAna.h"
+
+#include "TROOT.h"
+#include "TStopwatch.h"
+#include "TFile.h"
 
 using std::cout;
 using std::cerr;
@@ -22,10 +24,6 @@ int main(int argc, char* argv[]) {
 
   gROOT->SetBatch(kTRUE);
 
-  //ROOT::EnableThreadSafety();
-  //int nthreads = 10;
-  //ROOT::EnableImplicitMT(nthreads);
-  
   // Create analysis object 
   cout << "=== Start of Analysis === " << endl;
 

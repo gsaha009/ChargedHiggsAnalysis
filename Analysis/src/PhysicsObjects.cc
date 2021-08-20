@@ -31,12 +31,7 @@ vhtm::Event::Event():
   PVz(-999),
   nLHEParticles(-999),
   nLHEJets(-999),
-  nGenParticles(-999),
-  HLT_SingleMu(-111),
-  HLT_SingleEle(-111),
-  HLT_DoubleMu(-111),
-  HLT_DoubleEle(-111),
-  evType(-999)
+  nGenParticles(-999)
 {}
 
 vhtm::GenParticle::GenParticle():

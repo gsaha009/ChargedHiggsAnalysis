@@ -49,9 +49,9 @@ namespace AnaUtil {
     int i, mask = 1 << 31; 
     
     if (pos > INT_BIT) i = INT_BIT; 
-    for (i = 1; i <= (INT_BIT - pos); ++i) { 
+    for (i = 1; i <= (INT_BIT - pos); ++i)
       value <<= 1; 
-    } 
+
     os.put(' ');
     for (i = 1; i <= pos; ++i) { 
       os.put(((value & mask) == 0) ? '0' : '1'); 
@@ -198,8 +198,8 @@ namespace AnaUtil {
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
   // dynamic approach
-  TH2* getHist2D(const char* hname, const char* htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const char* region, */const char* channel) {
-    std::string hname_ = std::string(channel)+"_"+std::string(hname);
+  TH2* getHist2D(const char* hname, const char* htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const char* region, const char* channel) {
+    std::string hname_ = std::string(channel)+"_"+std::string(hname)+"_"+std::string(region);
     TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
     if (obj == nullptr) {
       obj = new TH2D(hname_.c_str(), std::string(htitle).c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh);
@@ -214,11 +214,11 @@ namespace AnaUtil {
     }
     return h;
   }
-  TH2* getHist2D(const string& hname, const std::string& htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const string& region, */const string& channel) {
-    return getHist2D(hname.c_str(), htitle.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, /*region.c_str(), */channel.c_str());
+  TH2* getHist2D(const string& hname, const std::string& htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const string& region, const string& channel) {
+    return getHist2D(hname.c_str(), htitle.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, region.c_str(), channel.c_str());
   }
   // static approach
-  TH2* getHist2DBasic(const char* hname) {
+  TH2* getHist2D(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (obj == nullptr) {
       cerr << "**** getHist2DBasic: Histogram for <" << hname 
@@ -248,8 +248,8 @@ namespace AnaUtil {
     }
     return h;
   }
-  TH2* getHist2DBasic(const string& hname) {
-    return getHist2DBasic(hname.c_str());
+  TH2* getHist2D(const string& hname) {
+    return getHist2D(hname.c_str());
   }
   // ---------------------------------------------
   // Convenience routine for filling 3D histograms
@@ -376,19 +376,14 @@ namespace AnaUtil {
   void scaleHistogram(const string& hname, double fac) {
     TH1 *h = AnaUtil::getHist1D(hname);
     if (h != nullptr) {
-      //#if 0
       int nbins = h->GetNbinsX();
       for (int i = 1; i <= nbins; ++i) {
-	//      cout<<"Bin no: "<<"\t"<<i<<endl;
-	//      cout<<"before scl: "<< h->GetBinContent(i)<<endl;
 	double cont = static_cast<double>(h->GetBinContent(i) * fac);
-	//      cout<<i<<") Cut: "<<cont<<endl;
 	double err  = static_cast<double>(h->GetBinError(i) * fac);
 	cout<<i<<") Cut: "<<cont<<"\t"<<"Bin Error: "<<err<<endl;
 	h->SetBinContent(i, cont);
 	h->SetBinError(i, err);
       }
-      //#endif
       //h->Scale(fac);
     }
   }

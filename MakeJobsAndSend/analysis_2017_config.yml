@@ -22,14 +22,19 @@ mvaInfo:
   - MVAnetwork BDT_nT1500_D2_nC100_ns5
   - MVAxmlFile TMVAClassification_BDT_nT1500_D2_nC100_ns5.weights.xml
 cutLists:
-  - vtxCutList ndf=4 z=24 Rho=2
-  - muonCutList eta=2.4 pt=10. dxy=0.05 dz=0.1 SIP3D=4. pfReliso=0.15
-  - electronCutList pt=10. eta=2.5 dxyEB=0.05 dzEB=0.1 dxyEE=0.1 dzEE=0.2 SIP3D=4. pfReliso=0.20
-  - tauCutList eta=2.3 pt=20. dz=0.2 muVeto=0.5 eleVeto=0.5 isol=0.5
-  - jetCutList eta=2.5 pt=20. dRlep=0.4 btagFactor=0.8484
-  - fatJetCutList eta=2.4 pt=200. dRlep=0.4 btagFactor=0.8484
-  - photonCutList pt=2 eta=2.4 isol=1.8 dRmin=0.5 dRovEt2=0.012
-  - evselCutList hLepPtMin=20. ZMassLow=60. ZMassHigh=120.
+  - muonCutList eta=2.4 pt=5. dxy=0.2 dz=0.5 SIP3D=8. ptFake=10 reliso=0.15
+  - electronCutList pt=7. eta=2.5 dxy=0.05 dz=0.1 SIP3D=8. ptFake=10
+  - jetCutList eta=2.5 pt=25. lbjetScore=0.0521 bjetScore=0.3033 deltaR=0.8
+  - tauCutList eta=2.4 pt=20. dz=0.2 dxy=0.1
+  - fatJetCutList eta=2.4 pt=200. subJetPt=20  subJetEta=2.4 msoftdropMin=30 msoftdropMax=210 fjetRatio=0.75 bSubJetPt=30 bSubJetScore=0.4941
+  #- vtxCutList ndf=4 z=24 Rho=2
+  #- muonCutList eta=2.4 pt=10. dxy=0.05 dz=0.1 SIP3D=4. pfReliso=0.15
+  #- electronCutList pt=10. eta=2.5 dxyEB=0.05 dzEB=0.1 dxyEE=0.1 dzEE=0.2 SIP3D=4. pfReliso=0.20
+  #- tauCutList eta=2.3 pt=20. dz=0.2 muVeto=0.5 eleVeto=0.5 isol=0.5
+  #- jetCutList eta=2.5 pt=20. dRlep=0.4 btagFactor=0.8484
+  #- fatJetCutList eta=2.4 pt=200. dRlep=0.4 btagFactor=0.8484
+  #- photonCutList pt=2 eta=2.4 isol=1.8 dRmin=0.5 dRovEt2=0.012
+  #- evselCutList hLepPtMin=20. ZMassLow=60. ZMassHigh=120.
 HLT_DoubleMuon:
   - Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8
   - Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8

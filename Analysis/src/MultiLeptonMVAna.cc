@@ -2,36 +2,21 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <iterator>
 #include <functional>
 #include <numeric>
-#include <string>
-#include <climits>
-#include <cassert>
-#include <cstdlib>
 #include <sstream>
-#include <utility> 
-#include <typeinfo>
-#include <memory>
+#include <fstream>
+
+#include "MultiLeptonMVAna.h"
+#include "LeptonCand.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
 #include "TChain.h"
-#include "TClonesArray.h"
-#include "TCanvas.h"
-#include "TFrame.h"
 #include "TRandom.h"
 #include "TStopwatch.h"
 #include "TFile.h"
 #include "TH1K.h"
-#include "TNtuple.h"
-#include <TTreeReader.h>
-#include <TTreeReaderValue.h>
-#include <TTreeReaderArray.h>
-
-#include "configana.h"
-#include "LeptonCand.h"
-#include "MultiLeptonMVAna.h"
 
 using std::cout;
 using std::cerr;
@@ -66,31 +51,13 @@ bool MultiLeptonMVAna::beginJob()
 
   bookHistograms();
 
-  if (_createMVATree) {
-#ifdef TRUE_CPP14
-    skimObj_ = std::make_unique <MVASkim> (_mvaInputFile);
-#else
-    skimObj_ = std::unique_ptr <MVASkim>(new MVASkim (_mvaInputFile));
-#endif
-    if (!skimObj_) return false;
-  }
-
-  else if (_readMVA) {
-#ifdef TRUE_CPP14
+  if (_createMVATree)
+    skimObj_ = std::make_unique<MVASkim>(_mvaInputFile);
+  else if (_readMVA)
     mvaObj_ = std::make_unique<MVAnalysis>(_MVAnetwork, _MVAxmlFile);
-#else
-    mvaObj_ = std::unique_ptr <MVAnalysis>(new MVAnalysis (_MVAnetwork, _MVAxmlFile));
-#endif
-    if (!mvaObj_) return false;
-  }
-
-#ifdef  SKIP_DUPLICATE_ALL
-  eventIdStore_.clear();
-#endif
 
   return true;
 }
-
 // ---------------
 // Book histograms
 // ---------------
@@ -139,49 +106,49 @@ void MultiLeptonMVAna::eventLoop()
   int fevt = (firstEvent() > -1) ? firstEvent() : 0;
   int levt = (lastEvent() > -1) ? lastEvent() : nEvents();
   cout << ">>> Event range: [" << fevt << ", " << levt -1 << "]" << endl;
-  int ev = 0;
-  int dumpIdx = 0;
 
   //--------------------------------------------------//
   //---Sum of GenEvWtSum over all the trees in chain--//
   //--------------------------------------------------//
-
   if (isMC()) {
     while (treeReaderRun()->Next()) {
       evtWeightSum_ += getGenSumW();
     }
     lumiFac = lumiWt(evtWeightSum_, true);
-    cout <<setprecision(5)<<">>> evtWeightSum: "<<evtWeightSum_<<"\t"<<">>> lumiWt: "<<lumiFac<<" <<<<"<<endl;
+    cout <<setprecision(5)<< ">>> evtWeightSum: "<<evtWeightSum_
+	 <<"\t"<<">>> lumiWt: "<<lumiFac
+	 <<" <<<<"<<endl;
     histf()->cd();
     AnaUtil::fillHist1D("EventWtSum", 0, evtWeightSum_);
   }
   //--------------------------------------------------//
   //--------------------Event Loop--------------------//
   //--------------------------------------------------//
+  int ev = 0;
+  int dumpIdx = 0;
   while (treeReader()->Next()) {
     ev++;
-    if (ev > levt) {
-      std::cout<<"Event Loop Finished!!!"<<std::endl;
-      break;
+    clearLists(); // reset analysis related lists for each event
+    if (!findEventInfo()) {
+      cerr << ">>> Event Info Not Found! ev = " 
+	   << ev << ", go to the next event!" 
+	   << endl;
+      continue;
     }
 
-    clearEvent(); // reset tree variables 
-    clearLists(); // reset analysis related lists for each event
+    if (isMC() && readGenInfo())
+      if (!findGenPartInfo()) {
+	cerr << ">>> Gen Info Not Found, ev = " 
+	     << ev << ", go to the next event!" 
+	     << endl;
+	continue;
+      }
+
+    const vhtm::Event& evt = getEventList().at(0);
+
 
     string currentFile(gSystem->BaseName(chain()->GetCurrentFile()->GetName()));
-    if (!findEventInfo()) std::cout<<">>>Event Info Not Found :( :( :(\n";
-
-
-    if (isMC() && readGenInfo())
-      if (!findGenPartInfo()) 
-	std::cout<<">>>Gen Info Not Found :( :( :(\n";
-
-    const auto& eventlist = getEventList();
-    const vhtm::Event& evt = eventlist.at(0);
-
-    // Show the status
     if (ev%nPrint == 0 || firstEvent() > -1)
-    //    if (ev%nPrint == 0)
       cout << "Tree# " << setw(4) << chain()->GetTreeNumber()
 	   << " ==> " << currentFile
 	   << " <<< Run# " << setw(8) << evt.run
@@ -194,67 +161,71 @@ void MultiLeptonMVAna::eventLoop()
     if (useEventList_ && eventIdMap().size()) {
       std::ostringstream mkey;
       mkey << evt.run << "-" << evt.lumis << "-" << evt.event;
-      if (eventIdMap().find(mkey.str()) != eventIdMap().end()) continue;
+      if (eventIdMap().find(mkey.str()) == eventIdMap().end()) continue;
     }
 
     histf()->cd(); //required
     
     // For data or for MC without pileup
-    float puWt   = 1.0; //for Data
-    float evWt   = 1.0; //for Data
-    float MCweight  = 1.0; //for Data
-
+    float puWt   = 1.0;
+    float evWt   = 1.0;
     if (isMC()) {
       evWt = evt.genEvWt;
       puWt = evt.PUWeight;
-      MCweight = evWt * puWt;
     }
-    if (op.verbose && ev == 1) 
-      cout << " <<<eventNo# " << setw(8) << ev <<"\n"
-	   << " eventWt# " << setw(8) << evWt <<"\n"
-	   << " pileUpWt# " << setw(8) << puWt <<"\n"
-	   << " lumiWt# " << setw(8) << lumiFac <<"\n"
-	   << " bTagWt# " << setw(8) << evt.btagWeight_CSVV2 << "\n"
-	   << " totalWt# " << setw(8) << MCweight << " >>> "
+    float MCweight = evWt * puWt;
+    if (ev == 1) 
+      cout << ">>> eventNo: "  << setw(8) << ev << endl
+           << setprecision(3)
+	   << "     eventWt: " << setw(8) << evWt << endl
+	   << "    pileUpWt: " << setw(8) << puWt << endl
+	   << "      lumiWt: " << setw(8) << lumiFac << endl
+	   << "      bTagWt: " << setw(8) << evt.btagWeight_CSVV2 << endl
+	   << "     totalWt: " << setw(8) << MCweight
 	   << endl;
 
     AnaUtil::fillHist1D("evtCutFlow", 0);
-    AnaUtil::fillHist1D("evtCutFlowWt", 0, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 0, MCweight*lumiFac);
 
     if (evt.nGoodPV < 1) continue;
     AnaUtil::fillHist1D("evtCutFlow", 1);
-    AnaUtil::fillHist1D("evtCutFlowWt", 1, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 1, MCweight*lumiFac);
 
     // Here one will only get to know if any of the <Type> triggers give true or false
     // If you want to know the HLT_path also, you can modify the isTriggered function in such a way
     // so that it returns the HLT_paths as well as the values which are giving true values
-    bool passDoubleMuonHLT = AnaUtil::isTriggered(AnaBase::getDoubleMuonHLTpaths(),PhysicsObjSelector::getDoubleMuonHLTscores());
-    bool passSingleEleHLT  = AnaUtil::isTriggered(AnaBase::getSingleElectronHLTpaths(),PhysicsObjSelector::getSingleElectronHLTscores());
-    bool passDoubleEgHLT   = AnaUtil::isTriggered(AnaBase::getDoubleEgHLTpaths(),PhysicsObjSelector::getDoubleEgHLTscores());
-    bool passSingleMuonHLT = AnaUtil::isTriggered(AnaBase::getSingleMuonHLTpaths(),PhysicsObjSelector::getSingleMuonHLTscores());
-    bool passMuonEgHLT     = AnaUtil::isTriggered(AnaBase::getMuonEgHLTpaths(),PhysicsObjSelector::getMuonEgHLTscores());
+    bool passDoubleMuonHLT = AnaBase::isTriggered(getDoubleMuonHLTpaths(),  AnaBase::getHLTscores(getDoubleMuonHLTptrs()));
+    bool passSingleEleHLT  = AnaBase::isTriggered(getSingleElectronHLTpaths(), AnaBase::getHLTscores(getSingleElectronHLTptrs()));
+    bool passDoubleEgHLT   = AnaBase::isTriggered(getDoubleEgHLTpaths(), AnaBase::getHLTscores(getDoubleEgHLTptrs()));
+    bool passSingleMuonHLT = AnaBase::isTriggered(getSingleMuonHLTpaths(), AnaBase::getHLTscores(getSingleMuonHLTptrs()));
+    bool passMuonEgHLT     = AnaBase::isTriggered(getMuonEgHLTpaths(), AnaBase::getHLTscores(getMuonEgHLTptrs()));
 
-    // Duplicate Event removal [FOR DATA ONLY]
-    if (isDuplicate (passDoubleMuonHLT, passSingleEleHLT, passDoubleEgHLT, 
-		     passSingleMuonHLT, passMuonEgHLT, getDatasetName())) continue;
-    //Making the object collections ready!!!
+    // Duplicate Event removal for data
+    if (!isMC() && AnaBase::isDuplicate(passDoubleMuonHLT, passSingleEleHLT, passDoubleEgHLT, 
+					passSingleMuonHLT, passMuonEgHLT, getDatasetName())) continue;
+    // Prepare object collections
     findObjects();
 
     histf()->cd(); //required
-    //Access Selected Objects
-    const auto& preselElColl       = getPreSelEleList();
+    // Access Selected Objects
     const auto& preselMuColl       = getPreSelMuList();
-    const auto& fakeableElColl     = getFakeableEleList();
     const auto& fakeableMuColl     = getFakeableMuList();
-    const auto& tightElColl        = getTightEleList();
     const auto& tightMuColl        = getTightMuList();
+
+    const auto& preselElColl       = getPreSelEleList();
+    const auto& fakeableElColl     = getFakeableEleList();
+    const auto& tightElColl        = getTightEleList();
+
     const auto& jetColl            = getCleanJetList();
     const auto& bJetColl           = getBJetList();
+    const auto& jetColl_ak8Cleaned = getAk8CleanJetList();
+
     const auto& fatJetColl         = getCleanFatJetList();
     const auto& fatbJetColl        = getBTaggedFatJetList();
+
     const auto& tauColl            = getLepCleanTauList();
     const vhtm::MET& met           = getMETList().at(0);
-    const auto& jetColl_ak8Cleaned = getAk8CleanJetList();
+
 
     //P A C K I N G  L E P T O N S
     std::vector<LeptonCand>preselLepColl;
@@ -274,14 +245,14 @@ void MultiLeptonMVAna::eventLoop()
 
     if (fakeableLepColl.size() < 2) continue;
     AnaUtil::fillHist1D("evtCutFlow", 2);
-    AnaUtil::fillHist1D("evtCutFlowWt", 2, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 2, MCweight*lumiFac);
 
     auto lep1 = fakeableLepColl[0];
     auto lep2 = fakeableLepColl[1];
 
     if (!(lep1.pt > 25 && lep2.pt > 20)) continue;
     AnaUtil::fillHist1D("evtCutFlow", 3);
-    AnaUtil::fillHist1D("evtCutFlowWt", 3, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 3, MCweight*lumiFac);
     
     // ------------------------------- HLT Condition --------------------------------- //
     int  hltCounter   = 0;
@@ -304,39 +275,37 @@ void MultiLeptonMVAna::eventLoop()
     
     if (hltCounter == 0) continue;
     AnaUtil::fillHist1D("evtCutFlow", 4);
-    AnaUtil::fillHist1D("evtCutFlowWt", 4, MCweight*lumiFac, isMC());
-    // ------------------------------------------------------------------------------- //
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 4, MCweight * lumiFac);
 
     // Leptons must be of same sign
     if (lep1.charge * lep2.charge < 0) continue;
     AnaUtil::fillHist1D("evtCutFlow", 5);
-    AnaUtil::fillHist1D("evtCutFlowWt", 5, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 5, MCweight * lumiFac);
     
     // no low mass resonance
     if (hasLowMassResonance(preselLepColl)) continue;
     AnaUtil::fillHist1D("evtCutFlow", 6);
-    AnaUtil::fillHist1D("evtCutFlowWt", 6, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 6, MCweight * lumiFac);
 
     // no Z like candidate (Z->ll)
     if (hasZcandidate(preselLepColl)) continue;
     AnaUtil::fillHist1D("evtCutFlow", 7);
-    AnaUtil::fillHist1D("evtCutFlowWt", 7, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 7, MCweight * lumiFac);
 
     // Max 2 tight leptons
     if (tightLepColl.size() > 2) continue;
     AnaUtil::fillHist1D("evtCutFlow", 8);
-    AnaUtil::fillHist1D("evtCutFlowWt", 8, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 8, MCweight * lumiFac);
 
     // tau veto
     if (tauColl.size() > 0) continue;
     AnaUtil::fillHist1D("evtCutFlow", 9);
-    AnaUtil::fillHist1D("evtCutFlowWt", 9, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 9, MCweight * lumiFac);
 
-    bool hasOnlyPrompt = isPrompt(lep1) && isPrompt(lep2);
-    bool hasNonPrompt  = (hasOnlyPrompt) ? false : true;
-    //if (!(isPrompt(lep1) && isPrompt(lep2))) continue;
+    bool hasOnlyPrompt = isMC() ? (isPrompt(lep1) && isPrompt(lep2)) : true;
+    bool hasNonPrompt  = hasOnlyPrompt ? false : true;
     AnaUtil::fillHist1D("evtCutFlow", 10);
-    AnaUtil::fillHist1D("evtCutFlowWt", 10, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 10, MCweight * lumiFac);
 
     // -------------------------------------------------------------------- //
     // To select the SR and Fake Region. Two leading leptons must be tight.
@@ -349,10 +318,8 @@ void MultiLeptonMVAna::eventLoop()
     // correct weight for events of every possible category.
     // -------------------------------------------------------------------- //
     // beforeGenMatch : not yet genMatched : prompt or nonprompt -> Not decided yet
-    size_t ntmu = 0;
-    size_t ntel = 0;
-    bool leadIsTightMuon {false};
-    bool leadIsTightEle {false};
+    size_t ntmu{0}, ntel{0};
+    bool leadIsTightMuon{false}, leadIsTightEle {false};
 
     for (size_t i = 0; i < 2; ++i) {
       auto indx = fakeableLepColl[i].index;
@@ -380,94 +347,92 @@ void MultiLeptonMVAna::eventLoop()
     // --------------------------------------- !!! Weight Factory and Flags !!! --------------------------------------- //
     // ---------------------------------------------------------------------------------------------------------------- //
     // For Signal region
-    if (isMC() && isSR_beforeGenMatch) {
-      if (isEleEle)     MCweight = MCweight 
-			  * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
-			  * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
-      else if (isMuMu)  MCweight = MCweight 
-			  * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
-			  * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
-			  * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
-			  * AnaBase::getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
-      else if (isEleMu) {
-	if (leadIsTightMuon) MCweight = MCweight 
-			       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
-			       * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
-			       * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
-	else MCweight = MCweight 
-	       * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
-	       * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
+    if (isMC()) {
+      if (isSR_beforeGenMatch) {
+	if (isEleEle)     MCweight *= SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
+			            * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	else if (isMuMu)  MCweight *= SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
+			            * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
+			            * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
+			            * SFHandler().getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
+	else if (isEleMu) {
+	  if (leadIsTightMuon) MCweight *= SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
+				         * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
+				         * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	  else MCweight *= SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
+		         * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
+	}
       }
-    }
-    // For Sideband region
-    else if (isMC() && isSB_beforeGenMatch) {
-      if (isEleEle) {
-	if (ntel == 0) MCweight = - MCweight 
-			* 0.01 
-			* 0.01 
-			* AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
-			* AnaBase::getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron");
-	else MCweight = (leadIsTightEle) ? 
-	       MCweight 
-	       * 0.01 
-	       * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
-	       * AnaBase::getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron") 
-	       : MCweight 
-	       * 0.01 
-	       * AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
-	       * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron"); 
-      }
-      else if (isMuMu) { 
-	if (ntmu == 0) MCweight = - MCweight 
-			* 0.01 
-			* 0.01 
-			* AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
-			* AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
-	else MCweight = (leadIsTightMuon) ? 
-	       MCweight 
-	       * 0.01 
-	       * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
-	       * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
-	       * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
-	       : MCweight 
-	       * 0.01 
-	       * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
-	       * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
-	       * AnaBase::getIdSF("Tight", lep2.pt, lep2.eta, "Muon");
-      }
-      else if (isEleMu) {
-	if (ntel == 0 && ntmu == 0) MCweight = (lep1.flavour == 1) ? 
-				    - MCweight 
-				    * 0.01 
-				    * 0.01 
-				    * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
-				    * AnaBase::getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
-				    : MCweight
-				    * 0.01 
-				    * 0.01 
-				    * AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
-				    * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
-	
-	else if (ntel == 1 && ntmu == 0) 
-	  MCweight = (leadIsTightEle) ? MCweight 
-	    * 0.01 
-	    * AnaBase::getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
-	    * AnaBase::getIdSF("Loose", lep2.pt, lep2.eta, "Muon") 
-	    : MCweight 
-	    * 0.01 
-	    * AnaBase::getIdSF("Loose", lep1.pt, lep1.eta, "Muon") 
-	    * AnaBase::getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
-	else if (ntel == 0 && ntmu == 1) 
-	  MCweight = (leadIsTightMuon) ? MCweight 
-	    * 0.01 
-	    * AnaBase::getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
-	    * AnaBase::getIsoSF("Tight", lep1.pt, lep1.eta, "Muon") 
-	    * AnaBase::getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
-	    : MCweight 
-	    * 0.01 
-	    * AnaBase::getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron") 
-	    * AnaBase::getIdSF("Medium", lep2.pt, lep2.eta, "Muon") 
-	    * AnaBase::getIsoSF("Tight", lep2.pt, lep2.eta, "Muon"); 
+      // For Sideband region
+      else if (isSB_beforeGenMatch) {
+	if (isEleEle) {
+	  if (ntel == 0) MCweight = - MCweight
+			   * 0.01
+			   * 0.01
+			   * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
+			   * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron");
+	  else MCweight = (leadIsTightEle) ?
+		 MCweight
+		 * 0.01
+		 * SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron")
+		 * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
+		 : MCweight
+		 * 0.01
+		 * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
+		 * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	}
+	else if (isMuMu) {
+	  if (ntmu == 0) MCweight = - MCweight
+			   * 0.01
+			   * 0.01
+			   * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
+			   * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
+	  else MCweight = (leadIsTightMuon) ? 
+		 MCweight
+		 * 0.01
+		 * SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
+		 * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
+		 * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
+		 : MCweight
+		 * 0.01
+		 * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
+		 * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
+		 * SFHandler().getIdSF("Tight", lep2.pt, lep2.eta, "Muon");
+	}
+	else if (isEleMu) {
+	  if (ntel == 0 && ntmu == 0) MCweight = (lep1.flavour == 1) ?
+					- MCweight
+					* 0.01
+					* 0.01
+					* SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
+					* SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
+					: MCweight
+					* 0.01
+					* 0.01
+					* SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
+					* SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
+	  
+	  else if (ntel == 1 && ntmu == 0)
+	    MCweight = (leadIsTightEle) ? MCweight
+	      * 0.01
+	      * SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron")
+	      * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
+	      : MCweight
+	      * 0.01
+	      * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
+	      * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	  else if (ntel == 0 && ntmu == 1)
+	    MCweight = (leadIsTightMuon) ? MCweight
+	      * 0.01
+	      * SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
+	      * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
+	      * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
+	      : MCweight
+	      * 0.01
+	      * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
+	      * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
+	      * SFHandler().getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
+	}
       }
     }
     // --------------------------------------------------------------------------------------------------------//
@@ -489,36 +454,41 @@ void MultiLeptonMVAna::eventLoop()
     bool isMCfake      = hasNonPrompt && isSR_beforeGenMatch; 
 
     if (dumpIdx < 10) {
-      std::cout<<"Event : "<<ev<<"\n";
-      std::cout<<"ntel :"<<ntel<<"\t"
-	       <<"ntmu :"<<ntmu<<"\t"
-	       <<"lep1Flv :"<<lep1.flavour<<"\t"
-	       <<"lep2Flv :"<<lep2.flavour<<"\t"
-	       <<"leadIsTightMuon :"<<leadIsTightMuon<<"\t"
-	       <<"leadIsTightEle :"<<leadIsTightEle<<"\n";
-      std::cout<<"isSR :"<<isSR<<"\t"
-	       <<"isSB :"<<isSB<<"\t"
-	       <<"isMCclosure :"<<isMCclosure<<"\n"
-	       <<"isEleEle :"<<isEleEle<<"\t"
-	       <<"isEleMu  :"<<isEleMu<<"\t"
-	       <<"isMuMu   :"<<isMuMu<<"\n"
-	       <<"isSR_EleEle :"<<(isSR && isEleEle)<<"\t"
-	       <<"isSR_EleMu  :"<<(isSR && isEleMu)<<"\t"
-	       <<"isSR_MuMu   :"<<(isSR && isMuMu)<<"\n"
-	       <<"isSB_EleEle :"<<(isSB && isEleEle)<<"\t"
-	       <<"isSB_EleMu  :"<<(isSB && isEleMu)<<"\t"
-	       <<"isSB_MuMu   :"<<(isSB && isMuMu)<<"\n"
-	       <<"isMCclosure_EleEle :"<<(isMCclosure && isEleEle)<<"\t"
-	       <<"isMCclosure_EleMu  :"<<(isMCclosure && isEleMu)<<"\t"
-	       <<"isMCclosure_MuMu   :"<<(isMCclosure && isMuMu)<<"\n"
-	       <<"isMCfake_EleEle :"<<(isMCfake && isEleEle)<<"\t"
-	       <<"isMCfake_EleMu  :"<<(isMCfake && isEleMu)<<"\t"
-	       <<"isMCfake_MuMu   :"<<(isMCfake && isMuMu)<<"\n";
-      std::cout<<setprecision(10)<<"MC_weight : "<<MCweight<<"\t"<<"Lumi_weight : "<<MCweight*lumiFac<<"\n"<<"\n";
+      cout << "------------------------------------------------------------" << endl;
+      cout << "Event : " << ev << endl;
+      cout << "  ntel  ntmu lep1Flv lep2Flv leadIsTightMuon leadIsTightEle" << endl;
+      cout << setw(6)  << ntel
+           << setw(6)  << ntmu
+	   << setw(8)  << lep1.flavour
+	   << setw(8)  << lep2.flavour
+	   << setw(16) << leadIsTightMuon
+	   << setw(15) << leadIsTightEle
+	   << endl << endl;
+      cout << "  isSR  isSB MCclosure  MCFake"
+           << endl;
+      cout << setw(6) << isSR 
+	   << setw(6) << isSB
+	   << setw(10) << isMCclosure
+	   << setw(8) << isMCfake
+	   << endl << endl;
+      cout << "EleEle EleMu  MuMu"
+	   << endl;
+      cout << setw(6) << isEleEle
+	   << setw(6) << isEleMu
+	   << setw(6) << isMuMu
+	   << endl << endl;
+      if (isMC()) {
+	cout << "   MC_weight Lumi_weight"
+	     << endl;
+	cout << setprecision(5) << setw(12) << MCweight
+	     << setw(12) << MCweight * lumiFac 
+	     << endl;
+      }
     }
     dumpIdx++;
 
     // Region Flags
+    // One can add other rehions also e.g. MC_fake region, MC_closure region etc
     std::map <std::string, bool> regionFlags {
         {"SR", isSR},
 	{"SB", (isSB && !isSignal())}
@@ -530,30 +500,6 @@ void MultiLeptonMVAna::eventLoop()
 	{"MuMu",   isMuMu}
     };
 
-    //    if (isSB && !isSignal()) fhistf()->cd();
-    /*
-    // Channel Flags ... very important
-    std::map <std::string, bool> channelFlags {}; 
-    // Signal Region
-    channelFlags.insert(std::make_pair("EleEle_SR", (isSR && isEleEle)));
-    channelFlags.insert(std::make_pair("EleMu_SR",  (isSR && isEleMu)));
-    channelFlags.insert(std::make_pair("MuMu_SR",   (isSR && isMuMu)));
-    // Sideband Region
-    channelFlags.insert(std::make_pair("EleEle_SB", (isSB && isEleEle && !isSignal())));
-    channelFlags.insert(std::make_pair("EleMu_SB",  (isSB && isEleMu  && !isSignal())));
-    channelFlags.insert(std::make_pair("MuMu_SB",   (isSB && isMuMu   && !isSignal())));
-    */
-    // MC-Closure Region :: TODO [need to tune the conditions here : 
-    // https://gitlab.cern.ch/cms-hh-bbww/cms-hh-to-bbww/-/blob/master/Legacy/MC_closure.md]
-    //    channelFlags.insert(std::make_pair("EleEle_MCclosure", (isMCclosure && isEleEle && isMC() && !isSignal())));
-    //    channelFlags.insert(std::make_pair("EleMu_MCclosure",  (isMCclosure && isEleMu  && isMC() && !isSignal())));
-    //    channelFlags.insert(std::make_pair("MuMu_MCclosure",   (isMCclosure && isMuMu   && isMC() && !isSignal())));
-    // MC-Fake Region
-    //    channelFlags.insert(std::make_pair("EleEle_MCfake", (isMCfake && isEleEle && isMC() && !isSignal())));
-    //    channelFlags.insert(std::make_pair("EleMu_MCfake",  (isMCfake && isEleMu  && isMC() && !isSignal())));
-    //    channelFlags.insert(std::make_pair("MuMu_MCfake",   (isMCfake && isMuMu   && isMC() && !isSignal())));
-    // Comment the last six lines out if you don't want to produce the plots for MC-Closure and MC-fakes
-
     // ----------------------------------------------------------------------------------------------------------------------- //
     // ----------------------------------------------------------------------------------------------------------------------- //
     // ----------------------------------------------------------------------------------------------------------------------- //
@@ -562,27 +508,45 @@ void MultiLeptonMVAna::eventLoop()
     AnaUtil::fillHist1D("metPt", "P_{T} (MET) [GeV]", met.pt, 100, 0, 500, regionFlags, channelFlags, MCweight);
     if (met.pt < 40) continue;
     // From this point onwards, 
+    dumpEvent(evt.event);
+
     // only prompt lepton contribution is goint to be considered for the evtCutFlow histogram
     AnaUtil::fillHist1D("evtCutFlow", 11);
-    AnaUtil::fillHist1D("evtCutFlowWt", 11, MCweight*lumiFac, isMC());
+    if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 11, MCweight * lumiFac);
+
     // nEvents in SR
-    AnaUtil::fillHist1D("evtCutFlow", 12, isSR);
-    AnaUtil::fillHist1D("evtCutFlowWt", 12, MCweight*lumiFac, isSR && isMC());
+    if (isSR) {
+      AnaUtil::fillHist1D("evtCutFlow", 12);
+      if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 12, MCweight * lumiFac);
 
-    // To get the yields for different regions
-    AnaUtil::fillHist1D("SR_yield", 0, (isSR && isEleEle));
-    AnaUtil::fillHist1D("SR_yieldWt", 0, MCweight*lumiFac, (isSR && isEleEle && isMC()));
-    AnaUtil::fillHist1D("SR_yield", 1, (isSR && isEleMu));
-    AnaUtil::fillHist1D("SR_yieldWt", 1, MCweight*lumiFac, (isSR && isEleMu && isMC()));
-    AnaUtil::fillHist1D("SR_yield", 2, (isSR && isMuMu));
-    AnaUtil::fillHist1D("SR_yieldWt", 2, MCweight*lumiFac, (isSR && isMuMu && isMC()));
-
-    AnaUtil::fillHist1D("SB_yield", 0, (isSB && isEleEle && !isSignal()));
-    AnaUtil::fillHist1D("SB_yieldWt", 0, MCweight*lumiFac, (isSB && isEleEle && isMC() && !isSignal()));
-    AnaUtil::fillHist1D("SB_yield", 1, (isSB && isEleMu && !isSignal()));
-    AnaUtil::fillHist1D("SB_yieldWt", 1, MCweight*lumiFac, (isSB && isEleMu && isMC() && !isSignal()));
-    AnaUtil::fillHist1D("SB_yield", 2, (isSB && isMuMu && !isSignal()));
-    AnaUtil::fillHist1D("SB_yieldWt", 2, MCweight*lumiFac, (isSB && isMuMu && isMC() && !isSignal()));
+      // To get the yields for different regions
+      if (isEleEle) {
+	AnaUtil::fillHist1D("SR_yield", 0);
+	if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 0, MCweight * lumiFac);
+      }
+      else if (isEleMu) {
+	AnaUtil::fillHist1D("SR_yield", 1);
+	if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 1, MCweight*lumiFac);
+      }
+      else if (isMuMu) {
+	AnaUtil::fillHist1D("SR_yield", 2);
+	if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 2, MCweight * lumiFac);
+      }
+    }
+    if (isSB && !isSignal()) {
+      if (isEleEle) {
+	AnaUtil::fillHist1D("SB_yield", 0);
+        if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 0, MCweight * lumiFac);
+      }
+      else if (isEleMu) {
+	AnaUtil::fillHist1D("SB_yield", 1);
+	if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 1, MCweight * lumiFac);
+      }
+      else if (isMuMu) {
+	AnaUtil::fillHist1D("SB_yield", 2);
+	if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 2, MCweight * lumiFac);
+      }
+    }
 
     bool isResolved_WZ = (jetColl.size() >= 3 && fatJetColl.size() == 0 && bJetColl.size()==0) ? true : false;
     bool isBoosted_WZ  = (fatJetColl.size() >= 1 && bJetColl.size()==0 && fatbJetColl.size()==0) ? true : false;
@@ -598,28 +562,43 @@ void MultiLeptonMVAna::eventLoop()
   
     // ----------------------------- Resolved WZ Region ----------------------------- //
     if (isResolved_WZ) {
-      AnaUtil::fillHist1D("evtCutFlow",   13,                   isSR);
-      AnaUtil::fillHist1D("evtCutFlowWt", 13, MCweight*lumiFac, (isMC() && isSR));
+      if (isSR) {
+	AnaUtil::fillHist1D("evtCutFlow", 13);
+	if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 13, MCweight*lumiFac);
 
-      AnaUtil::fillHist1D("SR_yield",      3,                   (isSR && isEleEle));
-      AnaUtil::fillHist1D("SR_yieldWt",    3, MCweight*lumiFac, (isMC() && isSR && isEleEle));
-      AnaUtil::fillHist1D("SR_yield",      4,                   (isSR && isEleMu));
-      AnaUtil::fillHist1D("SR_yieldWt",    4, MCweight*lumiFac, (isMC() && isSR && isEleMu));
-      AnaUtil::fillHist1D("SR_yield",      5,                   (isSR && isMuMu));
-      AnaUtil::fillHist1D("SR_yieldWt",    5, MCweight*lumiFac, (isMC() && isSR && isMuMu));
-
-      AnaUtil::fillHist1D("SB_yield",      3,                   (isSB && isEleEle && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    3, MCweight*lumiFac, (isMC() && isSB && isEleEle && !isSignal()));
-      AnaUtil::fillHist1D("SB_yield",      4,                   (isSB && isEleMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    4, MCweight*lumiFac, (isMC() && isSB && isEleMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yield",      5,                   (isSB && isMuMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    5, MCweight*lumiFac, (isMC() && isSB && isMuMu && !isSignal()));
+	if (isEleEle) {
+	  AnaUtil::fillHist1D("SR_yield", 3);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 3, MCweight*lumiFac);
+	}
+	if (isEleMu) {
+	  AnaUtil::fillHist1D("SR_yield", 4);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 4, MCweight * lumiFac);
+	}
+	if (isMuMu) {
+	  AnaUtil::fillHist1D("SR_yield", 5);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 5, MCweight * lumiFac);
+	}
+      }
+      if (isSB  && !isSignal()) {
+	if (isEleEle) {
+	  AnaUtil::fillHist1D("SB_yield", 3);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 3, MCweight * lumiFac);
+	}
+	if (isEleMu) {
+	  AnaUtil::fillHist1D("SB_yield", 4);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 4, MCweight * lumiFac);
+	}
+	if (isMuMu) {
+	  AnaUtil::fillHist1D("SB_yield", 5);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 5, MCweight * lumiFac);
+	}
+      }
 
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", "No. of ak4 jets", jetColl.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl[0].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet2Pt_Resolved_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl[1].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet3Pt_Resolved_WZ", "SubSub-leading ak4 jet p_{T} (GeV)", jetColl[2].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
-      AnaUtil::fillHist1D("ak4Jet4Pt_Resolved_WZ", "SubSubSub-leading ak4 jet p_{T} (GeV)", jetColl[3].pt, 20, 0, 300, regionFlags, channelFlags, MCweight, jetColl.size() > 3);
+      if (jetColl.size() > 3) AnaUtil::fillHist1D("ak4Jet4Pt_Resolved_WZ", "SubSubSub-leading ak4 jet p_{T} (GeV)", jetColl[3].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       
       // jet inv mass
       float jetsInvM = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1]) + 
@@ -631,80 +610,75 @@ void MultiLeptonMVAna::eventLoop()
       // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
       
       if (isSR && skimObj_) {
-	TreeVariablesResolved varListR;
+	TreeVariablesResolved varList;
 
-	varListR.MCweight               = MCweight;
-	varListR.Channel                = chTag;
-	varListR.pt_lep1                = lep1.pt;
-	varListR.pt_lep2                = lep2.pt;
-	varListR.invM_jets              = jetsInvM;
+	varList.MCweight               = MCweight;
+	varList.Channel                = chTag;
+	varList.pt_lep1                = lep1.pt;
+	varList.pt_lep2                = lep2.pt;
+	varList.invM_jets              = jetsInvM;
     
-	skimObj_->fill(varListR, isResolved_WZ, isBoosted_WZ);    
+	skimObj_->fill(varList);    
       }
       histf()->cd(); // Very Very Very Essential
-      // -------------------------------------------------------------------------------------------------- //
-
     }
-    //    if (isSB && !isSignal()) fhistf()->cd();
+
     // ----------------------------- Boosted WZ Region ----------------------------- //
     if (isBoosted_WZ) {
-      AnaUtil::fillHist1D("evtCutFlow",   14,                   isSR);
-      AnaUtil::fillHist1D("evtCutFlowWt", 14, MCweight*lumiFac, (isMC() && isSR));
+      if (isSR) {
+	AnaUtil::fillHist1D("evtCutFlow", 14);
+	if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 14, MCweight*lumiFac);
 
-      AnaUtil::fillHist1D("SR_yield",      6,                   (isSR && isEleEle));
-      AnaUtil::fillHist1D("SR_yieldWt",    6, MCweight*lumiFac, (isMC() && isSR && isEleEle));
-      AnaUtil::fillHist1D("SR_yield",      7,                   (isSR && isEleMu));
-      AnaUtil::fillHist1D("SR_yieldWt",    7, MCweight*lumiFac, (isMC() && isSR && isEleMu));
-      AnaUtil::fillHist1D("SR_yield",      8,                   (isSR && isMuMu));
-      AnaUtil::fillHist1D("SR_yieldWt",    8, MCweight*lumiFac, (isMC() && isSR && isMuMu));
-
-      AnaUtil::fillHist1D("SB_yield",      6,                   (isSB && isEleEle && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    6, MCweight*lumiFac, (isMC() && isSB && isEleEle && !isSignal()));
-      AnaUtil::fillHist1D("SB_yield",      7,                   (isSB && isEleMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    7, MCweight*lumiFac, (isMC() && isSB && isEleMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yield",      8,                   (isSB && isMuMu && !isSignal()));
-      AnaUtil::fillHist1D("SB_yieldWt",    8, MCweight*lumiFac, (isMC() && isSB && isMuMu && !isSignal()));
+	if (isEleEle) {
+	  AnaUtil::fillHist1D("SR_yield", 6);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 6, MCweight*lumiFac);
+	}
+	else if (isEleMu) {
+	  AnaUtil::fillHist1D("SR_yield", 7);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 7, MCweight * lumiFac);
+	}
+	else if (isMuMu) {
+	  AnaUtil::fillHist1D("SR_yield", 8);
+	  if (isMC()) AnaUtil::fillHist1D("SR_yieldWt", 8, MCweight * lumiFac);
+	}
+      }
+      if (isSB  && !isSignal()) {
+	if (isEleEle) {
+	  AnaUtil::fillHist1D("SB_yield", 6);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 6, MCweight * lumiFac);
+	}
+	else if (isEleMu) {
+	  AnaUtil::fillHist1D("SB_yield", 7);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 7, MCweight * lumiFac);
+	}
+	else if (isMuMu) {
+	  AnaUtil::fillHist1D("SB_yield", 8);
+	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 8, MCweight * lumiFac);
+	}
+      }
 
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", "No. of ak4 jets", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
-      AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight, jetColl_ak8Cleaned.size() >= 1);
-      AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight, jetColl_ak8Cleaned.size() >= 2);
-      AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", "No. of ak4 jets with one ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight, fatJetColl.size() == 1);
-      AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "No. of ak4 jets with ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight, fatJetColl.size() >= 2);
+      if (jetColl_ak8Cleaned.size() >= 1) AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+      if (jetColl_ak8Cleaned.size() >= 2) AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+      if (fatJetColl.size() == 1) AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", "No. of ak4 jets with one ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+      if (fatJetColl.size() >= 2) AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "No. of ak4 jets with ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
 
       // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
       if (isSR && skimObj_) {
-	TreeVariablesBoosted  varListB;
+	TreeVariablesBoosted  varList;
 	
-	varListB.MCweight               = MCweight;
-	varListB.Channel                = chTag;
-	varListB.pt_lep1                = lep1.pt;
-	varListB.pt_lep2                = lep2.pt;
+	varList.MCweight               = MCweight;
+	varList.Channel                = chTag;
+	varList.pt_lep1                = lep1.pt;
+	varList.pt_lep2                = lep2.pt;
 
-	skimObj_->fill(varListB, isResolved_WZ, isBoosted_WZ);
+	skimObj_->fill(varList);
       }
       histf()->cd(); // Very Very Very Essential
       // -------------------------------------------------------------------------------------------------- //
     } 
     if (!isMC()) selEvLog() << evt.run << " " << evt.lumis << " " << evt.event << std::endl;
   } // Event loop ends
-}
-
-bool MultiLeptonMVAna::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT,
-				   bool passSingleMuonHLT, bool passSingleEleHLT, std::string dataset) {
-  if (isMC()) return false;
-  else {
-    std::map<std::string, bool>triggerOptions;
-    std::map<std::string, bool>::iterator it;
-    triggerOptions["DoubleMuon"]     =  passDoubleMuonHLT;
-    triggerOptions["DoubleEG"]       =  passDoubleEgHLT && !passDoubleMuonHLT;
-    triggerOptions["MuonEG"]         =  passMuonEgHLT && !(passDoubleMuonHLT || passDoubleEgHLT);
-    triggerOptions["SingleMuon"]     =  passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT);
-    triggerOptions["SingleElectron"] =  passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT);
-    
-    it = triggerOptions.find(dataset.c_str());
-    if (it->second) return true;
-  }
-  return false;
 }
 
 bool MultiLeptonMVAna::hasZcandidate(const std::vector<LeptonCand>& lepColl) {
@@ -747,14 +721,11 @@ bool MultiLeptonMVAna::hasLowMassResonance(const std::vector<LeptonCand>& lepCol
   return false;
 }
 
-bool MultiLeptonMVAna::isPrompt(LeptonCand lep) {
-  if (!isMC()) return true;
-  else {
-    if (lep.genFlv == 1  || // prompt : final state 
-	lep.genFlv == 15 || // from tau
-	lep.genFlv == 22)   // from photon conversion (for ele only)
-      return true;
-  }
+bool MultiLeptonMVAna::isPrompt(const LeptonCand& lep) {
+  if (lep.genFlv == 1  || // prompt : final state 
+      lep.genFlv == 15 || // from tau
+      lep.genFlv == 22)   // from photon conversion (for ele only)
+    return true;
   return false;
 }
 
@@ -812,10 +783,9 @@ void MultiLeptonMVAna::endJob() {
 
 void MultiLeptonMVAna::closeFiles() {
   AnaBase::closeFiles();
-  // Take care of local stuff first 
+  // Take care of local stuff
   if (skimObj_ != nullptr) skimObj_->close(); 
 }
-
 
 // -------------------------------------------------------------------------------
 // Poor man's way of a datacard. Each line between the 'START' and 'END' tags
@@ -831,7 +801,7 @@ bool MultiLeptonMVAna::readJob(const string& jobFile, int& nFiles)
   if (!PhysicsObjSelector::readJob(jobFile, nFiles)) return false;
   
   // Open the same file containing the datacards again to read analysis specific cards
-  ifstream fin(jobFile.c_str(), std::ios::in);    
+  std::ifstream fin(jobFile.c_str(), std::ios::in);    
   if (!fin) {
     cerr << "==> Input File: " << jobFile << " could not be opened!" << endl;
     return false;
@@ -852,26 +822,17 @@ bool MultiLeptonMVAna::readJob(const string& jobFile, int& nFiles)
     // Split the line into words
     vector<string> tokens;
     AnaUtil::tokenize(line, tokens);
-    std::cout << line << std::endl;
     assert(tokens.size() > 1);
     const string& key   = tokens[0];
     const string& value = tokens[1];
     if (key == "useEventList")
       useEventList_ = std::stoi(value.c_str()) > 0 ? true : false;
-    else if (key == "skipDuplicate")
-      skipDuplicate_ = std::stoi(value.c_str()) > 0 ? true : false;
     else if (key == "dumpGenInfo")
       dumpGenInfo_ = std::stoi(value.c_str()) > 0 ? true : false;
     else if (key == "inputEventFile")
       eventFilelist_.push_back(value.c_str());
-    else if (key == "syncDumpFile")
-      dumpFilename_ = value.c_str();
     else if (key == "dumpEventMax")
       dumpEventCount_ = std::stoi(value.c_str());
-    else if (key == "selectPartons")
-      selectPM_ = std::stoi(value.c_str()) > 0 ? true : false;
-    else if (key == "nMEPartons")
-      nMEPartons_ = std::stoi(value.c_str());
     else if (key == "readMVA")
       _readMVA = (atoi(value.c_str()) > 0) ? true : false;
     else if (key == "MVAnetwork")
@@ -886,27 +847,16 @@ bool MultiLeptonMVAna::readJob(const string& jobFile, int& nFiles)
   // Close the file
   fin.close();
   
-  if (!dumpFilename_.empty()) {
-    syncDumpf_.open(dumpFilename_, std::ios::out);
-    if (!syncDumpf_) {
-      cerr << "Output File: " << dumpFilename_ << " could not be opened!" << endl;
-      return false;
-    }
-  }  
-
   printJob();
+
   return true;
 }
 void MultiLeptonMVAna::printJob(ostream& os) const
 {
   AnaBase::printJob(os);
   os << endl;
-  /*
+  
   os << "   useEventList: " << std::boolalpha << useEventList_ << endl
-     << "  skipDuplicate: " << std::boolalpha << skipDuplicate_ << endl
      << " dumpEventCount: " << dumpEventCount_ << endl
-     << "   syncDumpFile: " << dumpFilename_ << endl
-     << "   dumpEventMax: " << dumpEventCount_ << endl
-     << "  selectPartons: " << std::boolalpha << selectPM_ << endl
-     << "     nMEPartons: " << nMEPartons_ << endl;*/
+     << "   dumpEventMax: " << dumpEventCount_ << endl;
 }

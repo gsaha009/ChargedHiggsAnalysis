@@ -21,7 +21,7 @@ using std::ostream;
 namespace AnaUtil {
   // Templated functioned must be defined in the header itself
   void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters=" ");
-  void bit_print(int value, int pos=32, ostream& os=std::cout);
+  void bit_print(int value, int pos=32, std::ostream& os=std::cout);
   template <typename T>
   T deltaPhiT(T phi1, T phi2) {
     T result = phi1 - phi2;
@@ -31,44 +31,36 @@ namespace AnaUtil {
   }  
   // get p4
   template <class T>
-    TLorentzVector getP4(const T& obj) {
+  TLorentzVector getP4(const T& obj) {
     TLorentzVector lv;
     lv.SetPtEtaPhiM(obj.pt, obj.eta, obj.phi, obj.mass);
     return lv;
   }
   //  
-  template <typename T1, typename T2>
-    bool within(T1 pt_, T2 pt1, T2 pt2) {
+  template <typename T>
+  bool within(T pt_, T pt1, T pt2) {
     if (pt_ > pt1 && pt_ <= pt2) return true;
     else return false;
   }
+  // see AN-13-178
   // Transverse mass
-  template<typename LVector1, typename LVector2>
-    double Calculate_MT(const LVector1& lepton_p4, const LVector2& met_p4){
-    const double delta_phi = TVector2::Phi_mpi_pi(lepton_p4.Phi() - met_p4.Phi());
+  template<typename T>
+  double Calculate_MT(const T& lepton_p4, const T& met_p4){
+    double delta_phi = TVector2::Phi_mpi_pi(lepton_p4.Phi() - met_p4.Phi());
     return std::sqrt( 2.0 * lepton_p4.Pt() * met_p4.Pt() * ( 1.0 - std::cos(delta_phi) ) );
   }
-  template<typename LVector1, typename LVector2>
-    double Calculate_MTfix(const LVector1& lepton_p4, const LVector2& met_p4) {
-    const double delta_phi = TVector2::Phi_mpi_pi(lepton_p4.Phi() - met_p4.Phi());
+  template<typename T>
+  double Calculate_MTfix(const T& lepton_p4, const T& met_p4) {
+    double delta_phi = TVector2::Phi_mpi_pi(lepton_p4.Phi() - met_p4.Phi());
     return std::sqrt( 2.0 * 35.0 * met_p4.Pt() * ( 1.0 - std::cos(delta_phi)));
   }
-  template<typename LVector1, typename LVector2, typename LVector3>
-    double Calculate_TotalMT(const LVector1& lepton1_p4, const LVector2&
-			     lepton2_p4, const LVector3& met_p4)
+  template<typename T>
+  double Calculate_TotalMT(const T& lepton1_p4, const T& lepton2_p4, const T& met_p4)
   {
-    const double mt_1 = Calculate_MT(lepton1_p4, met_p4);
-    const double mt_2 = Calculate_MT(lepton2_p4, met_p4);
-    const double mt_ll = Calculate_MT(lepton1_p4, lepton2_p4);
-    return std::sqrt(std::pow(mt_1, 2) + std::pow(mt_2, 2) +
-		     std::pow(mt_ll, 2));
-  }
-  // if an event has paased HLT condition or not
-  template<typename T1, typename T2>
-    bool isTriggered(const std::vector<T1>& paths, const std::vector<T2>& scores){
-    for (size_t i = 0; i < paths.size(); ++i)
-      if (scores[i]) return true;
-    return false;
+    double mt_1 = Calculate_MT(lepton1_p4, met_p4);
+    double mt_2 = Calculate_MT(lepton2_p4, met_p4);
+    double mt_ll = Calculate_MT(lepton1_p4, lepton2_p4);
+    return std::sqrt(std::pow(mt_1, 2) + std::pow(mt_2, 2) + std::pow(mt_ll, 2));
   }
 
   double deltaPhi(double phia, double phib);
@@ -81,7 +73,7 @@ namespace AnaUtil {
   void buildMap(const std::vector<std::string>& tokens, std::map<std::string, int>& hmap);
   void buildMap(const std::vector<std::string>& tokens, std::unordered_map<std::string, int>& hmap);
   void storeCuts(const std::vector<std::string>& tokens, std::map<std::string, std::map<std::string, double>>& hmap);
-  void showCuts(const std::map<std::string, std::map<std::string, double> >& hmap, ostream& os=std::cout);
+  void showCuts(const std::map<std::string, std::map<std::string, double> >& hmap, std::ostream& os=std::cout);
   // ------------------------------------------------------------------------
   // Convenience routine for filling 1D histograms. We rely on root to keep 
   // track of all the histograms that are booked all over so that we do not 
@@ -91,32 +83,6 @@ namespace AnaUtil {
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
   // dynamic approach for 1d histogram booking and filling
-  /*
-  TH1* getHist1D(const char* hname, const char* htitle, int nbins, float xlow, float xhigh, const char* channel);
-  TH1* getHist1D(const std::string& hname, const std::string& htitle, int nbins, float xlow, float xhigh, const std::string& channel);
-  template <class T>
-    bool fillHist1D(const char* hname, const char* htitle, T value, int nbins, float xlow, float xhigh,
-		    const std::map<std::string, bool> &channelFlags, double w=1.0, bool selection=true) {
-    //if (!selection) return false;
-    for (auto const& x : channelFlags) {
-      std::string channel = x.first;
-      bool check = x.second;
-      TH1* h = getHist1D(hname, htitle, nbins, xlow, xhigh, channel.c_str());
-      if (h == nullptr) continue;
-      if (check && selection) {
-	//TH1* h = getHist1D(hname, nbins, xlow, xhigh, channel.c_str());
-	//if (h == nullptr) continue;
-	h->Fill(value, w);
-      }
-    }
-    return true;
-  }
-  template <class T>
-    bool fillHist1D(const std::string& hname, T value, int nbins, float xlow, float xhigh,
-		    const std::map<std::string, bool> channelFlags, double w=1.0, bool selection=true) {
-    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, channelFlags, w, selection);
-  }
-  */
   TH1* getHist1D(const char* hname, const char* htitle, int nbins, float xlow, float xhigh, const char* region, const char* channel);
   TH1* getHist1D(const std::string& hname, const std::string& htitle, int nbins, float xlow, float xhigh, const std::string& region, const std::string& channel);
   template <class T>
@@ -124,9 +90,7 @@ namespace AnaUtil {
 		    T value, int nbins, float xlow, float xhigh, 
 		    const std::map<std::string, bool> &regionFlags, 
 		    const std::map<std::string, bool> &channelFlags, 
-		    double w=1.0, 
-		    bool selection=true) {
-    //if (!selection) return false;
+		    double w=1.0) {
     for (auto const& x : channelFlags) {
       std::string channel = x.first;
       bool check1 = x.second;
@@ -135,7 +99,7 @@ namespace AnaUtil {
 	bool check2 = y.second;
 	TH1* h = getHist1D(hname, htitle, nbins, xlow, xhigh, region.c_str(), channel.c_str());
 	if (h == nullptr) continue;
-	if (check1 && check2 && selection) h->Fill(value, w);
+	if (check1 && check2) h->Fill(value, w);
       }
     }
     return true;
@@ -143,70 +107,73 @@ namespace AnaUtil {
 
   template <class T>
     bool fillHist1D(const std::string& hname, T value, int nbins, float xlow, float xhigh, const std::map<std::string, bool> regionFlags, 
-		    const std::map<std::string, bool> channelFlags, double w=1.0, bool selection=true) {
-    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, regionFlags, channelFlags, w, selection);
+		    const std::map<std::string, bool> channelFlags, double w=1.0) {
+    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, regionFlags, channelFlags, w);
   }
 
   // static approach for 1d histogram booking and filling
   TH1* getHist1D(const char* hname);
   TH1* getHist1D(const std::string& hname);
   template <class T>
-    bool fillHist1D(const char* hname, T value, double w=1.0, bool flag=true) {
+    bool fillHist1D(const char* hname, T value, double w=1.0) {
     TH1* h = getHist1D(hname);
     if (h == nullptr) return false;
-    if (flag) h->Fill(value, w);
+    h->Fill(value, w);
     return true;
   }
   template <class T>
-    bool fillHist1D(const std::string& hname, T value, double w=1.0, bool flag=true) {
-    return fillHist1D(hname.c_str(), value, w, flag);
+    bool fillHist1D(const std::string& hname, T value, double w=1.0) {
+    return fillHist1D(hname.c_str(), value, w);
   }
   // ---------------------------------------------
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
   // dynamic approach for 2d histogram booking and filling
-  TH2* getHist2D(const char* hname, const char* htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const char* region,*/ const char* channel);
-  TH2* getHist2D(const std::string& hname, const std::string& htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, /*const std::string& region,*/ const std::string& channel);
-  template <class T1, class T2>
-    bool fillHist2D(const char* hname, const char* htitle, T1 xvalue, T2 yvalue, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh,
-		    /*const char* region,*/ const std::map<std::string, bool> &channelFlags, double w=1.0, bool selection=true) {
-    //if (!selection) return false;
+  TH2* getHist2D(const char* hname, const char* htitle, 
+		 int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, 
+		 const char* region, const char* channel);
+  TH2* getHist2D(const std::string& hname, const std::string& htitle, 
+		 int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, 
+		 const std::string& region, const std::string& channel);
+  template <class T>
+    bool fillHist2D(const char* hname, const char* htitle, 
+		    T xvalue, T yvalue, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh,
+		    const std::map<std::string, bool> &regionFlags, 
+		    const std::map<std::string, bool> &channelFlags, 
+		    double w=1.0) {
     for (auto const& x : channelFlags) {
       std::string channel = x.first;
-      bool check = x.second;
-      TH2* h = getHist2D(hname, htitle, nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, /*region, */channel.c_str());
-      if (h == nullptr) continue;
-      if (check && selection) {
-	//TH2* h = getHist2D(hname, nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, /*region, */channel.c_str());
-	//if (h == nullptr) continue;
-	h->Fill(xvalue, yvalue, w);
+      bool check1 = x.second;
+      for (auto const& y : regionFlags) {
+	std::string region = y.first;
+	bool check2 = y.second;
+	TH1* h = getHist2D(hname, htitle, nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, region.c_str(), channel.c_str());
+	if (h == nullptr) continue;
+	if (check1 && check2) h->Fill(xvalue, yvalue, w);
       }
     }
     return true;
   }
-  template <class T1, class T2>
-    bool fillHist2D(const std::string& hname, const std::string& htitle, T1 xvalue, T2 yvalue, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, 
-		    /*const std::string& region,*/ const std::map<std::string, bool> channelFlags, double w=1.0, bool selection=true) {
-    return fillHist2D(hname.c_str(), htitle.c_str(), xvalue, yvalue, nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, /*region.c_str(), */channelFlags, w, selection);
+  template <class T>
+    bool fillHist2D(const std::string& hname, const std::string& htitle, 
+		    T xvalue, T yvalue, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, 
+		    const std::map<std::string, bool> regionFlags, const std::map<std::string, bool> channelFlags, double w=1.0) {
+    return fillHist2D(hname.c_str(), htitle.c_str(), xvalue, yvalue, nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, regionFlags, channelFlags, w);
   }
 
   // static approach for 2d histogram booking and filling
-  TH2* getHist2DBasic(const char* hname);
-  TH2* getHist2DBasic(const std::string& hname);
-  template <class T1, class T2>
-    bool fillHist2DBasic(const char* hname, T1 xvalue, T2 yvalue, double w=1.0, bool flag=true) {
-    TH2* h = getHist2DBasic(hname);
+  TH2* getHist2D(const char* hname);
+  TH2* getHist2D(const std::string& hname);
+  template <class T>
+    bool fillHist2D(const char* hname, T xvalue, T yvalue, double w=1.0) {
+    TH2* h = getHist2D(hname);
     if (h == nullptr) return false;
-    if (flag) {
-      //TH2* h = getHist2DBasic(hname);
-      //if (h == nullptr) return false;
-      h->Fill(xvalue, yvalue, w);
-    }
+    h->Fill(xvalue, yvalue, w);
     return true;
   }
-  template <class T1, class T2>
-    bool fillHist2DBasic(const std::string& hname, T1 xvalue, T2 yvalue, double w=1.0, bool flag=true) {
-    return fillHist2DBasic(hname.c_str(), xvalue, yvalue, w, flag);
+  template <class T>
+    bool fillHist2D(const std::string& hname, T xvalue, T yvalue, double w=1.0) {
+    return fillHist2D(hname.c_str(), xvalue, yvalue, w);
   }
   // ---------------------------------------------
   // Convenience routine for filling 3D histograms // TODO :: dynamic approach

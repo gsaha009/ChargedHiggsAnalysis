@@ -3,41 +3,31 @@
 
 #define NEL(x) (sizeof((x))/sizeof((x)[0]))
 
-#include <fstream>
 #include <string>
 #include <vector>
-#include <tuple>
-#include <algorithm>
-#include <cmath>
-#include "TLorentzVector.h"
-#include "TVector.h"
-#include "TProfile.h"
 
 #include "PhysicsObjects.h"
 #include "AnaBase.h"
 #include "LeptonCand.h"
 #include "ZCandidate.h"
 
-
 template <typename T>
-void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candList, bool ismc = false) {
-  for (unsigned int i = 0; i < lepList.size(); ++i) {
-    const auto& ip = lepList[i];
+void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candList, bool ismc=false) {
+  for (const auto& v: lepList) {
     LeptonCand lc;
-    lc.index   = ip.index;
-    lc.pt      = ip.pt;
-    lc.eta     = ip.eta;
-    lc.SCeta   = ip.SCeta;
-    lc.phi     = ip.phi;
-    lc.mass    = ip.mass;
-    lc.charge  = ip.charge;
-    lc.flavour = (typeid(ip) == typeid(vhtm::Muon)) ? 1 : 2;
-    if (ismc) lc.genFlv  = ip.genFlv;
+    lc.index   = v.index;
+    lc.pt      = v.pt;
+    lc.eta     = v.eta;
+    lc.SCeta   = v.SCeta;
+    lc.phi     = v.phi;
+    lc.mass    = v.mass;
+    lc.charge  = v.charge;
+    lc.flavour = (typeid(v) == typeid(vhtm::Muon)) ? 1 : 2;
+    if (ismc) lc.genFlv  = v.genFlv;
 
     candList.push_back(lc);
   }
 }
-
 // create unique lepton pair combination giving a Z and add the candidate into a vector
 template <typename T>
 void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& candList) {
@@ -86,7 +76,6 @@ void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& c
   }
 }
 
-  
 class PhysicsObjSelector: public AnaBase {
  public:
   PhysicsObjSelector();
@@ -98,58 +87,49 @@ class PhysicsObjSelector: public AnaBase {
   virtual bool readJob(const std::string& jobFile, int& nFiles) override;
   virtual void bookHistograms();
   void objectEfficiency();
-  bool jetLeptonCleaning(const vhtm::Jet& jet) const;
-  bool fatJetLeptonCleaning(const vhtm::FatJet& jet) const;
-  bool tauLeptonCleaning(const vhtm::Tau& tau) const;
-  bool thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons,  bool VsTightMuons) const;
-  
+  bool jetLeptonCleaning(const vhtm::Jet& jet, double minDR=0.4) const;
+  bool fatJetLeptonCleaning(const vhtm::FatJet& jet, double minDR=0.8) const;
+  bool tauLeptonCleaning(const vhtm::Tau& tau, double minDR=0.3) const;
+  bool thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons, bool VsTightMuons, double minDR=0.3) const;  
 
   //-----Inline functions to get the object collections-----
   const std::vector<vhtm::Event>& getEventList() const {return eventList_;}
   const std::vector<vhtm::MET>& getMETList() const {return metList_;}
 
-  //Jet Collections
+  // Jet Collections
   const std::vector<vhtm::Jet>& getPreSelJetList() const {return preSelJetList_;}
   const std::vector<vhtm::Jet>& getCleanJetList() const {return leptonCleanJetList_;}  
   const std::vector<vhtm::Jet>& getAk8CleanJetList() const {return leptonCleanJetListOutsideAk8_;}  
   const std::vector<vhtm::Jet>& getLooseBJetList() const {return looseBJetList_;}  
   const std::vector<vhtm::Jet>& getBJetList() const {return bJetList_;}  
 
-  //FatJet Collections
+  // FatJet Collections
   const std::vector<vhtm::FatJet>& getFatJetList() const {return fatJetList_;}
   const std::vector<vhtm::FatJet>& getCleanFatJetList() const {return cleanFatJetList_;}
   const std::vector<vhtm::FatJet>& getBTaggedFatJetList() const {return bTaggedFatJetList_;}
-  //SubJet Collections
+  
+  // SubJet Collections
   const std::vector<vhtm::SubJet>& getSubJetList() const {return subJetList_;}
 
-
-  //Tau Collections
+  // Tau Collections
   const std::vector<vhtm::Tau>& getTauList() const {return tauList_;}
   const std::vector<vhtm::Tau>& getLepCleanTauList() const {return leptonCleanTauList_;}
 
-  //Muon Collections
+  // Muon Collections
   const std::vector<vhtm::Muon>& getPreSelMuList() const {return preSelMuList_;}
   const std::vector<vhtm::Muon>& getFakeableMuList() const {return fakeableMuList_;}
   const std::vector<vhtm::Muon>& getTightMuList() const {return tightMuList_;}
 
-  //Electron Collection
+  // Electron Collection
   const std::vector<vhtm::Electron>& getPreSelEleList() const {return preSelEleList_;}
   const std::vector<vhtm::Electron>& getFakeableEleList() const {return fakeableEleList_;}
   const std::vector<vhtm::Electron>& getTightEleList() const {return tightEleList_;}
 
-  //GenParticle Collections
+  // GenParticle Collections
   const std::vector<vhtm::GenParticle>& getGenList() const {return genParticleList_;}
   const std::vector<vhtm::LHEParticle>& getLHEList() const {return lheParticleList_;}
-  //---------------------------------------------------------
-  
-  std::vector< bool >getDoubleMuonHLTscores();
-  std::vector< bool >getSingleMuonHLTscores();
-  std::vector< bool >getDoubleEgHLTscores();
-  std::vector< bool >getSingleElectronHLTscores();
-  std::vector< bool >getMuonEgHLTscores();
-  std::vector< bool >getSingleMuonHLTForFakescores();
-  std::vector< bool >getSingleElectronHLTForFakescores();
 
+  //---------------------------------------------------------  
   bool findEventInfo();
   bool findGenPartInfo();
   bool findLHEPartInfo();
@@ -164,15 +144,18 @@ class PhysicsObjSelector: public AnaBase {
   void fatJetSelector();
   void subJetSelector();
 
-  void dumpEverything(int evNo, ostream& os) const;
+  void dumpEvent(int evNo, std::ostream& os=std::cout) const;
 
   void clear();
 
  private:
-  //  bool dumpEvent_;
   std::vector<vhtm::Event> eventList_;
   std::vector<vhtm::MET> metList_;
-  std::vector<vhtm::Jet> preSelJetList_, leptonCleanJetList_, leptonCleanJetListOutsideAk8_, looseBJetList_, bJetList_; 
+  std::vector<vhtm::Jet> preSelJetList_, 
+    leptonCleanJetList_, 
+    leptonCleanJetListOutsideAk8_, 
+    looseBJetList_, 
+    bJetList_; 
   std::vector<vhtm::FatJet> fatJetList_, cleanFatJetList_, bTaggedFatJetList_;
   std::vector<vhtm::SubJet> subJetList_;
   std::vector<vhtm::Tau> tauList_, leptonCleanTauList_;
@@ -181,6 +164,9 @@ class PhysicsObjSelector: public AnaBase {
   std::vector<vhtm::GenParticle> genParticleList_;
   std::vector<vhtm::LHEParticle> lheParticleList_;
 
-  bool searchedEle_ {false}, searchedMu_  {false}, searchedJet_ {false}, searchedFatJet_ {false};
+  bool searchedEle_{false}, 
+       searchedMu_{false}, 
+       searchedJet_{false}, 
+       searchedFatJet_{false};
 };
 #endif
