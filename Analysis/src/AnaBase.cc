@@ -389,9 +389,6 @@ void AnaBase::closeHistFile()
   histf_->cd();
   histf_->Write();
   histf_->Close();
-  //fakehistf_->cd();
-  //fakehistf_->Write();
-  //fakehistf_->Close();
 }
 double AnaBase::lumiWt(double evtWeightSum, bool verbose) const 
 {
@@ -602,7 +599,9 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
     cout << "==> INFO. Adding input file " << fname << " to TChain " << endl;
     ++nFiles;
     int nevt = setInputFile(fname);
-    if (maxEvt_ > 0 && nevt >= maxEvt_) break;
+    std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
+    if (nFiles_ > 0 && nFiles > nFiles_) break;
+    // if (maxEvt_ > 0 && nevt >= maxEvt_) break; // -- Useful for debug -- //
   }
   if (!nFiles) {
     cerr << "==> WARN. Input Root file list is empty! exiting ..." << endl;

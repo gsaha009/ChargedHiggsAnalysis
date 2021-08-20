@@ -207,6 +207,7 @@ void MultiLeptonMVAna::eventLoop()
     findObjects();
 
     histf()->cd(); //required
+
     // Access Selected Objects
     const auto& preselMuColl       = getPreSelMuList();
     const auto& fakeableMuColl     = getFakeableMuList();
@@ -658,10 +659,14 @@ void MultiLeptonMVAna::eventLoop()
       }
 
       AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", "No. of ak4 jets", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
-      if (jetColl_ak8Cleaned.size() >= 1) AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
-      if (jetColl_ak8Cleaned.size() >= 2) AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
-      if (fatJetColl.size() == 1) AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", "No. of ak4 jets with one ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
-      if (fatJetColl.size() >= 2) AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "No. of ak4 jets with ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+      if (jetColl_ak8Cleaned.size() >= 1) 
+	AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+      if (jetColl_ak8Cleaned.size() >= 2) 
+	AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+      if (fatJetColl.size() == 1) 
+	AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", "No. of ak4 jets with one ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+      if (fatJetColl.size() >= 2) 
+	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "No. of ak4 jets with ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
 
       // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
       if (isSR && skimObj_) {
@@ -733,7 +738,6 @@ void MultiLeptonMVAna::endJob() {
   PhysicsObjSelector::endJob();
   
   histf()->cd();
-  //histf()->cd("Analysis");
   vector<string> evLabels {
     "Events processed                    : ",
       "has GoodPV                          : ",
