@@ -70,7 +70,7 @@ ScaleFactorsInfo:
   - muonTightIsoSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/RunBCDEF_SF_ISO.root
   - tightMuIsoSFhistName NUM_TightRelIso_DEN_MediumID_pt_abseta
 endInfo:
-  - useEventList 1
+  - useEventList 0
   - eventId 1 895751 20
 legendPos:
   legend:
