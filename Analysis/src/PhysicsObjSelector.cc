@@ -366,7 +366,11 @@ void PhysicsObjSelector::muonSelector() {
     mu.mass    = Muon_mass->At(j);
     mu.charge  = Muon_charge->At(j);
     mu.jetIdx  = Muon_jetIdx->At(j);
-    if (isMC() && readGenInfo()) {
+    //if (isMC() && readGenInfo()) {
+    //  mu.genIdx = Muon_genPartIdx->At(j);
+    //  mu.genFlv = Muon_genPartFlv->At(j); // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
+    // }
+    if (isMC()) {
       mu.genIdx = Muon_genPartIdx->At(j);
       mu.genFlv = Muon_genPartFlv->At(j); // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
     }
@@ -439,11 +443,14 @@ void PhysicsObjSelector::electronSelector() {
     el.charge  = Electron_charge->At(j);
     el.jetIdx  = Electron_jetIdx->At(j);
     el.phoIdx  = Electron_phoIdx->At(j);
-    if (isMC() && readGenInfo()) {
+    //if (isMC() && readGenInfo()) {
+    //  el.genIdx = Electron_genPartIdx->At(j);
+    //  el.genFlv = Electron_genPartFlv->At(j);
+    //}
+    if (isMC()) {
       el.genIdx = Electron_genPartIdx->At(j);
       el.genFlv = Electron_genPartFlv->At(j);
     }
-
     if (thisElectronIsMuon(el, false, true)) continue;
     AnaUtil::fillHist1D("eleCutFlow", 6, 1.0); 
     preSelEleList_.push_back(el);

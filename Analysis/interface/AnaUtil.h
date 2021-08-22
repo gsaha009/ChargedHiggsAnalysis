@@ -229,6 +229,8 @@ namespace AnaUtil {
     for (auto const& v: sourceColl)   
       destColl.push_back(v); 
   }
+  void SetEvtCutFlowBinLabels(const std::string& hname, 
+			      const std::vector<std::string>& slist);
   void scaleHistogram(const std::string& hname, double fac);
   void showEfficiency(const std::string& hname,
 		      const std::vector<std::string>& slist,

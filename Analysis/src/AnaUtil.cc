@@ -334,10 +334,12 @@ namespace AnaUtil {
       os.precision(3);
       int nbins = h->GetNbinsX();
       for (int i = 1; i <= nbins; ++i) {
+	std::string label = h->GetXaxis()->GetBinLabel(i);
 	double cont  = static_cast<double>(h->GetBinContent(1));
 	double conti = static_cast<double>(h->GetBinContent(i));
 	double contj = static_cast<double>(h->GetBinContent(i-1));
-	os << setw(64) << slist[i-1]
+	//os << setw(64) << slist[i-1]
+	os << setw(64) << label
 	   << std::setprecision(2)
 	   << setw(13) << conti
 	   << std::setprecision(5)
@@ -385,6 +387,14 @@ namespace AnaUtil {
 	h->SetBinError(i, err);
       }
       //h->Scale(fac);
+    }
+  }
+
+  void SetEvtCutFlowBinLabels(const std::string& hname, const std::vector<std::string>& slist) {
+    TH1 *h = AnaUtil::getHist1D(hname);
+    if (h != nullptr) {
+      int nbins = h->GetNbinsX();
+      for (int i = 1; i <= nbins; ++i) 	h->GetXaxis()->SetBinLabel(i, slist[i-1].c_str());  
     }
   }
 }

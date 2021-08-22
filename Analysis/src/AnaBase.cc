@@ -161,7 +161,13 @@ bool AnaBase::init() {
   if (branchFound("Muon_pfRelIso03_all")) Muon_pfRelIso03_all = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_pfRelIso03_all");
   if (branchFound("Muon_pfRelIso03_chg")) Muon_pfRelIso03_chg = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_pfRelIso03_chg");
   if (branchFound("Muon_pfRelIso04_all")) Muon_pfRelIso04_all = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_pfRelIso04_all");
+  /*
   if (isMC_ && readGenInfo_) {
+    if (branchFound("Muon_genPartIdx"))   Muon_genPartIdx     = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_genPartIdx");
+    if (branchFound("Muon_genPartFlav"))  Muon_genPartFlv     = make_unique<TTreeReaderArray<unsigned char>>(*treeReader_, "Muon_genPartFlav");
+  }
+  */
+  if (isMC_) {
     if (branchFound("Muon_genPartIdx"))   Muon_genPartIdx     = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_genPartIdx");
     if (branchFound("Muon_genPartFlav"))  Muon_genPartFlv     = make_unique<TTreeReaderArray<unsigned char>>(*treeReader_, "Muon_genPartFlav");
   }
@@ -191,8 +197,13 @@ bool AnaBase::init() {
                    Electron_mvaFall17V2Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2Iso_WP90");  
   if (branchFound("Electron_mvaFall17V1Iso_WP90"))
                    Electron_mvaFall17V1Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V1Iso_WP90");
-
+  /*
   if (isMC_ && readGenInfo_) {
+    if (branchFound("Electron_genPartIdx"))  Electron_genPartIdx = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_genPartIdx");
+    if (branchFound("Electron_genPartFlav")) Electron_genPartFlv = make_unique<TTreeReaderArray<unsigned char>>(*treeReader_, "Electron_genPartFlav");
+  }
+  */
+  if (isMC_) {
     if (branchFound("Electron_genPartIdx"))  Electron_genPartIdx = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_genPartIdx");
     if (branchFound("Electron_genPartFlav")) Electron_genPartFlv = make_unique<TTreeReaderArray<unsigned char>>(*treeReader_, "Electron_genPartFlav");
   }
@@ -599,7 +610,7 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
     cout << "==> INFO. Adding input file " << fname << " to TChain " << endl;
     ++nFiles;
     int nevt = setInputFile(fname);
-    std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
+    //std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
     if (nFiles_ > 0 && nFiles > nFiles_) break;
     // if (maxEvt_ > 0 && nevt >= maxEvt_) break; // -- Useful for debug -- //
   }

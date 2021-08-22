@@ -25,7 +25,7 @@ def getSRandFakeRootFiles(postHaddFilePath, isSignal=False):
 
         logger.info('Producing root file for Signal & FakeExtrapolation regions ...')
 
-        with alive_bar(len(SR_histList), title='Producing files with SR histos ...', length=40, enrich_print=True, bar='circles') as SR_bar:
+        with alive_bar(len(SR_histList), title='Producing file with SR histograms | ', length=30, enrich_print=True, bar='circles') as SR_bar:
             for histName in SR_histList:
                 time.sleep(0.03)
                 hist = copy.deepcopy(haddfile.Get(histName))
@@ -36,7 +36,7 @@ def getSRandFakeRootFiles(postHaddFilePath, isSignal=False):
         SR_file.Close()
 
         if not isSignal:
-            with alive_bar(len(SR_histList), title='Producing files with FakeExtrapolated histos ...', length=40, enrich_print=True, bar='circles') as SB_bar:
+            with alive_bar(len(SR_histList), title='Producing file with FR histograms | ', length=30, enrich_print=True, bar='circles') as SB_bar:
                 for histName in SB_histList:
                     time.sleep(0.03)
                     hist = copy.deepcopy(haddfile.Get(histName))

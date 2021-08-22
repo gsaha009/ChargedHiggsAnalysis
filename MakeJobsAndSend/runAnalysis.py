@@ -9,17 +9,30 @@ import shutil
 import fileinput
 import sys
 import stat
+import time
 from subprocess import Popen, PIPE
 from alive_progress import alive_bar
 from time import sleep
+from joblib import Parallel, delayed
 import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
+
 
 def replaceAll(file,searchExp,replaceExp):
     for line in fileinput.input(file, inplace=1):
         if searchExp in line:
             line = line.replace(searchExp,replaceExp)
         sys.stdout.write(line)
+
+def runShellCmd(cmdList):
+    process = Popen(cmdList, stdout=PIPE, stderr=PIPE)
+    while True:
+        output = process.stdout.readline()
+        if process.poll() is not None:
+            break
+        if output:
+            print(output.strip().decode("utf-8"))
+    rc = process.poll()
 
 def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists, 
                   HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
@@ -138,7 +151,8 @@ def main():
     #if args.send :
         #logging.info('{} : list of JobIds'.format(os.path.join(histDir, 'JobIds.txt')))
         #JobIdList   = open(os.path.join(histDir, 'JobIds.txt'), 'w')
-    
+
+    condorCmdList = []
     logging.info('Start making job cards ............... ')
     for dataType, valDict in samplesDict.items():
         ismc     = False
@@ -234,26 +248,34 @@ def main():
                     
                     # All job files, sub and sh files are ready
                     # Now SHOOT !
-                    if args.send :
-                        condorJobCommandList = ['condor_submit',subkey]
-                        st = os.stat(shkey)
-                        os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                        proc = Popen(condorJobCommandList, stdout=PIPE)
-                        #report = process.communicate()[0]
-                        #print(report)
-                        #JobIdList.write(report.split('cluster ')[-1])
-                        while True:
-                            output = proc.stdout.readline()
-                            if proc.poll() is not None:
-                                break
-                            if output:
-                                print(output.strip().decode("utf-8"))
-                        rc = proc.poll()
+                    #if args.send :
+                    condorJobCommand = ['condor_submit',subkey]
+                    condorCmdList.append(condorJobCommand)
+                    st = os.stat(shkey)
+                    os.chmod(shkey, st.st_mode | stat.S_IEXEC)
+                    proc = Popen(condorJobCommand, stdout=PIPE)
+                    #report = process.communicate()[0]
+                    #print(report)
+                    #JobIdList.write(report.split('cluster ')[-1])
+                    #while True:
+                    #    output = proc.stdout.readline()
+                    #    if proc.poll() is not None:
+                    #        break
+                    #    if output:
+                    #        print(output.strip().decode("utf-8"))
+                    #rc = proc.poll()
 
 
-    #if args.send:
-    #    JobIdList.close()
-
+    if args.send:
+        #JobIdList.close()
+        logging.info('Parrallelising job submission ...')
+        start = time.time()
+        #Parallel(n_jobs=10, prefer="threads")(delayed(runShellCmd)(cmd) for cmd in condorCmdList)
+        Parallel(n_jobs=10)(delayed(runShellCmd)(cmd) for cmd in condorCmdList)
+        stop = time.time()
+        logging.info(f'All jobs sent in {stop-start} seconds')
+    else:
+        logging.info('Use --send to submit jobs in HTcondor ...')
 
 if __name__ == "__main__":
     main()

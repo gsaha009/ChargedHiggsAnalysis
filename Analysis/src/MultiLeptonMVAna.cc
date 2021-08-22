@@ -68,12 +68,12 @@ void MultiLeptonMVAna::bookHistograms()
 
   // book basic histograms to be filled at different stages
   new TH1D("evtCutFlow", "Event CutFlow", 15, -0.5, 14.5);
+  if (isMC()) new TH1D("EventWtSum", "Event Weight Sum", 1, -0.5, 0.5);
   if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 15, -0.5, 14.5);
   new TH1D("SR_yield", "Yield in Signal Region", 9, -0.5, 8.5);
   if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 9, -0.5, 8.5);
   new TH1D("SB_yield", "Yield in Fake Extrapolated Region", 9, -0.5, 8.5);
   if (isMC()) new TH1D("SB_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
-  if (isMC()) new TH1D("EventWtSum", "Event Weight Sum", 1, -0.5, 0.5);
 
   histf()->ls();
 }
@@ -318,6 +318,7 @@ void MultiLeptonMVAna::eventLoop()
     // one of them fails. Thats why several bools have been taken to define
     // correct weight for events of every possible category.
     // -------------------------------------------------------------------- //
+
     // beforeGenMatch : not yet genMatched : prompt or nonprompt -> Not decided yet
     size_t ntmu{0}, ntel{0};
     bool leadIsTightMuon{false}, leadIsTightEle {false};
@@ -506,10 +507,9 @@ void MultiLeptonMVAna::eventLoop()
     // ----------------------------------------------------------------------------------------------------------------------- //
 
     // MET Distribution
-    AnaUtil::fillHist1D("metPt", "P_{T} (MET) [GeV]", met.pt, 100, 0, 500, regionFlags, channelFlags, MCweight);
     if (met.pt < 40) continue;
     // From this point onwards, 
-    dumpEvent(evt.event);
+    //dumpEvent(evt.event);
 
     // only prompt lepton contribution is goint to be considered for the evtCutFlow histogram
     AnaUtil::fillHist1D("evtCutFlow", 11);
@@ -595,11 +595,12 @@ void MultiLeptonMVAna::eventLoop()
 	}
       }
 
+      AnaUtil::fillHist1D("metPt", "P_{T} (MET) [GeV]", met.pt, 100, 0, 500, regionFlags, channelFlags, MCweight);
+
       AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", "No. of ak4 jets", jetColl.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl[0].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet2Pt_Resolved_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl[1].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       AnaUtil::fillHist1D("ak4Jet3Pt_Resolved_WZ", "SubSub-leading ak4 jet p_{T} (GeV)", jetColl[2].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
-      if (jetColl.size() > 3) AnaUtil::fillHist1D("ak4Jet4Pt_Resolved_WZ", "SubSubSub-leading ak4 jet p_{T} (GeV)", jetColl[3].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
       
       // jet inv mass
       float jetsInvM = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1]) + 
@@ -739,22 +740,23 @@ void MultiLeptonMVAna::endJob() {
   
   histf()->cd();
   vector<string> evLabels {
-    "Events processed                    : ",
-      "has GoodPV                          : ",
-      "at least 2 fakeable leptons         : ",
-      "lep1pt > 25 and lep2pt > 20         : ",
-      "pass HLT                            : ",
-      "OS fakeable leptons                 : ",
-      "low mass resonance veto             : ",
-      "Z mass resonance veto               : ",
-      "has max 2 tight leptons             : ",
-      "tau veto                            : ",
-      "isPrompt                            : ",
-      "met > 40                            : ",
-      "is SR                               : ",
-      "isResolved_WZ                       : ",
-      "isBoosted_WZ                        : "
+    "Events processed                                : ",
+      "has GoodPV                                    : ",
+      "at least 2 fakeable leptons                   : ",
+      "lep1pt grthan 25 and lep2pt grthan 20         : ",
+      "pass HLT                                      : ",
+      "2 or more fakeable leptons                    : ",
+      "low mass resonance veto                       : ",
+      "Z mass resonance veto                         : ",
+      "has max 2 tight leptons                       : ",
+      "tau veto                                      : ",
+      "isPrompt                                      : ",
+      "met above 40                                  : ",
+      "is SR                                         : ",
+      "isResolved_WZ                                 : ",
+      "isBoosted_WZ                                  : "
       };
+  AnaUtil::SetEvtCutFlowBinLabels("evtCutFlow", evLabels);
   vector<string> yieldLabels {
     "EleEle [All]",
       "EleMu  [All]",
