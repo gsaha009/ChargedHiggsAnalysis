@@ -74,6 +74,8 @@ namespace AnaUtil {
   void buildMap(const std::vector<std::string>& tokens, std::unordered_map<std::string, int>& hmap);
   void storeCuts(const std::vector<std::string>& tokens, std::map<std::string, std::map<std::string, double>>& hmap);
   void showCuts(const std::map<std::string, std::map<std::string, double> >& hmap, std::ostream& os=std::cout);
+  const std::map<std::string, bool> combineMaps (const std::map <std::string, bool> &map1, const std::map <std::string, bool> &map2);
+  const std::vector<std::string> mergeToList (const std::vector <std::string> &flagList, const std::string &flag);
   // ------------------------------------------------------------------------
   // Convenience routine for filling 1D histograms. We rely on root to keep 
   // track of all the histograms that are booked all over so that we do not 
@@ -83,35 +85,8 @@ namespace AnaUtil {
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
   // dynamic approach for 1d histogram booking and filling
-  TH1* getHist1D(const char* hname, const char* htitle, int nbins, float xlow, float xhigh, const char* region, const char* channel);
-  TH1* getHist1D(const std::string& hname, const std::string& htitle, int nbins, float xlow, float xhigh, const std::string& region, const std::string& channel);
-  template <class T>
-    bool fillHist1D(const char* hname, const char* htitle, 
-		    T value, int nbins, float xlow, float xhigh, 
-		    const std::map<std::string, bool> &regionFlags, 
-		    const std::map<std::string, bool> &channelFlags, 
-		    double w=1.0) {
-    for (auto const& x : channelFlags) {
-      std::string channel = x.first;
-      bool check1 = x.second;
-      for (auto const& y : regionFlags) {
-	std::string region = y.first;
-	bool check2 = y.second;
-	TH1* h = getHist1D(hname, htitle, nbins, xlow, xhigh, region.c_str(), channel.c_str());
-	if (h == nullptr) continue;
-	if (check1 && check2) h->Fill(value, w);
-      }
-    }
-    return true;
-  }
+  // dynamic approach is stalled temporarily ... Need more smart ideas to follow
 
-  template <class T>
-    bool fillHist1D(const std::string& hname, T value, int nbins, float xlow, float xhigh, const std::map<std::string, bool> regionFlags, 
-		    const std::map<std::string, bool> channelFlags, double w=1.0) {
-    return fillHist1D(hname.c_str(), value, nbins, xlow, xhigh, regionFlags, channelFlags, w);
-  }
-
-  // static approach for 1d histogram booking and filling
   TH1* getHist1D(const char* hname);
   TH1* getHist1D(const std::string& hname);
   template <class T>
@@ -124,6 +99,31 @@ namespace AnaUtil {
   template <class T>
     bool fillHist1D(const std::string& hname, T value, double w=1.0) {
     return fillHist1D(hname.c_str(), value, w);
+  }
+  template <class T>
+    bool fillHist1D(const char* hname, 
+		    T value, 
+		    const std::map<std::string, bool> &Flags1, 
+		    const std::map<std::string, bool> &Flags2, 
+		    double w=1.0) {
+    for (auto const& x : Flags1) {
+      std::string channel = x.first;
+      bool check1 = x.second;
+      for (auto const& y : Flags2) {
+	std::string region = y.first;
+	bool check2 = y.second;
+	std::string hnametofind = channel+region+std::string(hname);
+	TH1* h = getHist1D(hnametofind.c_str());
+	if (h == nullptr) continue;
+	if (check1 && check2) h->Fill(value, w);
+      }
+    }
+    return true;
+  }
+  template <class T>
+    bool fillHist1D(const std::string& hname, T value, const std::map<std::string, bool> Flags1, 
+		    const std::map<std::string, bool> Flags2, double w=1.0) {
+    return fillHist1D(hname.c_str(), value, Flags1, Flags2, w);
   }
   // ---------------------------------------------
   // Convenience routine for filling 2D histograms
@@ -192,6 +192,17 @@ namespace AnaUtil {
     return fillHist3D(hname.c_str(), xvalue, yvalue, zvalue, w);
   }
 
+  // --------------------------------------------------
+  //
+  // --------------------------------------------------
+  void bookHist1D(const char* hname,
+		  const char* htitle,
+		  int nbins, float xlow, float xhigh);
+  void bookHist1D(const char* hname,
+		  const char* htitle,
+		  int nbins, float xlow, float xhigh,
+		  const std::vector<std::string> &Flags1,
+		  const std::vector<std::string> &Flags2);
   // --------------------------------------------------
   // Convenience routine for filling profile histograms
   // --------------------------------------------------

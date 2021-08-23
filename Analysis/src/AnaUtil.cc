@@ -142,28 +142,6 @@ namespace AnaUtil {
   // Root object pool whenever necessary. This is the closest one can go to 
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
-  // dynamic approach 
-  TH1* getHist1D(const char* hname, const char* htitle, int nbins, float xlow, float xhigh, const char* region, const char* channel) {
-    std::string hname_ = std::string(channel)+"_"+std::string(hname)+"_"+std::string(region);
-    TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
-    if (obj == nullptr) {
-      obj = new TH1D(hname_.c_str(), std::string(htitle).c_str(), nbins, xlow, xhigh);
-    }
-    TH1* h = nullptr;
-    h = dynamic_cast<TH1D*>(obj);
-    if (h == nullptr) {
-      cerr << "**** getHist1D: <" << hname 
-  	 << "> may not be a 1D Histogram! (" 
-  	 << __FILE__ << ":" << __LINE__ << ")" 
-  	 << endl;
-    }
-    return h;
-  }
-  TH1* getHist1D(const string& hname, const string& htitle, int nbins, float xlow, float xhigh, const string& region, const string& channel) {
-    return getHist1D(hname.c_str(), htitle.c_str(), nbins, xlow, xhigh, region.c_str(), channel.c_str());
-  }
-
-  // static approach
   TH1* getHist1D(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (obj == nullptr) {
@@ -197,26 +175,6 @@ namespace AnaUtil {
   // ---------------------------------------------
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
-  // dynamic approach
-  TH2* getHist2D(const char* hname, const char* htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const char* region, const char* channel) {
-    std::string hname_ = std::string(channel)+"_"+std::string(hname)+"_"+std::string(region);
-    TObject *obj = gDirectory->GetList()->FindObject(hname_.c_str()); 
-    if (obj == nullptr) {
-      obj = new TH2D(hname_.c_str(), std::string(htitle).c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh);
-    }
-    TH2* h = nullptr;
-    h = dynamic_cast<TH2D*>(obj);
-    if (h == nullptr) {
-      cerr << "**** getHist2D: <" << hname 
-  	 << "> may not be a 2D Histogram! (" 
-  	 << __FILE__ << ":" << __LINE__ << ")" 
-  	 << endl;
-    }
-    return h;
-  }
-  TH2* getHist2D(const string& hname, const std::string& htitle, int nbinsX, float xlow, float xhigh, int nbinsY, float ylow, float yhigh, const string& region, const string& channel) {
-    return getHist2D(hname.c_str(), htitle.c_str(), nbinsX, xlow, xhigh, nbinsY, ylow, yhigh, region.c_str(), channel.c_str());
-  }
   // static approach
   TH2* getHist2D(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
@@ -315,6 +273,24 @@ namespace AnaUtil {
   bool fillProfile(const string& hname, float xvalue, float yvalue, double w) {
     return fillProfile(hname.c_str(), xvalue, yvalue, w);
   }
+  void bookHist1D(const char* hname,
+		  const char* htitle,
+		  int nbins, float xlow, float xhigh){
+    new TH1D(hname, htitle, nbins, xlow, xhigh);
+  }
+  void bookHist1D(const char* hname,
+		  const char* htitle,
+		  int nbins, float xlow, float xhigh,
+		  const std::vector<std::string> &Flags1,
+		  const std::vector<std::string> &Flags2){
+    for (auto &flag1 : Flags1) {
+      for(auto &flag2 : Flags2) {
+	std::string hname_ = std::string(flag1)+std::string(flag2)+std::string(hname);
+	new TH1D(hname_.c_str(), htitle, nbins, xlow, xhigh);
+      }
+    }
+  }
+
   void showEfficiency(const string& hname,
 		      const std::vector<std::string>& slist,
 		      const string& header,
@@ -334,12 +310,12 @@ namespace AnaUtil {
       os.precision(3);
       int nbins = h->GetNbinsX();
       for (int i = 1; i <= nbins; ++i) {
-	std::string label = h->GetXaxis()->GetBinLabel(i);
+	//std::string label = h->GetXaxis()->GetBinLabel(i);
 	double cont  = static_cast<double>(h->GetBinContent(1));
 	double conti = static_cast<double>(h->GetBinContent(i));
 	double contj = static_cast<double>(h->GetBinContent(i-1));
-	//os << setw(64) << slist[i-1]
-	os << setw(64) << label
+	os << setw(64) << slist[i-1]
+	  //os << setw(64) << label
 	   << std::setprecision(2)
 	   << setw(13) << conti
 	   << std::setprecision(5)
@@ -396,5 +372,25 @@ namespace AnaUtil {
       int nbins = h->GetNbinsX();
       for (int i = 1; i <= nbins; ++i) 	h->GetXaxis()->SetBinLabel(i, slist[i-1].c_str());  
     }
+  }
+
+  const std::map <std::string, bool> combineMaps (const std::map <std::string, bool> &map1, const std::map <std::string, bool> &map2) {
+    std::map <std::string, bool> resultMap;
+    for (auto& x : map1) {
+      std::string key1 = x.first;
+      bool val1 = x.second;
+      for (auto& y : map2) {
+	std::string key2 = y.first;
+	bool val2 = y.second;
+	resultMap[key1+key2] = val1 && val2;
+      }
+    }
+    return resultMap;
+  }
+
+  const std::vector <std::string> mergeToList (const std::vector <std::string> &flagList, const std::string &flag) {
+    std::vector <std::string> mergedList;
+    for (auto& x : flagList)  mergedList.push_back(x+flag);
+    return mergedList;
   }
 }

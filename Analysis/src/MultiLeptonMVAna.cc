@@ -28,7 +28,8 @@ using std::map;
 using std::pair;
 using std::setprecision;
 using std::setw;
-
+using AnaUtil::bookHist1D;
+using AnaUtil::fillHist1D;
 // -----------
 // Constructor
 // -----------
@@ -67,13 +68,37 @@ void MultiLeptonMVAna::bookHistograms()
   histf()->cd();
 
   // book basic histograms to be filled at different stages
-  new TH1D("evtCutFlow", "Event CutFlow", 15, -0.5, 14.5);
-  if (isMC()) new TH1D("EventWtSum", "Event Weight Sum", 1, -0.5, 0.5);
-  if (isMC()) new TH1D("evtCutFlowWt", "Event CutFlow (Weighted)", 15, -0.5, 14.5);
-  new TH1D("SR_yield", "Yield in Signal Region", 9, -0.5, 8.5);
-  if (isMC()) new TH1D("SR_yieldWt", "Yield in Signal Region Weighted", 9, -0.5, 8.5);
-  new TH1D("SB_yield", "Yield in Fake Extrapolated Region", 9, -0.5, 8.5);
-  if (isMC()) new TH1D("SB_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
+  bookHist1D("evtCutFlow", "Event CutFlow", 15, -0.5, 14.5);
+  if (isMC()) {
+    bookHist1D("EventWtSum", "Event Weight Sum", 1, -0.5, 0.5);
+    bookHist1D("evtCutFlowWt", "Event CutFlow (Weighted)", 15, -0.5, 14.5);
+  }
+  bookHist1D("SR_yield", "Yield in Signal Region", 9, -0.5, 8.5);
+  if (isMC()) bookHist1D("SR_yieldWt", "Yield in Signal Region Weighted", 9, -0.5, 8.5);
+  bookHist1D("SB_yield", "Yield in Fake Extrapolated Region", 9, -0.5, 8.5);
+  if (isMC()) bookHist1D("SB_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
+
+
+  std::vector<std::string>RegionFlags_ = {"SignalRegion","SidebandRegion"};
+  std::vector<std::string>ChannelFlags_ = {"EleEle","EleMu", "MuMu"};
+
+  bookHist1D("TestHist", "working on hist booking", 50, 0, 300, ChannelFlags_, RegionFlags_);
+  bookHist1D("MetPt", "Missing E_{T} (GeV)", 50, 0, 300, ChannelFlags_, RegionFlags_);
+
+  std::vector<std::string>ResolvedFlags_ = AnaUtil::mergeToList(RegionFlags_, "IsResolved");
+  bookHist1D("NoAk4Jets", "nAk4 Jets", 10, 0, 10, ChannelFlags_, ResolvedFlags_);
+  bookHist1D("Ak4Jet1Pt", "jet1 p_{T} (GeV)", 50, 0, 300, ChannelFlags_, ResolvedFlags_);
+  bookHist1D("Ak4Jet2Pt", "jet2 p_{T} (GeV)", 50, 0, 300, ChannelFlags_, ResolvedFlags_);
+  bookHist1D("Ak4Jet3Pt", "jet3 p_{T} (GeV)", 50, 0, 300, ChannelFlags_, ResolvedFlags_);
+  bookHist1D("Ak4Jet4Pt", "jet4 p_{T} (GeV)", 50, 0, 300, ChannelFlags_, ResolvedFlags_);
+  bookHist1D("JetsInvMass", "jets inv mass (GeV)", 100, 0, 500, ChannelFlags_, ResolvedFlags_);
+
+  std::vector<std::string>BoostedFlags_ = AnaUtil::mergeToList(RegionFlags_, "IsBoosted");
+  bookHist1D("NoAk4Jets", "No. of ak4 jets", 10, 0, 10, ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak4Jet1Pt", "Leading ak4 jet p_{T} (GeV)", 50, 0, 300, ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak4Jet2Pt", "Sub-leading ak4 jet p_{T} (GeV)", 50, 0, 300, ChannelFlags_, BoostedFlags_);
+  bookHist1D("NoAk4JetsHas1FatJet", "No. of ak4 jets with one ak8", 10, 0, 10, ChannelFlags_, BoostedFlags_);
+  bookHist1D("NoAk4JetsHas2orMoreFatJet", "No. of ak4 jets with ak8", 10, 0, 10, ChannelFlags_, BoostedFlags_);
 
   histf()->ls();
 }
@@ -183,6 +208,7 @@ void MultiLeptonMVAna::eventLoop()
 	   << "      bTagWt: " << setw(8) << evt.btagWeight_CSVV2 << endl
 	   << "     totalWt: " << setw(8) << MCweight
 	   << endl;
+
 
     AnaUtil::fillHist1D("evtCutFlow", 0);
     if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 0, MCweight*lumiFac);
@@ -492,8 +518,8 @@ void MultiLeptonMVAna::eventLoop()
     // Region Flags
     // One can add other rehions also e.g. MC_fake region, MC_closure region etc
     std::map <std::string, bool> regionFlags {
-        {"SR", isSR},
-	{"SB", (isSB && !isSignal())}
+        {"SignalRegion", isSR},
+	{"SidebandRegion", (isSB && !isSignal())}
     };
     // Channel Flags ... very important
     std::map <std::string, bool> channelFlags { 
@@ -505,6 +531,8 @@ void MultiLeptonMVAna::eventLoop()
     // ----------------------------------------------------------------------------------------------------------------------- //
     // ----------------------------------------------------------------------------------------------------------------------- //
     // ----------------------------------------------------------------------------------------------------------------------- //
+
+    AnaUtil::fillHist1D("TestHist", met.pt, channelFlags, regionFlags, MCweight);
 
     // MET Distribution
     if (met.pt < 40) continue;
@@ -563,6 +591,8 @@ void MultiLeptonMVAna::eventLoop()
   
     // ----------------------------- Resolved WZ Region ----------------------------- //
     if (isResolved_WZ) {
+      std::map <std::string, bool> ResolvedFlags = AnaUtil::combineMaps(regionFlags, {{"IsResolved", isResolved_WZ}});
+
       if (isSR) {
 	AnaUtil::fillHist1D("evtCutFlow", 13);
 	if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 13, MCweight*lumiFac);
@@ -595,19 +625,19 @@ void MultiLeptonMVAna::eventLoop()
 	}
       }
 
-      AnaUtil::fillHist1D("metPt", "P_{T} (MET) [GeV]", met.pt, 100, 0, 500, regionFlags, channelFlags, MCweight);
-
-      AnaUtil::fillHist1D("nAk4Jets_Resolved_WZ", "No. of ak4 jets", jetColl.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
-      AnaUtil::fillHist1D("ak4Jet1Pt_Resolved_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl[0].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
-      AnaUtil::fillHist1D("ak4Jet2Pt_Resolved_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl[1].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
-      AnaUtil::fillHist1D("ak4Jet3Pt_Resolved_WZ", "SubSub-leading ak4 jet p_{T} (GeV)", jetColl[2].pt, 20, 0, 300, regionFlags, channelFlags, MCweight);
+      AnaUtil::fillHist1D("MetPt", met.pt, channelFlags, ResolvedFlags, MCweight);
+      AnaUtil::fillHist1D("NoAk4Jets", jetColl.size(), channelFlags, ResolvedFlags, MCweight);
+      AnaUtil::fillHist1D("Ak4Jet1Pt", jetColl[0].pt, channelFlags, ResolvedFlags, MCweight);
+      AnaUtil::fillHist1D("Ak4Jet2Pt", jetColl[1].pt, channelFlags, ResolvedFlags, MCweight);
+      AnaUtil::fillHist1D("Ak4Jet3Pt", jetColl[2].pt, channelFlags, ResolvedFlags, MCweight);
+      if (jetColl.size() > 3) AnaUtil::fillHist1D("Ak4Jet4Pt", jetColl[3].pt, channelFlags, ResolvedFlags, MCweight);
       
       // jet inv mass
       float jetsInvM = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1]) + 
 					       AnaUtil::getP4(jetColl[2]) + AnaUtil::getP4(jetColl[3])).M()
 	: (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1]) + AnaUtil::getP4(jetColl[2])).M();
 
-      AnaUtil::fillHist1D("jetsInvMass_Resolved_WZ", "Invariant mass of maximum 3 jets (GeV)", jetsInvM, 100, 0, 500, regionFlags, channelFlags, MCweight);
+      AnaUtil::fillHist1D("JetsInvMass", jetsInvM, channelFlags, ResolvedFlags, MCweight);
 
       // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
       
@@ -627,6 +657,7 @@ void MultiLeptonMVAna::eventLoop()
 
     // ----------------------------- Boosted WZ Region ----------------------------- //
     if (isBoosted_WZ) {
+      std::map <std::string, bool> BoostedFlags = AnaUtil::combineMaps(regionFlags, {{"IsBoosted", isBoosted_WZ}});
       if (isSR) {
 	AnaUtil::fillHist1D("evtCutFlow", 14);
 	if (isMC()) AnaUtil::fillHist1D("evtCutFlowWt", 14, MCweight*lumiFac);
@@ -658,16 +689,15 @@ void MultiLeptonMVAna::eventLoop()
 	  if (isMC()) AnaUtil::fillHist1D("SB_yieldWt", 8, MCweight * lumiFac);
 	}
       }
-
-      AnaUtil::fillHist1D("nAk4Jets_Boosted_WZ", "No. of ak4 jets", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+      AnaUtil::fillHist1D("NoAk4Jets", jetColl_ak8Cleaned.size(), channelFlags, BoostedFlags, MCweight);
       if (jetColl_ak8Cleaned.size() >= 1) 
-	AnaUtil::fillHist1D("ak4Jet1Pt_Boosted_WZ", "Leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[0].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+	AnaUtil::fillHist1D("Ak4Jet1Pt", jetColl_ak8Cleaned[0].pt, channelFlags, BoostedFlags, MCweight);
       if (jetColl_ak8Cleaned.size() >= 2) 
-	AnaUtil::fillHist1D("ak4Jet2Pt_Boosted_WZ", "Sub-leading ak4 jet p_{T} (GeV)", jetColl_ak8Cleaned[1].pt, 50, 0, 1000, regionFlags, channelFlags, MCweight);
+	AnaUtil::fillHist1D("Ak4Jet2Pt", jetColl_ak8Cleaned[1].pt, channelFlags, BoostedFlags, MCweight);
       if (fatJetColl.size() == 1) 
-	AnaUtil::fillHist1D("nAk4Jets_has1FatJet_Boosted_WZ", "No. of ak4 jets with one ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+	AnaUtil::fillHist1D("NoAk4JetsHas1FatJet", jetColl_ak8Cleaned.size(), channelFlags, BoostedFlags, MCweight);
       if (fatJetColl.size() >= 2) 
-	AnaUtil::fillHist1D("nAk4Jets_has2OrMoreFatJet_Boosted_WZ", "No. of ak4 jets with ak8", jetColl_ak8Cleaned.size(), 10, -0.5, 9.5, regionFlags, channelFlags, MCweight);
+	AnaUtil::fillHist1D("NoAk4JetsHas2orMoreFatJet", jetColl_ak8Cleaned.size(), channelFlags, BoostedFlags, MCweight);
 
       // --------------------------- Varibales to be plotted and stored in ntuple ------------------------- //      
       if (isSR && skimObj_) {
