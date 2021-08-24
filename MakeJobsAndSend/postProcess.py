@@ -168,10 +168,8 @@ def main():
                                 logger.warning(f'{rootfile} is a Zombie! Please produce this file again.')
                                 tfile.Close()
                             else:
-                                #logging.info(f'to be h-added >>-----> : {rootfile}')
                                 sleep(0.03)
                                 tobehadd.append(rootfile)
-                            #bar()
                     
                         if len(tobehadd) == 0:
                             logger.error(f'{key} job output root files are not present')

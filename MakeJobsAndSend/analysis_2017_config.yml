@@ -1,7 +1,6 @@
 tree: Events
 era: 2017
 lumi: 41529.152
-#appDir: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/CMSSW_11_1_8/src
 envPath: /cvmfs/sft.cern.ch/lcg/views/LCG_98python3/x86_64-centos7-gcc9-opt/setup.sh
 jobDir: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis
 exeToRun: /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/multileptonMVA

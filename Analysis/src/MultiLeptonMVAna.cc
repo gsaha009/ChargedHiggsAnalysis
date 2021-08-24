@@ -79,7 +79,7 @@ void MultiLeptonMVAna::bookHistograms()
   if (isMC()) bookHist1D("SB_yieldWt", "Yield in Fake Extrapolated Region Weighted", 9, -0.5, 8.5);
 
 
-  std::vector<std::string>RegionFlags_ = {"SignalRegion","SidebandRegion"};
+  std::vector<std::string>RegionFlags_ = {"_SR_","_SB_"};
   std::vector<std::string>ChannelFlags_ = {"EleEle","EleMu", "MuMu"};
 
   bookHist1D("TestHist", "working on hist booking", 50, 0, 300, ChannelFlags_, RegionFlags_);
@@ -518,8 +518,8 @@ void MultiLeptonMVAna::eventLoop()
     // Region Flags
     // One can add other rehions also e.g. MC_fake region, MC_closure region etc
     std::map <std::string, bool> regionFlags {
-        {"SignalRegion", isSR},
-	{"SidebandRegion", (isSB && !isSignal())}
+        {"_SR_", isSR},
+	{"_SB_", (isSB && !isSignal())}
     };
     // Channel Flags ... very important
     std::map <std::string, bool> channelFlags { 
