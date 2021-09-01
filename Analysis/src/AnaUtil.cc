@@ -273,6 +273,7 @@ namespace AnaUtil {
   bool fillProfile(const string& hname, float xvalue, float yvalue, double w) {
     return fillProfile(hname.c_str(), xvalue, yvalue, w);
   }
+  /*
   void bookHist1D(const char* hname,
 		  const char* htitle,
 		  int nbins, float xlow, float xhigh){
@@ -290,7 +291,7 @@ namespace AnaUtil {
       }
     }
   }
-
+  */
   void showEfficiency(const string& hname,
 		      const std::vector<std::string>& slist,
 		      const string& header,

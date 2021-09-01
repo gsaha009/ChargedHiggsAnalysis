@@ -346,13 +346,16 @@ bool AnaBase::init() {
     }
   }
   // Setting the HLT branch pointers
-  setHltPtrList(doubleMuonHltPathList_, doubleMuonHltPtrList_);
   setHltPtrList(singleMuonHltPathList_, singleMuonHltPtrList_);
-  setHltPtrList(doubleEgHltPathList_, doubleEgHltPtrList_);
-  setHltPtrList(singleElectronHltPathList_, singleElectronHltPtrList_);
-  setHltPtrList(muonEgHltPathList_, muonEgHltPtrList_);
   setHltPtrList(doubleMuonHltPathList_, doubleMuonHltPtrList_);
-
+  setHltPtrList(muonEgHltPathList_, muonEgHltPtrList_);
+  setHltPtrList(singleElectronHltPathList_, singleElectronHltPtrList_);
+  setHltPtrList(doubleEgHltPathList_, doubleEgHltPtrList_);
+  // for 2018, EGamma = singleElectron + doubleEg
+  //if (era_ == 2018) {
+  //  eGammaHltPathList_.insert(eGammaHltPathList_.end(), singleElectronHltPathList_.begin(), singleElectronHltPathList_.end());
+  //  eGammaHltPtrList_.insert(eGammaHltPtrList_.end(), singleElectronHltPtrList_.begin(), singleElectronHltPtrList_.end());
+  //}
   setHltPtrList(singleMuonHltForFakePathList_, singleMuonHltForFakePtrList_);
   setHltPtrList(singleElectronHltForFakePathList_, singleElectronHltForFakePtrList_);
 
@@ -371,6 +374,7 @@ vector<bool> AnaBase::getHLTscores(const vector<std::unique_ptr<TTreeReaderValue
 
   return hltScores;
 }
+/*
 bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT,
 			  bool passSingleMuonHLT, bool passSingleEleHLT, const string& dataset) {
   map<string, bool> options {
@@ -380,6 +384,34 @@ bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool pas
     {"SingleMuon", passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT)},
     {"SingleElectron", passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT)}
   };
+  map<string, bool>::iterator it = options.find(dataset.c_str());
+  if (it != options.end() && it->second) return true;
+
+  return false;
+}
+*/
+bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT,
+			  bool passSingleMuonHLT, bool passSingleEleHLT, const string& dataset, int era) {
+  std::map<std::string, bool> options = {};
+  if (era == 2016 || era == 2017)
+    options.insert({
+	{"DoubleMuon", passDoubleMuonHLT},
+	{"DoubleEG", passDoubleEgHLT && !passDoubleMuonHLT},
+        {"MuonEG", passMuonEgHLT && !(passDoubleMuonHLT || passDoubleEgHLT)},
+        {"SingleMuon", passSingleMuonHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT)},
+	{"SingleElectron", passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT)}});
+  else if (era == 2018) {
+    bool passEGamma = (passDoubleEgHLT || passSingleEleHLT);
+    options.insert({
+	{"DoubleMuon", passDoubleMuonHLT},
+        {"EGamma", passEGamma && !passDoubleMuonHLT},
+        {"MuonEG", passMuonEgHLT && !(passDoubleMuonHLT || passEGamma)},
+        {"SingleMuon", passSingleMuonHLT && !(passDoubleMuonHLT || passEGamma || passMuonEgHLT)}});
+  }
+  else {
+    std::cout<<"Please mention era in jobCard ...\n";
+    exit(0);
+  }
   map<string, bool>::iterator it = options.find(dataset.c_str());
   if (it != options.end() && it->second) return true;
 
@@ -609,7 +641,7 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
   for (const auto& fname: fileList_) {
     cout << "==> INFO. Adding input file " << fname << " to TChain " << endl;
     ++nFiles;
-    int nevt = setInputFile(fname);
+    //int nevt = setInputFile(fname);
     //std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
     if (nFiles_ > 0 && nFiles > nFiles_) break;
     // if (maxEvt_ > 0 && nevt >= maxEvt_) break; // -- Useful for debug -- //

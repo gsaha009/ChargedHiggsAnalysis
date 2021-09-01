@@ -133,6 +133,7 @@ public:
   const std::vector<std::string> getSingleElectronHLTpaths() const {return singleElectronHltPathList_;}
   const std::vector<std::string> getDoubleEgHLTpaths() const {return doubleEgHltPathList_;}
   const std::vector<std::string> getMuonEgHLTpaths() const {return muonEgHltPathList_;}
+  //const std::vector<std::string> getEGammaHLTpaths() const {return eGammaHltPathList_;} // need for 2018 only
   const std::vector<std::string> getSingleMuonHLTForFakepaths() const {return singleMuonHltForFakePathList_;}
   const std::vector<std::string> getSingleElectronHLTForFakepaths() const {return singleElectronHltForFakePathList_;}
 
@@ -148,11 +149,12 @@ public:
 
   static std::vector<bool> getHLTscores(const std::vector<std::unique_ptr<TTreeReaderValue<bool>>>& ptrs);
   static bool isDuplicate(bool passDoubleMuonHLT, 
-		   bool passDoubleEgHLT, 
-		   bool passMuonEgHLT, 
-		   bool passSingleMuonHLT, 
-		   bool passSingleEleHLT,
-		   const std::string& dataset);
+			  bool passDoubleEgHLT, 
+			  bool passMuonEgHLT, 
+			  bool passSingleMuonHLT, 
+			  bool passSingleEleHLT,
+			  const std::string& dataset,
+			  int era);
   static bool isTriggered(const std::vector<std::string>& paths, const std::vector<bool>& scores);
 
   const ScaleFactorHandler& SFHandler() const {return SFHandler_;}
@@ -179,6 +181,7 @@ private:
   std::vector<std::string> doubleMuonHltPathList_;
   std::vector<std::string> doubleEgHltPathList_;
   std::vector<std::string> muonEgHltPathList_;
+  //std::vector<std::string> eGammaHltPathList_; // need for 2018 only
   std::vector<std::string> singleMuonHltForFakePathList_;
   std::vector<std::string> singleElectronHltForFakePathList_;
 
@@ -187,6 +190,7 @@ private:
   std::vector<std::unique_ptr<TTreeReaderValue<bool>>> doubleEgHltPtrList_;
   std::vector<std::unique_ptr<TTreeReaderValue<bool>>> singleElectronHltPtrList_;
   std::vector<std::unique_ptr<TTreeReaderValue<bool>>> muonEgHltPtrList_;
+  //std::vector<std::unique_ptr<TTreeReaderValue<bool>>> eGammaHltPtrList_; // need for 2018 only
   std::vector<std::unique_ptr<TTreeReaderValue<bool>>> singleMuonHltForFakePtrList_;
   std::vector<std::unique_ptr<TTreeReaderValue<bool>>> singleElectronHltForFakePtrList_;
 

@@ -14,6 +14,7 @@
 #include "MVASkim.h"
 #include "MVAnalysis.h"
 #include "LeptonCand.h"
+#include "HistBooker.h"
 
 class MultiLeptonMVAna : public PhysicsObjSelector {
     

@@ -195,6 +195,7 @@ namespace AnaUtil {
   // --------------------------------------------------
   //
   // --------------------------------------------------
+  /*
   void bookHist1D(const char* hname,
 		  const char* htitle,
 		  int nbins, float xlow, float xhigh);
@@ -203,6 +204,7 @@ namespace AnaUtil {
 		  int nbins, float xlow, float xhigh,
 		  const std::vector<std::string> &Flags1,
 		  const std::vector<std::string> &Flags2);
+  */
   // --------------------------------------------------
   // Convenience routine for filling profile histograms
   // --------------------------------------------------

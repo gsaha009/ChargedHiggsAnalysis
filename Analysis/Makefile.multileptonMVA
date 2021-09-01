@@ -14,6 +14,7 @@ SRCS   = src/PhysicsObjects.cc \
        	 src/AnaBase.cc \
 	 src/PhysicsObjSelector.cc \
 	 src/ScaleFactorHandler.cc \
+	 src/HistBooker.cc \
 	 src/MultiLeptonMVAna.cc \
 	 src/MVASkim.cc \
 	 src/MVAnalysis.cc \
