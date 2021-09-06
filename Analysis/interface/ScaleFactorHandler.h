@@ -12,6 +12,7 @@ public:
   bool openRootFiles();
   double getIdSF(const std::string& IdType, float pt, float eta, const std::string& Flav) const;
   double getIsoSF(const std::string& IsoType, float pt, float eta, const std::string& Flav) const;
+  double getFF(const float pt, float eta, const std::string& Flav) const;
 
   std::string muonIdSFRootFile_ {"default.root"};
   std::string looseMuonIdSFhistName_ {"hist"};
@@ -31,5 +32,11 @@ public:
   std::string muonTightIsoSFRootFile_ {"default.root"};
   std::string tightMuIsoSFhistName_ {"hist"};
   TH2D* tightMuIsoSFhist_ {nullptr};
+
+  std::string FRRootFile_ {"default.root"};
+  std::string muonFRhistName_ {"hist"};
+  TH2F* muonFRhist_ {nullptr};
+  std::string electronFRhistName_ {"hist"};
+  TH2F* electronFRhist_ {nullptr};
 };
 #endif

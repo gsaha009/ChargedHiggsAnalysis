@@ -70,7 +70,8 @@ vhtm::Muon::Muon():
   tightId(false),
   highPtId(-111),
   pfRelIso03_all(-999),
-  pfRelIso04_all(-999)
+  pfRelIso04_all(-999),
+  pdgId(-111)
 {}
 
 vhtm::Electron::Electron():
@@ -84,7 +85,8 @@ vhtm::Electron::Electron():
   charge(-999),
   jetIdx(-111),
   genIdx(-111),
-  genFlv(-111)
+  genFlv(-111),
+  pdgId(-111)
 {}
 
 

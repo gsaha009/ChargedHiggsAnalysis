@@ -24,6 +24,7 @@ void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candLis
     lc.charge  = v.charge;
     lc.flavour = (typeid(v) == typeid(vhtm::Muon)) ? 1 : 2;
     if (ismc) lc.genFlv  = v.genFlv;
+    lc.pdgId   = v.pdgId;
 
     candList.push_back(lc);
   }

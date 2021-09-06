@@ -90,6 +90,7 @@ namespace vhtm {
     unsigned char highPtId;
     float pfRelIso03_all;
     float pfRelIso04_all;
+    int pdgId;
 
     ClassDef(Muon, 1)
   };
@@ -110,6 +111,7 @@ namespace vhtm {
     int phoIdx;
     int genIdx;
     unsigned char genFlv;
+    int pdgId;
 
     ClassDef(Electron, 1)
   };
@@ -137,6 +139,7 @@ namespace vhtm {
     float mass;
     int charge;
     int jetIdx;
+
     ClassDef(Tau, 1)
   };
   class Jet: public TObject {

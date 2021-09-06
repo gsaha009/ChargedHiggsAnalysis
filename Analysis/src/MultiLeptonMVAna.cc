@@ -342,15 +342,18 @@ void MultiLeptonMVAna::eventLoop()
     // ---------------------------------------------------------------------------------------------------------------- //
     // --------------------------------------- !!! Weight Factory and Flags !!! --------------------------------------- //
     // ---------------------------------------------------------------------------------------------------------------- //
-    // For Signal region
     if (isMC()) {
+      // *** both of the fakeable leptons are tight [Signal Region] *** //
       if (isSR_beforeGenMatch) {
+	// ** both leptons are electrons ** //
 	if (isEleEle)     MCweight *= SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron") 
 			            * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	// ** both leptons are muons ** //
 	else if (isMuMu)  MCweight *= SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon") 
 			            * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
 			            * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
 			            * SFHandler().getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
+	// ** one is electron and other is muon ** //
 	else if (isEleMu) {
 	  if (leadIsTightMuon) MCweight *= SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
 				         * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
@@ -359,72 +362,92 @@ void MultiLeptonMVAna::eventLoop()
 		         * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon");
 	}
       }
-      // For Sideband region
+      // *** At least one fakeable lepton fails the tight criteria [Sideband Region] *** //
       else if (isSB_beforeGenMatch) {
+	// ** both leptons are electrons ** //
 	if (isEleEle) {
+	  // * both electrons fail tight id * //
 	  if (ntel == 0) MCweight = - MCweight
-			   * 0.01
-			   * 0.01
+			   * SFHandler().getFF(lep1.pt, std::fabs(lep1.SCeta),"Electron")
+			   * SFHandler().getFF(lep2.pt, std::fabs(lep2.SCeta),"Electron")
 			   * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
 			   * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron");
+	  // * leading fakeable electron is tight and the sub-leading electron fails tight id * //
+	  // *                                       or                                       * //
+	  // * leading electron is the fakeable one and the sub-leading is the tight electron * //
 	  else MCweight = (leadIsTightEle) ?
 		 MCweight
-		 * 0.01
+		 * SFHandler().getFF(lep2.pt, std::fabs(lep2.SCeta),"Electron")
 		 * SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron")
 		 * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
 		 : MCweight
-		 * 0.01
+		 * SFHandler().getFF(lep1.pt, std::fabs(lep1.SCeta),"Electron")
 		 * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
 		 * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
 	}
+	// ** both leptons are muons ** // 
 	else if (isMuMu) {
+	  // * both muons fail tight id * //
 	  if (ntmu == 0) MCweight = - MCweight
-			   * 0.01
-			   * 0.01
+			   * SFHandler().getFF(lep1.pt, std::fabs(lep1.eta),"Muon")
+			   * SFHandler().getFF(lep2.pt, std::fabs(lep2.eta),"Muon")
 			   * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
 			   * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
+	  // * leading fakeable muon is tight and the sub-leading muon fails tight id * //
+	  // *                                   or                                   * //
+	  // * leading muon is the fakeable one and the sub-leading is the tight muon * //	  
 	  else MCweight = (leadIsTightMuon) ? 
 		 MCweight
-		 * 0.01
+		 * SFHandler().getFF(lep2.pt, std::fabs(lep2.eta),"Muon")
 		 * SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
 		 * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
 		 * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
 		 : MCweight
-		 * 0.01
+		 * SFHandler().getFF(lep1.pt, std::fabs(lep1.eta),"Muon")
 		 * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
 		 * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
 		 * SFHandler().getIdSF("Tight", lep2.pt, lep2.eta, "Muon");
 	}
+	// ** one of the electron or muon fails the tight id ** //
 	else if (isEleMu) {
+	  // * both fail tight * //
+	  // * leading one is muon {flavour = 1} * //
+	  // or
+	  // * leading one is electron {flavour = 2} * //
 	  if (ntel == 0 && ntmu == 0) MCweight = (lep1.flavour == 1) ?
 					- MCweight
-					* 0.01
-					* 0.01
+					* SFHandler().getFF(lep1.pt, std::fabs(lep1.eta),"Muon")
+					* SFHandler().getFF(lep2.pt, std::fabs(lep2.SCeta),"Electron")
 					* SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
 					* SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
 					: MCweight
-					* 0.01
-					* 0.01
+					* SFHandler().getFF(lep1.pt, std::fabs(lep1.SCeta),"Electron")
+					* SFHandler().getFF(lep2.pt, std::fabs(lep2.eta),"Muon")
 					* SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
 					* SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon");
-	  
+	  // * leading fakeable electron is tight and the sub-leading muon fails tight id * //
+	  // *                                     or                                     * //
+	  // * leading muon is the fakeable one and the sub-leading is the tight electron * //	  	  
 	  else if (ntel == 1 && ntmu == 0)
 	    MCweight = (leadIsTightEle) ? MCweight
-	      * 0.01
+	      * SFHandler().getFF(lep2.pt, std::fabs(lep2.eta),"Muon")
 	      * SFHandler().getIdSF("Tight", lep1.pt, lep1.SCeta, "Electron")
 	      * SFHandler().getIdSF("Loose", lep2.pt, lep2.eta, "Muon")
 	      : MCweight
-	      * 0.01
+	      * SFHandler().getFF(lep1.pt, std::fabs(lep1.eta),"Muon")
 	      * SFHandler().getIdSF("Loose", lep1.pt, lep1.eta, "Muon")
 	      * SFHandler().getIdSF("Tight", lep2.pt, lep2.SCeta, "Electron");
+	  // * leading fakeable muon is tight and the sub-leading electron fails tight id * //
+	  // *                                     or                                     * //
+	  // * leading electron is the fakeable one and the sub-leading is the tight muon * //	  	  
 	  else if (ntel == 0 && ntmu == 1)
 	    MCweight = (leadIsTightMuon) ? MCweight
-	      * 0.01
+	      * SFHandler().getFF(lep2.pt, std::fabs(lep2.SCeta),"Electron")
 	      * SFHandler().getIdSF("Medium", lep1.pt, lep1.eta, "Muon")
 	      * SFHandler().getIsoSF("Tight", lep1.pt, lep1.eta, "Muon")
 	      * SFHandler().getIdSF("Loose", lep2.pt, lep2.SCeta, "Electron")
 	      : MCweight
-	      * 0.01
+	      * SFHandler().getFF(lep1.pt, std::fabs(lep1.SCeta),"Electron")
 	      * SFHandler().getIdSF("Loose", lep1.pt, lep1.SCeta, "Electron")
 	      * SFHandler().getIdSF("Medium", lep2.pt, lep2.eta, "Muon")
 	      * SFHandler().getIsoSF("Tight", lep2.pt, lep2.eta, "Muon");
@@ -555,6 +578,8 @@ void MultiLeptonMVAna::eventLoop()
 
     TLorentzVector lep1p4 = AnaUtil::getP4(lep1);
     TLorentzVector lep2p4 = AnaUtil::getP4(lep2);
+    TLorentzVector metp4;
+    metp4.SetPtEtaPhiE(met.pt, 0.0, met.phi, met.pt);
     float dr_l1l2   = lep1p4.DeltaR(lep2p4);
     float dphi_l1l2 = TVector2::Phi_mpi_pi(lep1.phi - lep2.phi);
     float deta_l1l2 = lep1.eta - lep2.eta;
@@ -653,7 +678,7 @@ void MultiLeptonMVAna::eventLoop()
 					       AnaUtil::getP4(jetColl[2]) + AnaUtil::getP4(jetColl[3])).M()
 	: (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1]) + AnaUtil::getP4(jetColl[2])).M();
 
-      //fillHist1D("JetsInvMass", jetsInvM, channelFlags, ResolvedFlags, MCweight);
+      fillHist1D("JetsInvMass", jetsInvM, channelFlags, ResolvedFlags, MCweight);
       fillHist1D("HT", HT, channelFlags, ResolvedFlags, MCweight);
       fillHist1D("HT_vectSum", jetsp4.Pt(), channelFlags, ResolvedFlags, MCweight);
 
@@ -680,9 +705,89 @@ void MultiLeptonMVAna::eventLoop()
 
 	varList.MCweight               = MCweight;
 	varList.Channel                = chTag;
+	// lepton1
+	varList.px_lep1                = lep1p4.Px();
+	varList.py_lep1                = lep1p4.Py();
+	varList.pz_lep1                = lep1p4.Pz();
+	varList.E_lep1                 = lep1p4.E();
 	varList.pt_lep1                = lep1.pt;
+	varList.eta_lep1               = lep1.eta;
+	varList.phi_lep1               = lep1.phi;
+	varList.charge_lep1            = lep1.charge;
+	varList.pdgid_lep1             = lep1.pdgId;
+	// lepton2
+	varList.px_lep2                = lep2p4.Px();
+	varList.py_lep2                = lep2p4.Py();
+	varList.pz_lep2                = lep2p4.Pz();
+	varList.E_lep2                 = lep2p4.E();
 	varList.pt_lep2                = lep2.pt;
-	varList.invM_jets              = jetsInvM;
+	varList.eta_lep2               = lep2.eta;
+	varList.phi_lep2               = lep2.phi;
+	varList.charge_lep2            = lep2.charge;
+	varList.pdgid_lep2             = lep2.pdgId;
+	// jet1
+	varList.px_jet1                = AnaUtil::getP4(jetColl[0]).Px();
+	varList.py_jet1                = AnaUtil::getP4(jetColl[0]).Py();
+	varList.pz_jet1                = AnaUtil::getP4(jetColl[0]).Pz();
+	varList.E_jet1                 = AnaUtil::getP4(jetColl[0]).E();
+	varList.pt_jet1                = jetColl[0].pt;
+	varList.eta_jet1               = jetColl[0].eta;
+	varList.phi_jet1               = jetColl[0].phi;
+	varList.btag_jet1              = jetColl[0].btagDeepFlavB;
+	// jet2
+	varList.px_jet2                = AnaUtil::getP4(jetColl[1]).Px();
+	varList.py_jet2                = AnaUtil::getP4(jetColl[1]).Py();
+	varList.pz_jet2                = AnaUtil::getP4(jetColl[1]).Pz();
+	varList.E_jet2                 = AnaUtil::getP4(jetColl[1]).E();
+	varList.pt_jet2                = jetColl[1].pt;
+	varList.eta_jet2               = jetColl[1].eta;
+	varList.phi_jet2               = jetColl[1].phi;
+	varList.btag_jet2              = jetColl[1].btagDeepFlavB;
+	// jet3
+	varList.px_jet3                = AnaUtil::getP4(jetColl[2]).Px();
+	varList.py_jet3                = AnaUtil::getP4(jetColl[2]).Py();
+	varList.pz_jet3                = AnaUtil::getP4(jetColl[2]).Pz();
+	varList.E_jet3                 = AnaUtil::getP4(jetColl[2]).E();
+	varList.pt_jet3                = jetColl[2].pt;
+	varList.eta_jet3               = jetColl[2].eta;
+	varList.phi_jet3               = jetColl[2].phi;
+	varList.btag_jet3              = jetColl[2].btagDeepFlavB;
+	// jet4
+	varList.px_jet4                = (jetColl.size() > 3) ? AnaUtil::getP4(jetColl[3]).Px() : 0.0;
+	varList.py_jet4                = (jetColl.size() > 3) ? AnaUtil::getP4(jetColl[3]).Py() : 0.0;
+	varList.pz_jet4                = (jetColl.size() > 3) ? AnaUtil::getP4(jetColl[3]).Pz() : 0.0;
+	varList.E_jet4                 = (jetColl.size() > 3) ? AnaUtil::getP4(jetColl[3]).E(): 0.0;
+	varList.pt_jet4                = (jetColl.size() > 3) ? jetColl[3].pt : 0.0;
+	varList.eta_jet4               = (jetColl.size() > 3) ? jetColl[3].eta : 0.0;
+	varList.phi_jet4               = (jetColl.size() > 3) ? jetColl[3].phi : 0.0;
+	varList.btag_jet4              = (jetColl.size() > 3) ? jetColl[3].btagDeepFlavB : 0.0;
+	/*
+	// di-jet
+	varList.dR_jet1jet2            = (AnaUtil::getP4(jetColl[0])).DeltaR(AnaUtil::getP4(jetColl[1]));
+	varList.dR_jet2jet3            = (AnaUtil::getP4(jetColl[0])).DeltaR(AnaUtil::getP4(jetColl[1]));
+	varList.dR_jet1jet3            = (AnaUtil::getP4(jetColl[0])).DeltaR(AnaUtil::getP4(jetColl[1]));
+	varList.dR_jet2jet4            = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[1])).DeltaR(AnaUtil::getP4(jetColl[3])) : 0.0;
+	varList.dR_jet3jet4            = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[2])).DeltaR(AnaUtil::getP4(jetColl[3])) : 0.0;
+	varList.dPhi_jet1jet2          = std::fabs(TVector2::Phi_mpi_pi(jetColl[0].phi - jetColl[1].phi));
+	varList.dPhi_jet2jet3          = std::fabs(TVector2::Phi_mpi_pi(jetColl[1].phi - jetColl[2].phi));
+	varList.dPhi_jet1jet3          = std::fabs(TVector2::Phi_mpi_pi(jetColl[0].phi - jetColl[2].phi));
+	varList.dPhi_jet2jet4          = (jetColl.size() > 3) ? std::fabs(TVector2::Phi_mpi_pi(jetColl[1].phi - jetColl[3].phi)) : 0.0;
+	varList.dPhi_jet3jet4          = (jetColl.size() > 3) ? std::fabs(TVector2::Phi_mpi_pi(jetColl[2].phi - jetColl[3].phi)) : 0.0;
+	varList.invM_jet1jet2          = (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[1])).M();
+	varList.invM_jet2jet3          = (AnaUtil::getP4(jetColl[1]) + AnaUtil::getP4(jetColl[2])).M();
+	varList.invM_jet1jet3          = (AnaUtil::getP4(jetColl[0]) + AnaUtil::getP4(jetColl[2])).M();
+	varList.invM_jet2jet4          = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[1]) + AnaUtil::getP4(jetColl[3])).M() : 0.0;
+	varList.invM_jet3jet4          = (jetColl.size() > 3) ? (AnaUtil::getP4(jetColl[2]) + AnaUtil::getP4(jetColl[3])).M() : 0.0;
+	// lep-jet
+	*/
+	// met
+	varList.px_met                 = metp4.Px();
+	varList.py_met                 = metp4.Py();
+	varList.pz_met                 = 0.0;
+	varList.E_met                  = met.pt;
+	varList.pt_met                 = met.pt;
+	varList.eta_met                = 0.0;
+	varList.phi_met                = met.phi;
 
 	skimObj_->fill(varList);    
       }
@@ -741,7 +846,14 @@ void MultiLeptonMVAna::eventLoop()
       fillHist1D("DEta_lep1lep2", deta_l1l2, channelFlags, BoostedFlags, MCweight);
       fillHist1D("InvM_l1l2", invM_l1l2, channelFlags, BoostedFlags, MCweight);
 
-
+      fillHist1D("Ak8Jet1Pt", fatJetColl[0].pt, channelFlags, BoostedFlags, MCweight);
+      fillHist1D("Ak8Jet1Eta", fatJetColl[0].eta, channelFlags, BoostedFlags, MCweight);
+      fillHist1D("Ak8Jet1Phi", fatJetColl[0].phi, channelFlags, BoostedFlags, MCweight);
+      if (fatJetColl.size() > 1) {
+	fillHist1D("Ak8Jet2Pt", fatJetColl[1].pt, channelFlags, BoostedFlags, MCweight);
+	fillHist1D("Ak8Jet2Eta", fatJetColl[1].eta, channelFlags, BoostedFlags, MCweight);
+	fillHist1D("Ak8Jet2Phi", fatJetColl[1].phi, channelFlags, BoostedFlags, MCweight);
+      }
       if (jetColl_ak8Cleaned.size() >= 1) fillHist1D("Ak4Jet1Pt", jetColl_ak8Cleaned[0].pt, channelFlags, BoostedFlags, MCweight);
       if (jetColl_ak8Cleaned.size() >= 2) fillHist1D("Ak4Jet2Pt", jetColl_ak8Cleaned[1].pt, channelFlags, BoostedFlags, MCweight);
       if (fatJetColl.size() == 1) fillHist1D("NoAk4JetsHas1FatJet", jetColl_ak8Cleaned.size(), channelFlags, BoostedFlags, MCweight);
@@ -807,6 +919,7 @@ bool MultiLeptonMVAna::hasLowMassResonance(const std::vector<LeptonCand>& lepCol
 }
 
 bool MultiLeptonMVAna::isPrompt(const LeptonCand& lep) {
+  //std::cout<<lep.genFlv<<std::endl;
   if (lep.genFlv == 1  || // prompt : final state 
       lep.genFlv == 15 || // from tau
       lep.genFlv == 22)   // from photon conversion (for ele only)

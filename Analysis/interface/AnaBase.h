@@ -255,6 +255,7 @@ public:
   std::unique_ptr<TTreeReaderArray<float>> Muon_phi;
   std::unique_ptr<TTreeReaderArray<int>> Muon_charge;
   std::unique_ptr<TTreeReaderArray<float>> Muon_mass;
+  std::unique_ptr<TTreeReaderArray<int>> Muon_pdgId;
   std::unique_ptr<TTreeReaderArray<float>> Muon_sip3d;
   std::unique_ptr<TTreeReaderArray<int>> Muon_jetIdx;
   std::unique_ptr<TTreeReaderArray<bool>> Muon_LooseId;
@@ -286,6 +287,7 @@ public:
   std::unique_ptr<TTreeReaderArray<float>> Electron_phi;
   std::unique_ptr<TTreeReaderArray<int>> Electron_charge;
   std::unique_ptr<TTreeReaderArray<float>> Electron_mass;
+  std::unique_ptr<TTreeReaderArray<int>> Electron_pdgId;
   std::unique_ptr<TTreeReaderArray<float>> Electron_sip3d;
   std::unique_ptr<TTreeReaderArray<int>> Electron_jetIdx;
   std::unique_ptr<TTreeReaderArray<int>> Electron_phoIdx;

@@ -11,6 +11,7 @@ import fileinput
 import sys
 import ROOT
 import stat
+import copy
 from subprocess import Popen, PIPE
 from collections import defaultdict
 from alive_progress import alive_bar
@@ -94,6 +95,8 @@ def main():
     logger.info('Doing hadd ===>')
     #groupLegendDict = dict()
     #groupLegendInfo = dict()
+    evtCutFlowDict   = defaultdict(list)
+    evtCutFlowLabels = []
     combinedDictForYaml = dict()
     for dataType, valDict in samplesDict.items():
         '''
@@ -191,6 +194,28 @@ def main():
                             '''
                         bar()
                 # hadding done .................
+                # getting all the evtCutFlow histograms
+                outrootfile  = ROOT.TFile(posthaddfile,'read')
+                cutFlowHist  = outrootfile.Get('evtCutFlow')
+                if len(evtCutFlowLabels) == 0:
+                    for ibin in range(cutFlowHist.GetNbinsX()):
+                        evtCutFlowLabels.append(cutFlowHist.GetXaxis().GetBinLabel(cutFlowHist.FindBin(ibin)))
+
+                if dataType == 'MC' or dataType == 'SIGNAL':
+                    evtCutFlowDict[key].append(cutFlowHist)
+                    cutFlowWtHist = outrootfile.Get('evtCutFlowWt')
+                    cutFlowWtHist_ls = copy.deepcopy(cutFlowWtHist)
+                    evtWtSumHist = outrootfile.Get('EventWtSum')
+                    if cutFlowWtHist_ls.Integral() > 0:
+                        cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(0))                        
+                    evtCutFlowDict[key].append(cutFlowWtHist)
+                    evtCutFlowDict[key].append(cutFlowWtHist_ls)
+
+                elif dataType == 'Data':
+                    evtCutFlowDict['Observed'].append(cutFlowHist)
+                else:
+                    raise RuntimeError('please mention correct datatype : MC or DATA or SIGNAL ...')
+
                 SR_File, Fake_File = makeFakeFileSeparate.getSRandFakeRootFiles(posthaddfile, isSignal=issignal)
     
                 group = val.get('group')
@@ -259,6 +284,38 @@ def main():
             if output:
                 logging.info(output.strip().decode("utf-8"))
         rc = proc.poll()
+
+
+    # Producing yield tables
+    evtCutFlowLabels.insert(0, 'Process')
+    yieldTable = PrettyTable(evtCutFlowLabels)
+    yieldTableWt = PrettyTable(evtCutFlowLabels)
+    yieldTableWtLs = PrettyTable(evtCutFlowLabels)
+    for label, histList in evtCutFlowDict.items():
+        entries = []
+        hist = histList[0]
+        for i in range(hist.GetNbinsX()):
+            entries.append(round(hist.GetBinContent(hist.FindBin(i)),3))
+        yieldTable.add_row([label]+entries)
+
+        if not label == 'DATA':
+            histWt = histList[1]
+            histWtLs = histList[2]
+            entriesWt = []
+            entriesWtLs = []
+            for i in range(hist.GetNbinsX()):
+                entriesWt.append(round(histWt.GetBinContent(histWt.FindBin(i)),3))
+                entriesWtLs.append(round(histWtLs.GetBinContent(histWtLs.FindBin(i)),3))
+            yieldTableWt.add_row([label]+entriesWt)
+            yieldTableWtLs.add_row([label]+entriesWtLs)
+
+    with open (os.path.join(histDir, 'YieldTable.txt'), 'w') as yfile:
+        yfile.write(' -------------- | For unweighted events | ---------------- \n')
+        yfile.write(str(yieldTable)+'\n')
+        yfile.write(' -------------- | For weighted events | ---------------- \n')
+        yfile.write(str(yieldTableWt)+'\n')
+        yfile.write(f' -------------- | For weighted events (at {lumi} pb-1) | ---------------- \n')
+        yfile.write(str(yieldTableWtLs)+'\n')
 
 if __name__ == "__main__":
     main()

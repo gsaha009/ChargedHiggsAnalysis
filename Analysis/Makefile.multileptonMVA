@@ -23,6 +23,7 @@ SRCS   = src/PhysicsObjects.cc \
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 DEBUG_FLAG = -g0 -O3
+#DEBUG_FLAG = -g
 CXX      = g++
 LDFLAGS  = $(DEBUG_FLAG)
 SOFLAGS  = -shared 

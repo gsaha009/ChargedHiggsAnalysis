@@ -91,6 +91,31 @@ bool ScaleFactorHandler::openRootFiles() {
 
   file_MuTightIsoSF->Close();
 
+  // FakeRates
+  const char* fname_FR = gSystem->ExpandPathName(FRRootFile_.c_str());
+  if (gSystem->AccessPathName(fname_FR)) {
+    cerr << ">>> Warning: File <<" << FRRootFile_ << ">> not found!!" << endl;
+    return false;
+  }
+  std::unique_ptr<TFile> file_FR = std::make_unique<TFile>(fname_FR);
+
+  file_FR -> GetObject(muonFRhistName_.c_str(), muonFRhist_);
+  if (!muonFRhist_) {
+    cerr << ">>> Warning: Histogram <<" << muonFRhistName_ << ">> not found!!" << endl;
+    return false;
+  }
+  muonFRhist_->SetDirectory(0);
+
+  file_FR -> GetObject(electronFRhistName_.c_str(), electronFRhist_);
+  if (!electronFRhist_) {
+    cerr << ">>> Warning: Histogram <<" << electronFRhistName_ << ">> not found!!" << endl;
+    return false;
+  }
+  electronFRhist_->SetDirectory(0);
+
+  file_FR ->Close();
+  
+
   return true;
 }
 double ScaleFactorHandler::getIdSF(const std::string& IdType, float pt, float eta, const std::string& Flav) const {
@@ -154,4 +179,25 @@ double ScaleFactorHandler::getIsoSF(const std::string& IsoType, float pt, float 
     }
   }
   return SF;
+}
+double ScaleFactorHandler::getFF(float pt, float eta, const std::string& Flav) const {
+  double FR = 0.0;
+  if (Flav == "Muon") {
+    if (pt < muonFRhist_->GetXaxis()->GetXmax()) {
+	int binX = muonFRhist_->GetXaxis()->FindBin(pt);
+	int binY = muonFRhist_->GetYaxis()->FindBin(std::abs(eta));
+	FR = muonFRhist_->GetBinContent(binX, binY);
+    }
+    else FR = 0.0;
+  }
+  else if (Flav == "Electron") {
+    if (pt < electronFRhist_->GetYaxis()->GetXmax()) {
+      int binX = electronFRhist_->GetYaxis()->FindBin(pt);
+      int binY = electronFRhist_->GetXaxis()->FindBin(std::abs(eta));
+      FR = electronFRhist_->GetBinContent(binX, binY);
+    }
+    else FR = 0.0;
+  }
+  double FF = FR/(1-FR);
+  return FF;
 }

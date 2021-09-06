@@ -14,6 +14,7 @@ from subprocess import Popen, PIPE
 from alive_progress import alive_bar
 from time import sleep
 from joblib import Parallel, delayed
+import datetime as cal
 import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s',datefmt='%m/%d/%Y %H:%M:%S')
 
@@ -34,7 +35,7 @@ def runShellCmd(cmdList):
             print(output.strip().decode("utf-8"))
     rc = process.poll()
 
-def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists, 
+def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, key, xsec, lumi, cutLists, 
                   HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                   SFInfo, dataset, files, endInfoList, ismc, isdata, issignal):
     if ismc:
@@ -46,15 +47,23 @@ def dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, ke
     for item in commonInfoList:
         jfile.write(item+'\n') 
     jfile.write('evtWtSum '+evtWtSum+'\n')
+    jfile.write('############ Skim Info ###############'+'\n')
+    jfile.write(skimInfoList[0]+'\n') if not isdata else jfile.write('createMVATree 0'+'\n')
+    '''
+    for item in skimInfoList:
+        if isdata:
+            if '1' in str(item):
+                str(item).replace('1','0')
+        jfile.write(item+'\n')
+    '''
     jfile.write('############ MVA Info ###############'+'\n')
     for item in mvaInfoList:
         jfile.write(item+'\n')
-    jfile.write('mvaInputFile '+histDir+'/'+str(key)+'_ntuple.root'+'\n')
+    jfile.write('mvaInputFile '+histDir+'/'+str(key)+'_skim.root'+'\n')
     jfile.write('########### xsec,lumi,hist ###########\n')
     if not isdata:
         jfile.write('lumiWtList xsec='+str(xsec)+' intLumi='+str(lumi)+' nevents=100000'+'\n')
     jfile.write('histFile '+histDir+'/'+str(key)+'_hist.root'+'\n')
-    #jfile.write('fakehistFile '+histDir+'/'+str(key)+'_FakeExtrapolation.root'+'\n')
     #jfile.write('logFile '+histDir+'/'+str(key)+'_dump.log'+'\n')
     jfile.write('############ Cut lists ###############'+'\n')
     for item in cutLists:
@@ -92,7 +101,6 @@ def main():
     parser = argparse.ArgumentParser(description='Make Jobs and Send')
     
     parser.add_argument('--configname', action='store', required=True, type=str, help='Name of the config')
-    parser.add_argument('--suffix', action='store', required=True, type=str, help='set jobdir name')
     parser.add_argument('--send', action='store_true', required=False, help='send jobs to HT-Condor')
     
     args = parser.parse_args()
@@ -110,6 +118,7 @@ def main():
     lumi                      = configDict.get('lumi')
     tree                      = configDict.get('tree')
     commonInfoList            = configDict.get('commonInfo')
+    skimInfoList              = configDict.get('skimInfo')
     mvaInfoList               = configDict.get('mvaInfo')
     endInfoList               = configDict.get('endInfo')
     cutLists                  = configDict.get('cutLists')    
@@ -132,15 +141,19 @@ def main():
     exeToRun          = configDict.get('exeToRun')
     outdir            = configDict.get('outDir')
     samplesDict       = configDict.get('samplesDict')
+    
+    # to make the dir names unique # (dateMonthYear_hourMinSec)
+    now = cal.datetime.now()
+    suffix = now.strftime("%d%m%Y_%H%M%S")
 
-    jobDir  = os.path.join(pwd,'JobCards_'+str(era)+'_'+args.suffix) 
+    jobDir  = os.path.join(pwd,'JobCards_'+str(era)+'_'+suffix) 
     if os.path.isdir(jobDir):
         logging.info('{} : job directory overwritten !'.format(jobDir))
     else:
         os.mkdir(jobDir)
         logging.info('{} : job directory created'.format(jobDir))
 
-    histDir = os.path.join(outdir,'ChargedHiggsAnalysis_'+str(era)+'_JobOutput_'+args.suffix)
+    histDir = os.path.join(outdir,'ChargedHiggsAnalysis_'+str(era)+'_JobOutput_'+suffix)
     if os.path.isdir(histDir):
         logging.info('Existing output directory : {}'.format(histDir))
         raise RuntimeError('Output directory exists. Please change the suffix .')
@@ -176,6 +189,9 @@ def main():
                 logging.info(' Sample : {}'.format(key))
                 dataset      = str(key.split('_')[0]) if isdata else 'null'
                 filePathList = val.get('filedirs')
+                if len(filePathList) == 0:
+                    logging.warning('No files present !!!!!!')
+                    continue
                 xsec         = val.get('xsec') if not isdata else -999.9
                 evtWtSum     = val.get('genEvtWtSum') if not isdata else 'null'
                 filesPerJob  = int(val.get('filesPerJob'))
@@ -185,7 +201,7 @@ def main():
                     files += [os.path.join(item,rfile) for rfile in os.listdir(item) if '.root' in rfile]
                 jobFile = str(key)+'.job'
                 with open(os.path.join(jobDir,jobFile), 'w') as jfile:
-                    dumpInJobCard(jfile, era, commonInfoList, evtWtSum, mvaInfoList, histDir, key, xsec, lumi, cutLists,
+                    dumpInJobCard(jfile, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, key, xsec, lumi, cutLists,
                                   HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                                   SFInfo, dataset, files, endInfoList, ismc, isdata, issignal)
                 jfile.close()
@@ -221,7 +237,7 @@ def main():
                     shkey  = os.path.join(conDir,str(key)+'_'+str(i)+'.sh')
                     with open(jobkey, 'w') as tmpl:
                         tmplKey = key+'_'+str(i)
-                        dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
+                        dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
                                       HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                                       SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
                     tmpl.close()

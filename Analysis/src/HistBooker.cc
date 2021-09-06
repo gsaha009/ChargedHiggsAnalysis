@@ -85,13 +85,12 @@ void HistBooker::bookHistograms (bool isMC) {
   bookHist1D("DR_jet1_jet4",       "#Delta R [jet1, jet4]",                                25, 0, 5,        ChannelFlags_, ResolvedFlags_);
   bookHist1D("DR_jet2_jet3",       "#Delta R [jet2, jet3]",                                25, 0, 5,        ChannelFlags_, ResolvedFlags_);
   bookHist1D("DR_jet2_jet4",       "#Delta R [jet2, jet4]",                                25, 0, 5,        ChannelFlags_, ResolvedFlags_);
-  bookHist1D("DPhi_jet3_jet4",     "#Delta#Phi [jet3, jet4]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
+  bookHist1D("DR_jet3_jet4",       "#Delta R [jet3, jet4]",                                25, 0, 5,        ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet1_jet2",     "#Delta#Phi [jet1, jet2]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet1_jet3",     "#Delta#Phi [jet1, jet3]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet1_jet4",     "#Delta#Phi [jet1, jet4]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet2_jet3",     "#Delta#Phi [jet2, jet3]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet2_jet4",     "#Delta#Phi [jet2, jet4]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
-  bookHist1D("DPhi_jet3_jet4",     "#Delta#Phi [jet3, jet4]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DPhi_jet3_jet4",     "#Delta#Phi [jet3, jet4]",                              32, -3.2, 3.2,   ChannelFlags_, ResolvedFlags_);
   bookHist1D("DEta_jet1_jet2",     "#Delta#eta [jet1, jet2]",                              50, -5, 5,       ChannelFlags_, ResolvedFlags_);
   bookHist1D("DEta_jet1_jet3",     "#Delta#eta [jet1, jet3]",                              50, -5, 5,       ChannelFlags_, ResolvedFlags_);
@@ -155,11 +154,14 @@ void HistBooker::bookHistograms (bool isMC) {
   bookHist1D("DPhi_lep1lep2",      "#Delta#Phi [lep1, lep2]",                              32, -3.2, 3.2,   ChannelFlags_, BoostedFlags_);
   bookHist1D("DEta_lep1lep2",      "#Delta#eta [lep1, lep2]",                              25, -2.5, 2.5,   ChannelFlags_, BoostedFlags_);
   // Ak8 jets plots
+  bookHist1D("Ak8Jet1Pt",          "Leading Ak8 jet p_{T} (GeV)",                          25, 0, 400,      ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak8Jet2Pt",          "Sub-leading Ak8 jet p_{T} (GeV)",                      25, 0, 400,      ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak8Jet1Eta",         "Leading Ak8 jet #eta",                                 50, -5, 5,       ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak8Jet2Eta",         "Sub-leading Ak8 jet #eta",                             50, -5, 5,       ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak8Jet1Phi",         "Leading Ak8 jet #Phi",                                 32, -3.2, 3.2,   ChannelFlags_, BoostedFlags_);
+  bookHist1D("Ak8Jet2Phi",         "Sub-leading Ak8 jet #Phi",                             32, -3.2, 3.2,   ChannelFlags_, BoostedFlags_);
 
   // Ak4 jets plots
-  
-
-
   bookHist1D("NoAk4Jets", "No. of ak4 jets", 10, 0, 10, ChannelFlags_, BoostedFlags_);
   bookHist1D("Ak4Jet1Pt", "Leading ak4 jet p_{T} (GeV)", 50, 0, 300, ChannelFlags_, BoostedFlags_);
   bookHist1D("Ak4Jet2Pt", "Sub-leading ak4 jet p_{T} (GeV)", 50, 0, 300, ChannelFlags_, BoostedFlags_);

@@ -151,6 +151,7 @@ bool AnaBase::init() {
   if (branchFound("Muon_phi"))            Muon_phi            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_phi");
   if (branchFound("Muon_charge"))         Muon_charge         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_charge");
   if (branchFound("Muon_mass"))           Muon_mass           = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_mass");
+  if (branchFound("Muon_pdgId"))          Muon_pdgId          = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_pdgId");
   if (branchFound("Muon_sip3d"))          Muon_sip3d          = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_sip3d");
   if (branchFound("Muon_jetIdx"))         Muon_jetIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_jetIdx");
   if (branchFound("Muon_softId"))         Muon_LooseId        = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Muon_softId");
@@ -186,6 +187,7 @@ bool AnaBase::init() {
   if (branchFound("Electron_phi"))                Electron_phi            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_phi");
   if (branchFound("Electron_charge"))             Electron_charge         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_charge");
   if (branchFound("Electron_mass"))               Electron_mass           = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_mass");
+  if (branchFound("Electron_pdgId"))              Electron_pdgId          = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_pdgId");
   if (branchFound("Electron_sip3d"))              Electron_sip3d          = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_sip3d");
   if (branchFound("Electron_jetIdx"))             Electron_jetIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_jetIdx");
   if (branchFound("Electron_photonIdx"))          Electron_phoIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_photonIdx");
@@ -612,6 +614,12 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       SFHandler_.muonTightIsoSFRootFile_ = value;
     else if (key == "tightMuIsoSFhistName")
       SFHandler_.tightMuIsoSFhistName_ = value;
+    else if (key == "FRRootFile")
+      SFHandler_.FRRootFile_ = value;
+    else if (key == "muonFRhistName")
+      SFHandler_.muonFRhistName_ = value;
+    else if (key == "electronFRhistName")
+      SFHandler_.electronFRhistName_ = value;
     else if (key == "DoubleMuon")
       AnaUtil::buildList(tokens, doubleMuonHltPathList_);
     else if (key == "SingleMuon")
@@ -641,7 +649,7 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
   for (const auto& fname: fileList_) {
     cout << "==> INFO. Adding input file " << fname << " to TChain " << endl;
     ++nFiles;
-    //int nevt = setInputFile(fname);
+    int nevt = setInputFile(fname);
     //std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
     if (nFiles_ > 0 && nFiles > nFiles_) break;
     // if (maxEvt_ > 0 && nevt >= maxEvt_) break; // -- Useful for debug -- //
