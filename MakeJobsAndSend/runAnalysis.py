@@ -230,57 +230,58 @@ def main():
                     os.mkdir(os.path.join(conDir,'runlogs'))
                 infileListPerJob = [files[i:i+filesPerJob] for i in range(0, len(files), filesPerJob)]
                 logging.info('\t nFiles : {} || nJobs : {}'.format(len(files),len(infileListPerJob)))
-
-                for i, filesList in enumerate(infileListPerJob):
-                    jobkey = os.path.join(conDir,str(key)+'_'+str(i)+'.job')
-                    subkey = os.path.join(conDir,str(key)+'_'+str(i)+'.sub')
-                    shkey  = os.path.join(conDir,str(key)+'_'+str(i)+'.sh')
-                    with open(jobkey, 'w') as tmpl:
-                        tmplKey = key+'_'+str(i)
-                        dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
-                                      HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
-                                      SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
-                    tmpl.close()
+                with alive_bar(title='Preparing Condor Scripts', length=60, enrich_print=True, bar='blocks') as bar:
+                    for i, filesList in enumerate(infileListPerJob):
+                        time.sleep(0.03)
+                        jobkey = os.path.join(conDir,str(key)+'_'+str(i)+'.job')
+                        subkey = os.path.join(conDir,str(key)+'_'+str(i)+'.sub')
+                        shkey  = os.path.join(conDir,str(key)+'_'+str(i)+'.sh')
+                        with open(jobkey, 'w') as tmpl:
+                            tmplKey = key+'_'+str(i)
+                            dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
+                                          HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
+                                          SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
+                        tmpl.close()
                     
-                    # Make the condor scripts ready
-                    shutil.copy(tmplsubFile, subkey)
-                    shutil.copy(tmplshFile, shkey)
-                    # edit the sub.tmpl file
-                    replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey)
-                    replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 
-                               'output = '+os.path.join(conDir,'output',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
-                    replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err',  
-                               'error  = '+os.path.join(conDir,'error',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
-                    replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log', 
-                               'log    = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
-                    # edit the sh.tmpl file
-                    replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
-                    #replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
-                    replaceAll(shkey, 'ENVPATH=NameOfPathEnvironment', 'ENVPATH='+envpath)
-                    replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
-                    replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
-                    replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', 
-                               exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
+                        # Make the condor scripts ready
+                        shutil.copy(tmplsubFile, subkey)
+                        shutil.copy(tmplshFile, shkey)
+                        # edit the sub.tmpl file
+                        replaceAll(subkey, 'executable   = sample_index.sh', 'executable   = '+shkey)
+                        replaceAll(subkey, 'output       = output/sample_INDEX.$(ClusterId).$(ProcId).out', 
+                                   'output = '+os.path.join(conDir,'output',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).out')
+                        replaceAll(subkey, 'error        = error/sample_INDEX.$(ClusterId).$(ProcId).err',  
+                                   'error  = '+os.path.join(conDir,'error',str(key))+'_'+str(i)+'.$(ClusterId).$(ProcId).err')
+                        replaceAll(subkey, 'log          = log/sample_INDEX.$(ClusterId).log', 
+                                   'log    = '+os.path.join(conDir,'log',str(key))+'_'+str(i)+'.$(ClusterId).log')
+                        # edit the sh.tmpl file
+                        replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
+                        #replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
+                        replaceAll(shkey, 'ENVPATH=NameOfPathEnvironment', 'ENVPATH='+envpath)
+                        replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
+                        replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
+                        replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', 
+                                   exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
                     
-                    # All job files, sub and sh files are ready
-                    # Now SHOOT !
-                    #if args.send :
-                    condorJobCommand = ['condor_submit',subkey]
-                    condorCmdList.append(condorJobCommand)
-                    st = os.stat(shkey)
-                    os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                    proc = Popen(condorJobCommand, stdout=PIPE)
-                    #report = process.communicate()[0]
-                    #print(report)
-                    #JobIdList.write(report.split('cluster ')[-1])
-                    #while True:
-                    #    output = proc.stdout.readline()
-                    #    if proc.poll() is not None:
-                    #        break
-                    #    if output:
-                    #        print(output.strip().decode("utf-8"))
-                    #rc = proc.poll()
-
+                        # All job files, sub and sh files are ready
+                        # Now SHOOT !
+                        #if args.send :
+                        condorJobCommand = ['condor_submit',subkey]
+                        condorCmdList.append(condorJobCommand)
+                        #st = os.stat(shkey)
+                        #os.chmod(shkey, st.st_mode | stat.S_IEXEC)
+                        #proc = Popen(condorJobCommand, stdout=PIPE)
+                        #report = process.communicate()[0]
+                        #print(report)
+                        #JobIdList.write(report.split('cluster ')[-1])
+                        #while True:
+                        #    output = proc.stdout.readline()
+                        #    if proc.poll() is not None:
+                        #        break
+                        #    if output:
+                        #        print(output.strip().decode("utf-8"))
+                        #rc = proc.poll()
+                        bar()
 
     if args.send:
         #JobIdList.close()

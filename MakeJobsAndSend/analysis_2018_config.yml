@@ -102,7 +102,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 88.40
-      filesPerJob: 3
+      filesPerJob: 2
       group: 'TT'
       legend: 'tt+jets'
 
@@ -112,7 +112,7 @@ samplesDict:
         - /eos/user/s/sbaradia2/Analysis/post_processed/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 365.52
-      filesPerJob: 3
+      filesPerJob: 2
       group: 'TT'
       legend: 'tt+jets'
 
@@ -121,7 +121,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/TTToHadronic_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 377.85
-      filesPerJob: 3
+      filesPerJob: 2
       group: 'TT'
       legend: 'tt+jets'
 
@@ -140,7 +140,7 @@ samplesDict:
         - /eos/user/s/sbaradia2/Analysis/post_processed/ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
-      filesPerJob: 2
+      filesPerJob: 4
       group: 'ST'
       legend: 'Single top'
 
@@ -149,7 +149,7 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
-      filesPerJob: 2
+      filesPerJob: 4
       group: 'ST'
       legend: 'Single top'
 
@@ -158,7 +158,7 @@ samplesDict:
         - /eos/user/s/sbaradia2/Analysis/post_processed/ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec : 136.02
-      filesPerJob: 2
+      filesPerJob: 4
       group: 'ST'
       legend: 'Single top'
 
@@ -167,7 +167,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/ST_t-channel_antitop_4f_InclusiveDecays
       genEvtWtSum: 'genEventSumw'
       xsec : 80.95
-      filesPerJob: 2
+      filesPerJob: 4
       group: 'ST'
       legend: 'Single top'
 
@@ -177,7 +177,7 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 0.2118
-      filesPerJob: 2
+      filesPerJob: 4
       group: SM
       legend: 'SM higgs'
 
@@ -186,7 +186,7 @@ samplesDict:
         - /eos/user/s/sbaradia2/Analysis/post_processed/ttHJetTobb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 0.2953
-      filesPerJob: 2
+      filesPerJob: 4
       group: SM
       legend: 'SM higgs'
 
@@ -197,7 +197,7 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/ZZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 5.52
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -206,7 +206,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/ZZTo2L2Nu_ext2
       genEvtWtSum: 'genEventSumw'
       xsec: 0.5644
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -215,8 +215,8 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/ZZTo4L_13TeV_powheg_pythia8_TuneCP5
       genEvtWtSum: 'genEventSumw'
       xsec: 1.256
-      filesPerJob: 2
-      group: VV
+      filesPerJob: 4
+      group: V4
       legend: 'VV(V)'
 
     WWTo2L2Nu:
@@ -224,7 +224,7 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/WWTo2L2Nu_NNPDF31_TuneCP5_13TeV-powheg-pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 12.2
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -233,7 +233,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/WWTo2L2Nu_DoubleScattering
       genEvtWtSum: 'genEventSumw'
       xsec: 0.2232
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -242,7 +242,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/WWToLNuQQ
       genEvtWtSum: 'genEventSumw'
       xsec: 43.53
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -252,7 +252,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/WZTo3LNu_ext1
       genEvtWtSum: 'genEventSumw'
       xsec: 4.43
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -261,7 +261,7 @@ samplesDict:
         - /eos/user/s/sbaradia5/Analysis/post_processed/WZTo2L2Q_13TeV_amcatnloFXFX_madspin_pythia8
       genEvtWtSum: 'genEventSumw'
       xsec: 5.6
-      filesPerJob: 2
+      filesPerJob: 4
       group: VV
       legend: 'VV(V)'
 
@@ -355,7 +355,7 @@ samplesDict:
         - /eos/user/s/sbaradia3/Analysis/post_processed/TTWJetsToQQ
       genEvtWtSum: 'genEventSumw'
       xsec: 0.4049
-      filesPerJob: 2
+      filesPerJob: 4
       group: TTVX
       legend: 'ttV(V) + jets'
 
@@ -449,7 +449,7 @@ samplesDict:
       group: 'data'
     DoubleMuon_2018D:
       filedirs: 
-        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018D-02Apr2020-v1
+        - /eos/user/g/gsaha2/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018D-02Apr2020-v1
       filesPerJob: 20
       group: 'data'
 
@@ -504,4 +504,4 @@ samplesDict:
       xsec: 0.001929282841388
       genEvtWtSum: 'genEventSumw'
       filesPerJob: 100
-      group: 'Signal_v1'
+      group: 'Signal'

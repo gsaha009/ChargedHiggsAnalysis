@@ -88,11 +88,14 @@ class yamlMaker:
         #print(yaml.dump(configDict,default_flow_style=False))
         return configDict
 
-    def getLegendInfoDict(self):
+    def getLegendInfoDict(self, nofake=False):
         import random
         groupLegendDict = dict()
         groupLegendInfo = dict()
         for group, fileList in self.fileDict.items():
+            if nofake : 
+                if group == 'Fake':
+                    continue
             if 'Signal' in group:
                 continue
             if group == 'data':
@@ -113,7 +116,7 @@ class yamlMaker:
         return groupLegendDict
                 
 
-    def getFileInfoDict(self):
+    def getFileInfoDict(self, lumi, nofake=False):
         fileDictToYaml = dict()
         fileInfoDict   = dict()
 
@@ -125,7 +128,11 @@ class yamlMaker:
                 fileHandle = file.replace('_FakeExtrapolation','') if '_FakeExtrapolation' in fileName else file
                 xsec = self.xsecDict.get(fileHandle)[0]
                 datatype = self.xsecDict.get(fileHandle)[1].lower()
-                if not datatype == 'data' :
+                if nofake:
+                    if 'FakeExtrapolation' in fileName:
+                        continue
+                #if not datatype == 'data' :
+                if datatype == 'mc' :
                     rootFile     = ROOT.TFile(fileHandle,"READ") 
                     EvtWtSumHist = copy.deepcopy(rootFile.Get('EventWtSum'))
                     rootFile.Close()
@@ -147,19 +154,19 @@ class yamlMaker:
                             "group": group,
                             "type": datatype
                         }
-                    elif datatype == 'signal':
-                        fileInfo = {
-                            "branching-ratio": 10.0,
-                            "cross-section":xsec, 
-                            "era": self.era,
-                            "generated-events":generatedEvents,
-                            "legend": fileName.split('.')[0],
-                            "line-color":'#8f0a1e',
-                            "line-type": idx,
-                            "order": idx,
-                            "type": datatype
-                        }
-                        idx = idx + 1
+                elif datatype == 'signal':
+                    fileInfo = {
+                        "branching-ratio": 10.0,
+                        "cross-section":xsec, 
+                        "era": self.era,
+                        "generated-events":generatedEvents,
+                        "legend": fileName.split('.')[0],
+                        "line-color":'#8f0a1e',
+                        "line-type": idx,
+                        "order": idx,
+                        "type": datatype
+                    }
+                    idx = idx + 1
                 else :
                     fileInfo = {
                         "era": self.era,
@@ -170,10 +177,11 @@ class yamlMaker:
                         fileInfo = {
                             "cross-section": 1.0,
                             "era": self.era,
+                            "generated-events": lumi,
                             "group": group,
                             "type": 'mc'
                         }
-                    
+                        
                 testDict[fileName] = fileInfo   
                 fileInfoDict.update(testDict)
         fileDictToYaml['files'] = fileInfoDict

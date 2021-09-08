@@ -18,6 +18,7 @@ from alive_progress import alive_bar
 from time import sleep
 import logging
 from yamlMaker import yamlMaker
+from prettytable import PrettyTable
 import makeFakeFileSeparate
 
 def realTimeLogging(proc):
@@ -37,14 +38,34 @@ def main():
     logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(description='Make Jobs and Send')    
-    parser.add_argument('--configname', action='store', required=True, type=str, help='Name of the config')
-    parser.add_argument('--histdir', action='store', required=True, type=str, help='just name of the output directory')
-    parser.add_argument('--runplotit',action='store_true',required=False,default=False,help="")
-    parser.add_argument('--norm',action='store_true',required=False,default=False,help="To produce normalised plots")
+    parser.add_argument('--yaml', 
+                        action='store', 
+                        required=True, type=str, 
+                        help='Name of the config')
+    parser.add_argument('--histdir', 
+                        action='store', 
+                        required=True, type=str, 
+                        help='just name of the output directory')
+    parser.add_argument('--runplotit',
+                        action='store_true',
+                        required=False,default=False,
+                        help="Run PlotIt to produce plots")
+    parser.add_argument('--hasSkim', 
+                        action='store_true',
+                        required=False,default=False,
+                        help="Use this if skimmed ntuples need to be h-added")
+    parser.add_argument('--norm',
+                        action='store_true',
+                        required=False,default=False,
+                        help="To produce normalised plots")
+    parser.add_argument('--noFake',
+                        action='store_true',
+                        required=False,default=False,
+                        help="To produce normalised plots")
 
     args = parser.parse_args()
     
-    with open(args.configname, 'r') as config:
+    with open(args.yaml, 'r') as config:
         configDict = yaml.safe_load(config)
 
     outdir  = configDict.get('outDir')
@@ -69,7 +90,9 @@ def main():
     
 
     keyList = [str(key) for key in configDict.keys()]
-    
+    hasskim = args.hasSkim
+    nofake  = args.noFake 
+
     era            = configDict.get('era')
     lumi           = configDict.get('lumi')
 
@@ -118,6 +141,7 @@ def main():
             ismc = True
         elif dataType == 'DATA':
             isdata = True
+            hasskim = False
         elif dataType == 'SIGNAL':
             issignal = True
         else:
@@ -156,7 +180,11 @@ def main():
                 tobehadd         = []
                 posthaddfile     = os.path.join(histDir, str(key)+'_hist.root')
                 haddcmd_         = ['hadd', posthaddfile]
-
+                if hasskim:
+                    tobehaddskim         = []
+                    posthaddfileskim     = os.path.join(histDir, str(key)+'_skim.root')
+                    haddcmdskim_         = ['hadd', posthaddfile]
+                    
                 #if args.dohadd:
                 if os.path.exists(posthaddfile):
                     logger.info('hadded file ---> {} : already exists!'.format(posthaddfile))
@@ -174,6 +202,18 @@ def main():
                                 sleep(0.03)
                                 tobehadd.append(rootfile)
                     
+                            if hasskim:
+                                rootfileS  = os.path.join(histDir, str(key)+'_'+str(i)+'_skim.root')
+                                tfileS    = ROOT.TFile(rootfileS,"READ")
+                                if not os.path.exists(rootfileS): 
+                                    logger.warning(f'{rootfileS} >>-x-x-x-> Missing')
+                                elif tfileS.IsZombie():
+                                    logger.warning(f'{rootfileS} is a Zombie! Please produce this file again.')
+                                    tfileS.Close()
+                                else:
+                                    sleep(0.03)
+                                    tobehaddskim.append(rootfileS)
+
                         if len(tobehadd) == 0:
                             logger.error(f'{key} job output root files are not present')
                             sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
@@ -192,9 +232,29 @@ def main():
                             else:
                             logging.info('There are some missing or zombie files ... Resolve it before removing !')
                             '''
+                        if hasskim:
+                            if len(tobehaddskim) == 0:
+                                logger.error(f'{key} job output skim root files are not present')
+                                sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
+                            else:
+                                haddcmdskim = haddcmdskim_ + tobehaddskim
+                                processskim = Popen(haddcmdskim, stdout=PIPE)
+                                processskim.communicate()
+                                #realTimeLogging(process)
+                                '''
+                                # removing the job root files because
+                                # we have the hadded root files now
+                                if len(tobehadd) == nJobs:
+                                rmcmd = ['rm'] + tobehadd
+                                process2 = Popen(rmcmd, stdout=PIPE)
+                                process2.communicate()
+                                else:
+                                logging.info('There are some missing or zombie files ... Resolve it before removing !')
+                                '''
                         bar()
                 # hadding done .................
                 # getting all the evtCutFlow histograms
+                #print(dataType , key)
                 outrootfile  = ROOT.TFile(posthaddfile,'read')
                 cutFlowHist  = outrootfile.Get('evtCutFlow')
                 if len(evtCutFlowLabels) == 0:
@@ -207,12 +267,19 @@ def main():
                     cutFlowWtHist_ls = copy.deepcopy(cutFlowWtHist)
                     evtWtSumHist = outrootfile.Get('EventWtSum')
                     if cutFlowWtHist_ls.Integral() > 0:
-                        cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(0))                        
+                        cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(1))                        
                     evtCutFlowDict[key].append(cutFlowWtHist)
                     evtCutFlowDict[key].append(cutFlowWtHist_ls)
+                    #print(cutFlowHist.Integral(), cutFlowWtHist.Integral(), cutFlowWtHist_ls.Integral())
+                    cutFlowHist.SetDirectory(0)
+                    cutFlowWtHist.SetDirectory(0)
+                    cutFlowWtHist_ls.SetDirectory(0)
 
-                elif dataType == 'Data':
+                elif dataType == 'DATA':
                     evtCutFlowDict['Observed'].append(cutFlowHist)
+                    #print(cutFlowHist.Integral())
+                    cutFlowHist.SetDirectory(0)
+
                 else:
                     raise RuntimeError('please mention correct datatype : MC or DATA or SIGNAL ...')
 
@@ -238,13 +305,13 @@ def main():
     #print(yaml.dump(commonInfoDict,default_flow_style=False))
     combinedDictForYaml.update(commonInfoDict)
 
-    fileInfoDict = yamlObj.getFileInfoDict()
+    fileInfoDict = yamlObj.getFileInfoDict(lumi,nofake)
     logger.info('fileInfo >>----> plots.yml')
     combinedDictForYaml.update(fileInfoDict)
 
     logger.info('legendInfo >>----> plots.yml')
     #logging.info(yaml.dump(groupLegendDict,default_flow_style=False))
-    groupLegendDict = yamlObj.getLegendInfoDict()
+    groupLegendDict = yamlObj.getLegendInfoDict(nofake)
     combinedDictForYaml.update(groupLegendDict)
 
     logger.info('legendPosInfo >>----> plots.yml')
@@ -261,20 +328,21 @@ def main():
     with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
         outfile.write(json_object)
 
-    logger.info('preparing plots.yml')
-    with open(os.path.join(histDir, 'plots.yml'), 'w') as ymlfile:
+    logger.info('preparing plot yml')
+    plotyaml = os.path.join(histDir, 'plots.yml') if nofake else os.path.join(histDir, 'plots_FakeExtrapolation.yml')
+    with open(plotyaml, 'w') as ymlfile:
         documents = yaml.dump(combinedDictForYaml, ymlfile, default_flow_style=False)
 
     if args.runplotit:
         logger.info('running PlotIt ... \n')
-        plotDir = os.path.join(histDir, 'plots') if not args.norm else os.path.join(histDir, 'norm_plots')
+        plotDir = os.path.join(histDir, 'Plots') if nofake else os.path.join(histDir, 'Plots_FakeExtrapolation')
         if not os.path.exists(plotDir):
             os.mkdir(plotDir)
         
-        if not os.path.exists(os.path.join(histDir, 'plots.yml')):
-            raise RuntimeError('plots.yml doesnt exist !!!')
+        if not os.path.exists(plotyaml):
+            raise RuntimeError(f'{plotyaml} doesnt exist !!!')
         # run plotIt
-        plotItCmds = ['plotIt','-y','-o',plotDir,os.path.join(histDir, 'plots.yml')]
+        plotItCmds = ['plotIt','-y','-o',plotDir, plotyaml]
         proc       = Popen(plotItCmds, stdout=PIPE)
         # Poll proc.stdout to show stdout live
         while True:
@@ -287,6 +355,7 @@ def main():
 
 
     # Producing yield tables
+    '''
     evtCutFlowLabels.insert(0, 'Process')
     yieldTable = PrettyTable(evtCutFlowLabels)
     yieldTableWt = PrettyTable(evtCutFlowLabels)
@@ -308,6 +377,50 @@ def main():
                 entriesWtLs.append(round(histWtLs.GetBinContent(histWtLs.FindBin(i)),3))
             yieldTableWt.add_row([label]+entriesWt)
             yieldTableWtLs.add_row([label]+entriesWtLs)
+
+    with open (os.path.join(histDir, 'YieldTable.txt'), 'w') as yfile:
+        yfile.write(' -------------- | For unweighted events | ---------------- \n')
+        yfile.write(str(yieldTable)+'\n')
+        yfile.write(' -------------- | For weighted events | ---------------- \n')
+        yfile.write(str(yieldTableWt)+'\n')
+        yfile.write(f' -------------- | For weighted events (at {lumi} pb-1) | ---------------- \n')
+        yfile.write(str(yieldTableWtLs)+'\n')
+    '''
+    yieldTable = PrettyTable()
+    yieldTableWt = PrettyTable()
+    yieldTableWtLs = PrettyTable()
+    yieldTable.add_column('Selections',evtCutFlowLabels)
+    yieldTableWt.add_column('Selections',evtCutFlowLabels)
+    yieldTableWtLs.add_column('Selections',evtCutFlowLabels)
+    for label, histList in evtCutFlowDict.items():
+        entries = []
+        hist = histList[0]
+        for i in range(hist.GetNbinsX()):
+            if not label == 'Observed':
+                entries.append(round(hist.GetBinContent(hist.FindBin(i)),3))
+            else:
+                content = 0.0
+                for ih in histList:
+                    content += ih.GetBinContent(ih.FindBin(i))
+                entries.append(content)
+
+        #if not label == 'Observed' :
+        #    yieldTable.add_column(label, entries)
+        if label == 'Observed' :
+            yieldTableWtLs.add_column('Observed',entries)
+
+        #if not label == 'Observed':
+        else:
+            yieldTable.add_column(label, entries)
+            histWt = histList[1]
+            histWtLs = histList[2]
+            entriesWt = []
+            entriesWtLs = []
+            for i in range(hist.GetNbinsX()):
+                entriesWt.append(round(histWt.GetBinContent(histWt.FindBin(i)),3))
+                entriesWtLs.append(round(histWtLs.GetBinContent(histWtLs.FindBin(i)),3))
+            yieldTableWt.add_column(label,entriesWt)
+            yieldTableWtLs.add_column(label,entriesWtLs)
 
     with open (os.path.join(histDir, 'YieldTable.txt'), 'w') as yfile:
         yfile.write(' -------------- | For unweighted events | ---------------- \n')

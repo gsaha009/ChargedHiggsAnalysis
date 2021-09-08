@@ -932,21 +932,21 @@ void MultiLeptonMVAna::endJob() {
   
   histf()->cd();
   vector<string> evLabels {
-    "Events processed                                : ",
-      "has GoodPV                                    : ",
-      "at least 2 fakeable leptons                   : ",
-      "lep1pt grthan 25 and lep2pt grthan 20         : ",
-      "pass HLT                                      : ",
-      "2 or more fakeable leptons                    : ",
-      "low mass resonance veto                       : ",
-      "Z mass resonance veto                         : ",
-      "has max 2 tight leptons                       : ",
-      "tau veto                                      : ",
-      "isPrompt                                      : ",
-      "met above 40                                  : ",
-      "is SR                                         : ",
-      "isResolved_WZ                                 : ",
-      "isBoosted_WZ                                  : "
+    "Events processed",
+      "has GoodPV",
+      "nfakeable leptons >= 2",
+      "lep1pt > 25 and lep2pt > 20 GeV",
+      "pass HLT",
+      "leptons having same charge",
+      "low mass resonance veto",
+      "Z mass resonance veto",
+      "max 2 tight leptons",
+      "tau veto",
+      "isPrompt",
+      "met > 40 GeV",
+      "is SR",
+      "isResolved_WZ",
+      "isBoosted_WZ"
       };
   AnaUtil::SetEvtCutFlowBinLabels("evtCutFlow", evLabels);
   vector<string> yieldLabels {
