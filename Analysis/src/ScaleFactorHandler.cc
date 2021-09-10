@@ -183,21 +183,30 @@ double ScaleFactorHandler::getIsoSF(const std::string& IsoType, float pt, float 
 double ScaleFactorHandler::getFF(float pt, float eta, const std::string& Flav) const {
   double FR = 0.0;
   if (Flav == "Muon") {
-    if (pt < muonFRhist_->GetXaxis()->GetXmax()) {
-	int binX = muonFRhist_->GetXaxis()->FindBin(pt);
-	int binY = muonFRhist_->GetYaxis()->FindBin(std::abs(eta));
-	FR = muonFRhist_->GetBinContent(binX, binY);
+    if (pt >= muonFRhist_->GetXaxis()->GetXmax()) {
+      int binX = muonFRhist_->GetXaxis()->GetLast();
+      int binY = muonFRhist_->GetYaxis()->FindBin(std::fabs(eta));
+      FR = muonFRhist_->GetBinContent(binX, binY);
     }
-    else FR = 0.0;
+    else {
+      int binX = muonFRhist_->GetXaxis()->FindBin(pt);
+      int binY = muonFRhist_->GetYaxis()->FindBin(std::fabs(eta));
+      FR = muonFRhist_->GetBinContent(binX, binY);
+    }
   }
   else if (Flav == "Electron") {
-    if (pt < electronFRhist_->GetYaxis()->GetXmax()) {
-      int binX = electronFRhist_->GetYaxis()->FindBin(pt);
-      int binY = electronFRhist_->GetXaxis()->FindBin(std::abs(eta));
+    if (pt >= electronFRhist_->GetXaxis()->GetXmax()) {
+      int binX = electronFRhist_->GetXaxis()->GetLast();
+      int binY = electronFRhist_->GetYaxis()->FindBin(std::fabs(eta));
       FR = electronFRhist_->GetBinContent(binX, binY);
     }
-    else FR = 0.0;
+    else {
+      int binX = electronFRhist_->GetXaxis()->FindBin(pt);
+      int binY = electronFRhist_->GetYaxis()->FindBin(std::fabs(eta));
+      FR = electronFRhist_->GetBinContent(binX, binY);
+    }
   }
   double FF = FR/(1-FR);
+  //std::cout<<"Flavour : "<<Flav<<"\t"<<"pt : "<<pt<<"\t"<<"eta : "<<std::abs(eta)<<"\t"<<"FakeRate : "<<FR<<"\t"<<"FakeFactor : "<<FF<<"\n";
   return FF;
 }

@@ -19,6 +19,7 @@ from time import sleep
 import logging
 from yamlMaker import yamlMaker
 from prettytable import PrettyTable
+import getYields
 import makeFakeFileSeparate
 
 def realTimeLogging(proc):
@@ -57,7 +58,7 @@ def main():
     parser.add_argument('--norm',
                         action='store_true',
                         required=False,default=False,
-                        help="To produce normalised plots")
+                        help="To produce stack plots but normalised to data")
     parser.add_argument('--noFake',
                         action='store_true',
                         required=False,default=False,
@@ -70,6 +71,32 @@ def main():
 
     outdir  = configDict.get('outDir')
     histDir = os.path.join(outdir, args.histdir)
+    if not os.path.isdir(histDir):
+        raise RuntimeError(f'Couldnt find {histDir}')
+    dirKey_condor = '_'.join(args.histdir.split('_')[-2:])
+
+    batchOutDir = os.path.join(histDir, 'batch') # NEW
+    if not os.path.isdir(batchOutDir):
+        raise RuntimeError(f'batch dir not found : {batchOutDir}')
+
+    resultDir = os.path.join(histDir, 'results') # NEW
+    if os.path.isdir(resultDir):
+        logging.info(f'{resultDir} exits !!!')
+    else:
+        os.mkdir(resultDir)
+
+    skimDir = os.path.join(histDir, 'skims') # NEW
+    if os.path.isdir(skimDir):
+        logging.info(f'{skimDir} exits !!!')
+    else:
+        os.mkdir(skimDir)
+
+    yieldDir = os.path.join(histDir, 'yields') # NEW
+    if os.path.isdir(yieldDir):
+        logging.info(f'{yieldDir} exits !!!')
+    else:
+        os.mkdir(yieldDir)
+
     '''
     logging.basicConfig (filename=os.path.join(histDir,'postprocess.log'),
                          level=logging.INFO,
@@ -98,7 +125,9 @@ def main():
 
     logger.info('era  : {}'.format(era))
     logger.info('lumi : {} pb-1'.format(lumi))
-    
+
+    jobdir = os.path.join(os.getcwd(), 'JobCards_'+str(era)+'_'+dirKey_condor)
+
     samplesDict       = configDict.get('samplesDict')
     dataTypes         = [str(sample) for sample in samplesDict.keys()]
 
@@ -121,6 +150,10 @@ def main():
     evtCutFlowDict   = defaultdict(list)
     evtCutFlowLabels = []
     combinedDictForYaml = dict()
+    resubmitList = []
+    cutflowTableFile   = open(os.path.join(yieldDir, f'CutFlow_{era}.txt'),'w')
+    yieldTableFile     = open(os.path.join(yieldDir, f'Yields_{era}.txt'),'w')
+
     for dataType, valDict in samplesDict.items():
         '''
         e.g. dataType : MC
@@ -139,14 +172,16 @@ def main():
         issignal = False
         if dataType == 'MC' : 
             ismc = True
+            hasskim = True
         elif dataType == 'DATA':
             isdata = True
             hasskim = False
         elif dataType == 'SIGNAL':
             issignal = True
+            hasskim = True
         else:
             raise RuntimeError('Unknown datatype. Please mention MC, DATA or SIGNAL in the main yaml')
-
+            
         if valDict == None or len(valDict) == 0:
             logger.info(f'Sorry! No {dataType} samples are present in yaml')
         else:
@@ -169,6 +204,7 @@ def main():
                 filePathList = val.get('filedirs')
                 filesPerJob  = int(val.get('filesPerJob'))
                 files        = []
+                condorDir = os.path.join(jobdir, key+'_condorJobs')
                 for item in filePathList:
                     logger.info('\t {}'.format(item))
                     files += [os.path.join(item,rfile) for rfile in os.listdir(item) if '.root' in rfile]
@@ -177,33 +213,47 @@ def main():
                 logger.info('\t nJobs : {}'.format(len(infileListPerJob)))
                 nJobs = len(infileListPerJob)
                 
+                batchHistDir = os.path.join(batchOutDir, key) # ..........New
+                if not os.path.isdir(batchHistDir):
+                    raise RuntimeError(f'{batchHistDir} not found !')
+
                 tobehadd         = []
-                posthaddfile     = os.path.join(histDir, str(key)+'_hist.root')
+                #posthaddfile     = os.path.join(histDir, str(key)+'_hist.root')
+                posthaddfile     = os.path.join(batchHistDir, str(key)+'_hist.root') # NEW
                 haddcmd_         = ['hadd', posthaddfile]
                 if hasskim:
                     tobehaddskim         = []
-                    posthaddfileskim     = os.path.join(histDir, str(key)+'_skim.root')
-                    haddcmdskim_         = ['hadd', posthaddfile]
-                    
+                    posthaddfileskim     = os.path.join(skimDir, str(key)+'_skim.root')
+                    haddcmdskim_         = ['hadd', posthaddfileskim]
+
+                fileabsent = False                    
                 #if args.dohadd:
-                if os.path.exists(posthaddfile):
-                    logger.info('hadded file ---> {} : already exists!'.format(posthaddfile))
+                haddCond = os.path.exists(posthaddfile) and os.path.exists(posthaddfileskim) if hasskim else os.path.exists(posthaddfile)
+                #if os.path.exists(posthaddfile) :
+                if haddCond :
+                    logger.info(f'hadded files ---> {posthaddfile} & {posthaddfileskim} already exist!') if hasskim else logger.info(f'hadded file ---> {posthaddfile} already exist!')
                 else:
                     with alive_bar(title='h-adding', length=60, enrich_print=True) as bar:
                         for i in range(nJobs) :
-                            rootfile  = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
+                            #rootfile  = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
+                            rootfile  = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_hist.root') # NEW
                             tfile    = ROOT.TFile(rootfile,"READ")
                             if not os.path.exists(rootfile): 
                                 logger.warning(f'{rootfile} >>-x-x-x-> Missing')
+                                resubmitList.append(['condor_submit', os.path.join(condorDir,str(key)+'_'+str(i)+'.sub')])
+                                fileabsent = True
                             elif tfile.IsZombie():
                                 logger.warning(f'{rootfile} is a Zombie! Please produce this file again.')
+                                resubmitList.append(['condor_submit', os.path.join(condorDir,str(key)+'_'+str(i)+'.sub')])
                                 tfile.Close()
+                                fileabsent = True
                             else:
                                 sleep(0.03)
                                 tobehadd.append(rootfile)
                     
                             if hasskim:
-                                rootfileS  = os.path.join(histDir, str(key)+'_'+str(i)+'_skim.root')
+                                #rootfileS  = os.path.join(histDir, str(key)+'_'+str(i)+'_skim.root')
+                                rootfileS  = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_skim.root')
                                 tfileS    = ROOT.TFile(rootfileS,"READ")
                                 if not os.path.exists(rootfileS): 
                                     logger.warning(f'{rootfileS} >>-x-x-x-> Missing')
@@ -217,7 +267,7 @@ def main():
                         if len(tobehadd) == 0:
                             logger.error(f'{key} job output root files are not present')
                             sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
-                        else:
+                        elif nJobs == len(tobehadd):
                             haddcmd = haddcmd_ + tobehadd
                             process = Popen(haddcmd, stdout=PIPE)
                             process.communicate()
@@ -232,12 +282,16 @@ def main():
                             else:
                             logging.info('There are some missing or zombie files ... Resolve it before removing !')
                             '''
+                        else:
+                            logger.warning('Skipping hadd hist files because files are found missing')
+
                         if hasskim:
                             if len(tobehaddskim) == 0:
                                 logger.error(f'{key} job output skim root files are not present')
                                 sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
-                            else:
+                            elif nJobs == len(tobehaddskim):
                                 haddcmdskim = haddcmdskim_ + tobehaddskim
+                                #print(haddcmdskim)
                                 processskim = Popen(haddcmdskim, stdout=PIPE)
                                 processskim.communicate()
                                 #realTimeLogging(process)
@@ -251,55 +305,73 @@ def main():
                                 else:
                                 logging.info('There are some missing or zombie files ... Resolve it before removing !')
                                 '''
+                            else:
+                                logger.warning('Skipping hadd skim files because files are found missing')
+
                         bar()
                 # hadding done .................
-                # getting all the evtCutFlow histograms
-                #print(dataType , key)
-                outrootfile  = ROOT.TFile(posthaddfile,'read')
-                cutFlowHist  = outrootfile.Get('evtCutFlow')
-                if len(evtCutFlowLabels) == 0:
-                    for ibin in range(cutFlowHist.GetNbinsX()):
-                        evtCutFlowLabels.append(cutFlowHist.GetXaxis().GetBinLabel(cutFlowHist.FindBin(ibin)))
+                if not fileabsent:
+                    # getting all the evtCutFlow histograms
+                    #print(dataType , key)
+                    outrootfile  = ROOT.TFile(posthaddfile,'read')
+                    if outrootfile.IsZombie():
+                        raiseRuntimeError (f'{posthaddfile} is a Zombie !!!')
 
-                if dataType == 'MC' or dataType == 'SIGNAL':
-                    evtCutFlowDict[key].append(cutFlowHist)
-                    cutFlowWtHist = outrootfile.Get('evtCutFlowWt')
-                    cutFlowWtHist_ls = copy.deepcopy(cutFlowWtHist)
-                    evtWtSumHist = outrootfile.Get('EventWtSum')
-                    if cutFlowWtHist_ls.Integral() > 0:
-                        cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(1))                        
-                    evtCutFlowDict[key].append(cutFlowWtHist)
-                    evtCutFlowDict[key].append(cutFlowWtHist_ls)
-                    #print(cutFlowHist.Integral(), cutFlowWtHist.Integral(), cutFlowWtHist_ls.Integral())
-                    cutFlowHist.SetDirectory(0)
-                    cutFlowWtHist.SetDirectory(0)
-                    cutFlowWtHist_ls.SetDirectory(0)
+                    cutFlowHist  = outrootfile.Get('evtCutFlow')
+                    if len(evtCutFlowLabels) == 0:
+                        for ibin in range(cutFlowHist.GetNbinsX()):
+                            evtCutFlowLabels.append(cutFlowHist.GetXaxis().GetBinLabel(cutFlowHist.FindBin(ibin)))
 
-                elif dataType == 'DATA':
-                    evtCutFlowDict['Observed'].append(cutFlowHist)
-                    #print(cutFlowHist.Integral())
-                    cutFlowHist.SetDirectory(0)
+                    if dataType == 'MC' or dataType == 'SIGNAL':
+                        evtCutFlowDict[key].append(cutFlowHist)
+                        cutFlowWtHist = outrootfile.Get('evtCutFlowWt')
+                        cutFlowWtHist_ls = copy.deepcopy(cutFlowWtHist)
+                        evtWtSumHist = outrootfile.Get('EventWtSum')
+                        if cutFlowWtHist_ls.Integral() > 0:
+                            cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(1))                        
+                        evtCutFlowDict[key].append(cutFlowWtHist)
+                        evtCutFlowDict[key].append(cutFlowWtHist_ls)
+                        #print(cutFlowHist.Integral(), cutFlowWtHist.Integral(), cutFlowWtHist_ls.Integral())
+                        cutFlowHist.SetDirectory(0)
+                        cutFlowWtHist.SetDirectory(0)
+                        cutFlowWtHist_ls.SetDirectory(0)
 
-                else:
-                    raise RuntimeError('please mention correct datatype : MC or DATA or SIGNAL ...')
+                    elif dataType == 'DATA':
+                        evtCutFlowDict[dataType+'_'+key].append(cutFlowHist)
+                        #print(cutFlowHist.Integral())
+                        cutFlowHist.SetDirectory(0)
+                        
+                    else:
+                        raise RuntimeError('please mention correct datatype : MC or DATA or SIGNAL ...')
 
-                SR_File, Fake_File = makeFakeFileSeparate.getSRandFakeRootFiles(posthaddfile, isSignal=issignal)
-    
-                group = val.get('group')
-                if os.path.exists(SR_File):
-                    resultDict[str(group)].append(SR_File)
-                    legendDict[str(group)] = val.get('legend')
-                    xsecDict[str(SR_File)]=[xsec, dataType]
-                else:
-                    logging.warning('hadded file |{}| is absent'.format(SR_File))
-                if not issignal and os.path.exists(Fake_File):
-                    resultDict['Fake'].append(Fake_File)
-                    legendDict['Fake'] = 'Fake'
+                    SR_File, Fake_File = makeFakeFileSeparate.getSRandFakeRootFiles(posthaddfile, resultDir, isSignal=issignal)
                     
-    logger.debug(resultDict)
+                    group = val.get('group')
+                    if os.path.exists(SR_File):
+                        resultDict[str(group)].append(SR_File)
+                        legendDict[str(group)] = val.get('legend')
+                        xsecDict[str(SR_File)]=[xsec, dataType]
+                    else:
+                        logging.warning('hadded file |{}| is absent'.format(SR_File))
+                    if not issignal and os.path.exists(Fake_File):
+                        resultDict['Fake'].append(Fake_File)
+                        legendDict['Fake'] = 'Fake'
+                        
+    # Re-submission
+    if len(resubmitList) > 0:
+        logger.info('Resubmit the following jobs')
+        for cmd in resubmitList:
+            logger.info(' '.join(cmd)+'\n')
+        logger.info('After re-running these failed jobs, do proceed again with the post-processing.')
+        sys.exit()
+    else:
+        logger.info('All h-added files are present. So moving further --->')
+     
+        
+    #logger.debug(resultDict)
     yamlObj = yamlMaker(era,lumi,resultDict,xsecDict,legendDict,os.path.join(histDir,'plots.yml'),histDir,args.norm)
     histograms, histTitles = yamlObj.getListOfHistograms()
-    logger.info(f'List of histograms : \n {histograms} \n')
+    #logger.info(f'List of histograms : \n {histograms} \n')
     commonInfoDict = yamlObj.getCommonInfoDict()
     logger.info('commonInfo >>----> plots.yml')
     #print(yaml.dump(commonInfoDict,default_flow_style=False))
@@ -323,10 +395,10 @@ def main():
     combinedDictForYaml.update(plotInfoDict)
 
     #print(combinedDictForYaml)
-    logger.info('preparing plots.json')
-    json_object = json.dumps(combinedDictForYaml, indent = 4)
-    with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
-        outfile.write(json_object)
+    #logger.info('preparing plots.json')
+    #json_object = json.dumps(combinedDictForYaml, indent = 4)
+    #with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
+    #    outfile.write(json_object)
 
     logger.info('preparing plot yml')
     plotyaml = os.path.join(histDir, 'plots.yml') if nofake else os.path.join(histDir, 'plots_FakeExtrapolation.yml')
@@ -385,7 +457,7 @@ def main():
         yfile.write(str(yieldTableWt)+'\n')
         yfile.write(f' -------------- | For weighted events (at {lumi} pb-1) | ---------------- \n')
         yfile.write(str(yieldTableWtLs)+'\n')
-    '''
+
     yieldTable = PrettyTable()
     yieldTableWt = PrettyTable()
     yieldTableWtLs = PrettyTable()
@@ -429,6 +501,12 @@ def main():
         yfile.write(str(yieldTableWt)+'\n')
         yfile.write(f' -------------- | For weighted events (at {lumi} pb-1) | ---------------- \n')
         yfile.write(str(yieldTableWtLs)+'\n')
+'''
+    labels, cutFlowTables, yieldTable = getYields.getYields(evtCutFlowDict, evtCutFlowLabels, xsec, era)
+    for i,tab in enumerate(cutFlowTables):
+        cutflowTableFile.write(f' =========== Process : {labels[i]} ========== \n')
+        cutflowTableFile.write(str(tab)+'\n')
+    yieldTableFile.write(str(yieldTable))
 
 if __name__ == "__main__":
     main()

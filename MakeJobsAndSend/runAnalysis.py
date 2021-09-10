@@ -161,6 +161,12 @@ def main():
         os.mkdir(histDir)
         logging.info('{} : out directory created'.format(histDir))
 
+    batchOutDir = os.path.join(histDir, 'batch') # NEW
+    if os.path.isdir(batchOutDir):
+        logging.info('Existing batchOutput directory : {}'.format(batchOutDir))
+    else:
+        os.mkdir(batchOutDir)
+
     #if args.send :
         #logging.info('{} : list of JobIds'.format(os.path.join(histDir, 'JobIds.txt')))
         #JobIdList   = open(os.path.join(histDir, 'JobIds.txt'), 'w')
@@ -230,15 +236,27 @@ def main():
                     os.mkdir(os.path.join(conDir,'runlogs'))
                 infileListPerJob = [files[i:i+filesPerJob] for i in range(0, len(files), filesPerJob)]
                 logging.info('\t nFiles : {} || nJobs : {}'.format(len(files),len(infileListPerJob)))
-                with alive_bar(title='Preparing Condor Scripts', length=60, enrich_print=True, bar='blocks') as bar:
+                batchHistDir = os.path.join(batchOutDir, key) # ..........New
+                if os.path.isdir(batchHistDir):
+                    logging.info(f'{batchHistDir} already exists !')
+                else:
+                    os.mkdir(batchHistDir)
+                batchRunlogDir = os.path.join(batchHistDir, 'runlogs') # ..........New
+                if os.path.isdir(batchRunlogDir):
+                    logging.info(f'{batchRunlogDir} already exists !')
+                else:
+                    os.mkdir(batchRunlogDir)
+
+                with alive_bar(len(infileListPerJob),title='Preparing Condor Scripts', enrich_print=True, bar='filling') as bar:
                     for i, filesList in enumerate(infileListPerJob):
                         time.sleep(0.03)
                         jobkey = os.path.join(conDir,str(key)+'_'+str(i)+'.job')
                         subkey = os.path.join(conDir,str(key)+'_'+str(i)+'.sub')
                         shkey  = os.path.join(conDir,str(key)+'_'+str(i)+'.sh')
+
                         with open(jobkey, 'w') as tmpl:
                             tmplKey = key+'_'+str(i)
-                            dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, histDir, tmplKey, xsec, lumi, cutLists,
+                            dumpInJobCard(tmpl, era, commonInfoList, evtWtSum, skimInfoList, mvaInfoList, batchHistDir, tmplKey, xsec, lumi, cutLists,
                                           HLT_SingleMuon, HLT_DoubleMuon, HLT_SingleElectron, HLT_DoubleEG, HLT_MuonEG, HLT_SingleElectronForFake, HLT_SingleMuonForFake,
                                           SFInfo, dataset, filesList, endInfoList, ismc, isdata, issignal)
                         tmpl.close()
@@ -258,7 +276,8 @@ def main():
                         replaceAll(shkey, 'JOBDIR=NameOfJobDirGivenInYaml', 'JOBDIR='+jobdir)
                         #replaceAll(shkey, 'APPDIR=NameOfAppDirGivenInYaml', 'APPDIR='+appdir)
                         replaceAll(shkey, 'ENVPATH=NameOfPathEnvironment', 'ENVPATH='+envpath)
-                        replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
+                        #replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+os.path.join(conDir,'runlogs'))
+                        replaceAll(shkey, 'cd $JOBDIR/condor_runlog_dir', 'cd '+batchRunlogDir) # ............. New
                         replaceAll(shkey, 'uname -a > ./sample_INDEX.runlog 2>&1', 'uname -a > ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
                         replaceAll(shkey, '$JOBDIR/EXE $JOBDIR/PathToJobFile/sample_index.job >> ./sample_index.runlog 2>&1', 
                                    exeToRun+' '+jobkey+' >> ./'+str(key)+'_'+str(i)+'.runlog 2>&1')
@@ -270,17 +289,6 @@ def main():
                         condorCmdList.append(condorJobCommand)
                         #st = os.stat(shkey)
                         #os.chmod(shkey, st.st_mode | stat.S_IEXEC)
-                        #proc = Popen(condorJobCommand, stdout=PIPE)
-                        #report = process.communicate()[0]
-                        #print(report)
-                        #JobIdList.write(report.split('cluster ')[-1])
-                        #while True:
-                        #    output = proc.stdout.readline()
-                        #    if proc.poll() is not None:
-                        #        break
-                        #    if output:
-                        #        print(output.strip().decode("utf-8"))
-                        #rc = proc.poll()
                         bar()
 
     if args.send:

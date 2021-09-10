@@ -74,7 +74,7 @@ class yamlMaker:
             margin-left: 0.15
             margin-right: 0.03
             margin-top: 0.05
-            root:
+            root: 
             show-overflow: true
             width: 800
             yields-table-align: v
@@ -82,7 +82,7 @@ class yamlMaker:
         )
         commonDict['eras'] = [self.era]
         commonDict['luminosity'] = {self.era : self.lumi}
-        commonDict['root'] = str(self.histDir)
+        commonDict['root'] = str(os.path.join(self.histDir, 'results'))
 
         configDict['configuration'] = commonDict
         #print(yaml.dump(configDict,default_flow_style=False))

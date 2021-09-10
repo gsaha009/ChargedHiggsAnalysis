@@ -7,15 +7,16 @@ import copy
 import logging
 logger = logging.getLogger(__name__)
 
-def getSRandFakeRootFiles(postHaddFilePath, isSignal=False):
+def getSRandFakeRootFiles(postHaddFilePath, resultdir, isSignal=False):
     haddfile = ROOT.TFile (postHaddFilePath,"READ")
     if (haddfile.IsZombie()):
-        logger.warning(f'{postHaddFilePath} is a zombie')
+        logger.error(f'{postHaddFilePath} is a zombie')
+        raise RuntimeError('Abort')
     else:
-        SR_fileName = postHaddFilePath.replace('_hist','')
-        SB_fileName = postHaddFilePath.replace('_hist','_FakeExtrapolation')
+        SR_fileName = os.path.join(resultdir, os.path.basename(postHaddFilePath).replace('_hist',''))
+        SB_fileName = os.path.join(resultdir, os.path.basename(postHaddFilePath).replace('_hist','_FakeExtrapolation'))
         if os.path.isfile(SR_fileName) and os.path.isfile(SB_fileName):
-            logger.info("files already exist !!!")
+            logger.info("SR and FR files already exist !!!") if not isSignal else logger.info("SR file already exists !!!")
         else:
             SR_file  = ROOT.TFile.Open(SR_fileName, 'RECREATE')
             SR_histList = [key.GetName() for key in haddfile.GetListOfKeys() if not any(['_SB_' in key.GetName(),'ObjectSelection' in key.GetName()])]
