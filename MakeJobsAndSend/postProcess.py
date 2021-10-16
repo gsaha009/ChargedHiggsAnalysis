@@ -19,24 +19,26 @@ from time import sleep
 import logging
 from yamlMaker import yamlMaker
 from prettytable import PrettyTable
+import datetime as cal
 import getYields
 import makeFakeFileSeparate
 
-def realTimeLogging(proc):
+def runShellCmd(cmdList):
+    process = Popen(cmdList, stdout=PIPE, stderr=PIPE)
     while True:
-        output = proc.stdout.readline()
-        if proc.poll() is not None:
+        output = process.stdout.readline()
+        if process.poll() is not None:
             break
         if output:
-            logging.info(output.strip().decode("utf-8"))
-    rc = proc.poll()
+            print(output.strip().decode("utf-8"))
+    rc = process.poll()
 
 
 def main():
-    logging.basicConfig(level   = logging.DEBUG,
-                        format  = '%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt = '%m/%d/%Y %H:%M:%S')
-    logger = logging.getLogger(__name__)
+    #logging.basicConfig(level   = logging.DEBUG,
+    #                    format  = '%(asctime)s - %(levelname)s - %(message)s',
+    #                    datefmt = '%m/%d/%Y %H:%M:%S')
+    #logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(description='Make Jobs and Send')    
     parser.add_argument('--yaml', 
@@ -51,7 +53,7 @@ def main():
                         action='store_true',
                         required=False,default=False,
                         help="Run PlotIt to produce plots")
-    parser.add_argument('--hasSkim', 
+    parser.add_argument('--hasskim', 
                         action='store_true',
                         required=False,default=False,
                         help="Use this if skimmed ntuples need to be h-added")
@@ -59,10 +61,23 @@ def main():
                         action='store_true',
                         required=False,default=False,
                         help="To produce stack plots but normalised to data")
-    parser.add_argument('--noFake',
+    parser.add_argument('--nofake',
                         action='store_true',
                         required=False,default=False,
                         help="To produce normalised plots")
+    parser.add_argument('--verbose',
+                        action='store_true',
+                        required=False,default=False,
+                        help="verbosity")
+    parser.add_argument('--checkinputs',
+                        action='store_true',
+                        required=False,default=False,
+                        help="Check inputfiles if any of the files is corrupted or not")
+    parser.add_argument('--forcehadd',
+                        action='store_true',
+                        required=False,default=False,
+                        help="do hadd even if some files are missing")
+
 
     args = parser.parse_args()
     
@@ -75,50 +90,49 @@ def main():
         raise RuntimeError(f'Couldnt find {histDir}')
     dirKey_condor = '_'.join(args.histdir.split('_')[-2:])
 
-    batchOutDir = os.path.join(histDir, 'batch') # NEW
+    batchOutDir = os.path.join(histDir, 'batch')
     if not os.path.isdir(batchOutDir):
         raise RuntimeError(f'batch dir not found : {batchOutDir}')
 
-    resultDir = os.path.join(histDir, 'results') # NEW
+    # Logger
+    logFormatter = logging.Formatter("%(asctime)s -- [%(levelname)s] -- %(message)s",
+                                     "%Y-%m-%d %H:%M:%S")
+    logger       = logging.getLogger("postlog")
+    logger.setLevel(logging.DEBUG)
+    # logger for console
+    consoleHandler = logging.StreamHandler(sys.stdout)
+    consoleHandler.setFormatter(logFormatter)
+    logger.addHandler(consoleHandler)
+    # Adding file-handler for logging
+    now    = cal.datetime.now()
+    logfiletag = now.strftime("%d%m%Y_%H%M%S")
+    fileHandler = logging.FileHandler(os.path.join(histDir, 'postprocess_'+logfiletag+'.log'))
+    fileHandler.setFormatter(logFormatter)
+    logger.addHandler(fileHandler)
+
+    resultDir = os.path.join(histDir, 'results')
     if os.path.isdir(resultDir):
-        logging.info(f'{resultDir} exits !!!')
+        logger.info(f'{resultDir} exits !!!')
     else:
         os.mkdir(resultDir)
 
-    skimDir = os.path.join(histDir, 'skims') # NEW
+    skimDir = os.path.join(histDir, 'skims')
     if os.path.isdir(skimDir):
-        logging.info(f'{skimDir} exits !!!')
+        logger.info(f'{skimDir} exits !!!')
     else:
         os.mkdir(skimDir)
 
-    yieldDir = os.path.join(histDir, 'yields') # NEW
+    yieldDir = os.path.join(histDir, 'yields')
     if os.path.isdir(yieldDir):
-        logging.info(f'{yieldDir} exits !!!')
+        logger.info(f'{yieldDir} exits !!!')
     else:
         os.mkdir(yieldDir)
 
-    '''
-    logging.basicConfig (filename=os.path.join(histDir,'postprocess.log'),
-                         level=logging.INFO,
-                         format='%(asctime)s - %(levelname)s - %(message)s',
-                         datefmt='%m/%d/%Y %H:%M:%S')
-    # set up logging to console 
-    console = logging.StreamHandler() 
-    console.setLevel(logging.DEBUG) 
-    # set a format which is simpler for console use 
-    #formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-    #console.setFormatter(formatter) 
-    # add the handler to the root logger 
-    logging.getLogger('').addHandler(console) 
-    logger = logging.getLogger(__name__)
-    '''
     pwd = os.getcwd()
     logger.info('present working dir : {}'.format(pwd))
     
-
     keyList = [str(key) for key in configDict.keys()]
-    hasskim = args.hasSkim
-    nofake  = args.noFake 
+    nofake  = args.nofake 
 
     era            = configDict.get('era')
     lumi           = configDict.get('lumi')
@@ -134,19 +148,12 @@ def main():
     if not os.path.isdir(histDir):
         logger.info('{} : output directory doesnt exist !!! '.format(histDir))
 
-    #if args.produceplotyaml:
-    #    dictToDump = dict()
-    #    dictToDump.update(getCommonInfoDict())
-    #    print(dictToDump)
-    
+    groupLegendInfoDict = configDict.get('groupLegendInfo')
     legendPosDict = configDict.get('legendPos')
     resultDict = defaultdict(list)
     xsecDict   = dict()
     legendDict = dict()
-    # mc samples
     logger.info('Doing hadd ===>')
-    #groupLegendDict = dict()
-    #groupLegendInfo = dict()
     evtCutFlowDict   = defaultdict(list)
     evtCutFlowLabels = []
     combinedDictForYaml = dict()
@@ -156,15 +163,15 @@ def main():
 
     for dataType, valDict in samplesDict.items():
         '''
-        e.g. dataType : MC
+        e.g. 
+        dataType : MC
         valDict:
-          TTToSemiLeptonic:
+        TTToSemiLeptonic:
           filedirs: ['/eos/user/g/gsaha3/Exotic/MC_UL2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/']
           genEvtWtSum: 'genEventSumw'
           xsec: 365.52
           filesPerJob: 2
           group: 'TT'
-        ...
         
         '''
         ismc     = False
@@ -172,16 +179,25 @@ def main():
         issignal = False
         if dataType == 'MC' : 
             ismc = True
-            hasskim = True
+            hasskim = args.hasskim
+            forcehadd = args.forcehadd
         elif dataType == 'DATA':
             isdata = True
             hasskim = False
+            forcehadd = False
         elif dataType == 'SIGNAL':
             issignal = True
-            hasskim = True
+            hasskim = args.hasskim
+            forcehadd = args.forcehadd
         else:
             raise RuntimeError('Unknown datatype. Please mention MC, DATA or SIGNAL in the main yaml')
-            
+          
+        # if verbose
+        if args.verbose:
+            logger.info(f'dataType : {dataType}')
+            logger.info(f'Looking for skimmed ntuples? {hasskim}')
+
+  
         if valDict == None or len(valDict) == 0:
             logger.info(f'Sorry! No {dataType} samples are present in yaml')
         else:
@@ -199,7 +215,7 @@ def main():
                 group: 'TT'
                 legend: 'tt+jets'
                 '''
-                logger.info(' Sample : {}'.format(key))
+                logger.info(' Process : {}'.format(key))
                 xsec = val.get('xsec')
                 filePathList = val.get('filedirs')
                 filesPerJob  = int(val.get('filesPerJob'))
@@ -209,110 +225,129 @@ def main():
                     logger.info('\t {}'.format(item))
                     files += [os.path.join(item,rfile) for rfile in os.listdir(item) if '.root' in rfile]
 
+                logger.info('\t nFiles : {}'.format(len(files)))
+                logger.info('\t filesPerJob : {}'.format(filesPerJob))
                 infileListPerJob = [files[i:i+filesPerJob] for i in range(0, len(files), filesPerJob)]
-                logger.info('\t nJobs : {}'.format(len(infileListPerJob)))
                 nJobs = len(infileListPerJob)
-                
-                batchHistDir = os.path.join(batchOutDir, key) # ..........New
+                logger.info('\t nJobs : {}'.format(nJobs))
+
+                # if verbose or checkinputs
+                if args.verbose or args.checkinputs:
+                    logger.info('\t   Input INFO')
+                    for i,jobfileList in enumerate(infileListPerJob):
+                        logger.info(f'\t\t Job : {i}')
+                        for ele in jobfileList:
+                            logger.info('\t\t\t '+ele)
+                            elefile = ROOT.Open(ele)
+                            if elefile.IsZombie():
+                                logger.error('Z O M B I E. Please check this inputfile, especially for data samples !')
+                            elefiletrees = [key.GetName() for key in elefile.GetListOfKeys() if key.GetClassName() == 'TTree']
+                            if elefiletrees.count('Events') <= 0:
+                                logger.warning('Events tree found missing. Please check this inputfile !')
+                            if elefiletrees.count('Runs') <= 0:
+                                logger.warning('Runs tree found missing. Please check this inputfile !')
+
+                batchHistDir = os.path.join(batchOutDir, key)
                 if not os.path.isdir(batchHistDir):
                     raise RuntimeError(f'{batchHistDir} not found !')
 
                 tobehadd         = []
-                #posthaddfile     = os.path.join(histDir, str(key)+'_hist.root')
-                posthaddfile     = os.path.join(batchHistDir, str(key)+'_hist.root') # NEW
+                posthaddfile     = os.path.join(batchHistDir, str(key)+'_hist.root')
                 haddcmd_         = ['hadd', posthaddfile]
                 if hasskim:
                     tobehaddskim         = []
                     posthaddfileskim     = os.path.join(skimDir, str(key)+'_skim.root')
                     haddcmdskim_         = ['hadd', posthaddfileskim]
 
-                fileabsent = False                    
-                #if args.dohadd:
+                fileabsent = False
+                filesfoundmissing = False
                 haddCond = os.path.exists(posthaddfile) and os.path.exists(posthaddfileskim) if hasskim else os.path.exists(posthaddfile)
-                #if os.path.exists(posthaddfile) :
+
                 if haddCond :
                     logger.info(f'hadded files ---> {posthaddfile} & {posthaddfileskim} already exist!') if hasskim else logger.info(f'hadded file ---> {posthaddfile} already exist!')
                 else:
-                    with alive_bar(title='h-adding', length=60, enrich_print=True) as bar:
+                    #logger.info('\t   Output INFO')
+                    #logger.info('\t   h-adding >>--------->')
+                    #logger.info(f'\t   hadded output to be produced : {os.path.basename(posthaddfile)} using {nJobs} output root files')
+                    with alive_bar(nJobs, title='collecting files to hadd ', length=50, enrich_print=True) as bar:
                         for i in range(nJobs) :
-                            #rootfile  = os.path.join(histDir, str(key)+'_'+str(i)+'_hist.root')
-                            rootfile  = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_hist.root') # NEW
+                            fileabsent = False
+                            rootfile  = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_hist.root')
+                            #logger.info(f'\t\t Job {i} output : {rootfile}')
                             tfile    = ROOT.TFile(rootfile,"READ")
                             if not os.path.exists(rootfile): 
                                 logger.warning(f'{rootfile} >>-x-x-x-> Missing')
-                                resubmitList.append(['condor_submit', os.path.join(condorDir,str(key)+'_'+str(i)+'.sub')])
-                                fileabsent = True
+                                fileabsent = True if not forcehadd else False
+                                filesfoundmissing = True if not forcehadd else False
                             elif tfile.IsZombie():
                                 logger.warning(f'{rootfile} is a Zombie! Please produce this file again.')
-                                resubmitList.append(['condor_submit', os.path.join(condorDir,str(key)+'_'+str(i)+'.sub')])
-                                tfile.Close()
-                                fileabsent = True
+                                fileabsent = True if not forcehadd else False
+                                filesfoundmissing = True if not forcehadd else False
                             else:
-                                sleep(0.03)
-                                tobehadd.append(rootfile)
-                    
+                                listOfHistos = [key for key in tfile.GetListOfKeys()]
+                                if len(listOfHistos) <= 1:
+                                    logger.error(f'check the logfile of {rootfile} for any possible segfault')
+                                    fileabsent = True if not forcehadd else False
+                                    filesfoundmissing = True if not forcehadd else False
+                                else:
+                                    sleep(0.03)
+                                    tobehadd.append(rootfile)
+                            tfile.Close()
                             if hasskim:
-                                #rootfileS  = os.path.join(histDir, str(key)+'_'+str(i)+'_skim.root')
-                                rootfileS  = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_skim.root')
+                                rootfileS = os.path.join(batchHistDir, str(key)+'_'+str(i)+'_skim.root')
                                 tfileS    = ROOT.TFile(rootfileS,"READ")
                                 if not os.path.exists(rootfileS): 
                                     logger.warning(f'{rootfileS} >>-x-x-x-> Missing')
+                                    fileabsent = True if not forcehadd else False
+                                    filesfoundmissing = True if not forcehadd else False
                                 elif tfileS.IsZombie():
                                     logger.warning(f'{rootfileS} is a Zombie! Please produce this file again.')
-                                    tfileS.Close()
+                                    fileabsent = True if not forcehadd else False
+                                    filesfoundmissing = True if not forcehadd else False
                                 else:
                                     sleep(0.03)
                                     tobehaddskim.append(rootfileS)
+                                tfileS.Close()
+                            if fileabsent:
+                                if not forcehadd:
+                                    resubmitList.append(['condor_submit', os.path.join(condorDir,str(key)+'_'+str(i)+'.sub')])
+                            bar()
 
-                        if len(tobehadd) == 0:
-                            logger.error(f'{key} job output root files are not present')
-                            sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
-                        elif nJobs == len(tobehadd):
+                    if len(tobehadd) == 0:
+                        logger.error(f'{key} job output root files are not present')
+                        sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
+                    elif nJobs == len(tobehadd):
+                        haddcmd = haddcmd_ + tobehadd
+                        runShellCmd(haddcmd)
+                    elif nJobs > len(tobehadd):
+                        logger.warning('some output root files are missing ...')
+                        if forcehadd:
+                            logger.warning('[--forcehadd] doing force-hadd !!!')
                             haddcmd = haddcmd_ + tobehadd
-                            process = Popen(haddcmd, stdout=PIPE)
-                            process.communicate()
-                            #realTimeLogging(process)
-                            '''
-                            # removing the job root files because
-                            # we have the hadded root files now
-                            if len(tobehadd) == nJobs:
-                            rmcmd = ['rm'] + tobehadd
-                            process2 = Popen(rmcmd, stdout=PIPE)
-                            process2.communicate()
-                            else:
-                            logging.info('There are some missing or zombie files ... Resolve it before removing !')
-                            '''
-                        else:
-                            logger.warning('Skipping hadd hist files because files are found missing')
-
-                        if hasskim:
-                            if len(tobehaddskim) == 0:
-                                logger.error(f'{key} job output skim root files are not present')
-                                sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
-                            elif nJobs == len(tobehaddskim):
+                            runShellCmd(haddcmd)
+                    else:
+                        logger.warning('Skipping hadd hist files because files are found missing')
+                        
+                    if hasskim:
+                        if len(tobehaddskim) == 0:
+                            logger.error(f'{key} job output skim root files are not present')
+                            sys.exit(f'TERMINATED!!! no post hadd files for {key}. Check the input files and then check the scripts :( ')  
+                        elif nJobs == len(tobehaddskim):
+                            haddcmdskim = haddcmdskim_ + tobehaddskim
+                            runShellCmd(haddcmdskim)
+                        elif nJobs > len(tobehaddskim):
+                            logger.warning('some output root files are missing ...')
+                            if forcehadd:
+                                logger.warning('[--forcehadd] doing force-hadd !!!')
                                 haddcmdskim = haddcmdskim_ + tobehaddskim
-                                #print(haddcmdskim)
-                                processskim = Popen(haddcmdskim, stdout=PIPE)
-                                processskim.communicate()
-                                #realTimeLogging(process)
-                                '''
-                                # removing the job root files because
-                                # we have the hadded root files now
-                                if len(tobehadd) == nJobs:
-                                rmcmd = ['rm'] + tobehadd
-                                process2 = Popen(rmcmd, stdout=PIPE)
-                                process2.communicate()
-                                else:
-                                logging.info('There are some missing or zombie files ... Resolve it before removing !')
-                                '''
-                            else:
-                                logger.warning('Skipping hadd skim files because files are found missing')
+                                runShellCmd(haddcmdskim)
+                        else:
+                            logger.warning('Skipping hadd skim files because some files are missing')
 
-                        bar()
-                # hadding done .................
-                if not fileabsent:
-                    # getting all the evtCutFlow histograms
-                    #print(dataType , key)
+                logger.info('hadding done ... |')# hadding done .................
+                
+                # If all files are present, start collecting event-cut-flow histogram
+                if not filesfoundmissing:
                     outrootfile  = ROOT.TFile(posthaddfile,'read')
                     if outrootfile.IsZombie():
                         raiseRuntimeError (f'{posthaddfile} is a Zombie !!!')
@@ -331,76 +366,87 @@ def main():
                             cutFlowWtHist_ls.Scale(lumi*xsec/evtWtSumHist.GetBinContent(1))                        
                         evtCutFlowDict[key].append(cutFlowWtHist)
                         evtCutFlowDict[key].append(cutFlowWtHist_ls)
-                        #print(cutFlowHist.Integral(), cutFlowWtHist.Integral(), cutFlowWtHist_ls.Integral())
                         cutFlowHist.SetDirectory(0)
                         cutFlowWtHist.SetDirectory(0)
                         cutFlowWtHist_ls.SetDirectory(0)
 
                     elif dataType == 'DATA':
                         evtCutFlowDict[dataType+'_'+key].append(cutFlowHist)
-                        #print(cutFlowHist.Integral())
                         cutFlowHist.SetDirectory(0)
                         
                     else:
                         raise RuntimeError('please mention correct datatype : MC or DATA or SIGNAL ...')
 
-                    SR_File, Fake_File = makeFakeFileSeparate.getSRandFakeRootFiles(posthaddfile, resultDir, isSignal=issignal)
+                    # making SR and FR files separate
+                    SR_File, Fake_File = makeFakeFileSeparate.getSRandFakeRootFiles(posthaddfile, resultDir, noFake=nofake, isSignal=issignal)
                     
                     group = val.get('group')
                     if os.path.exists(SR_File):
                         resultDict[str(group)].append(SR_File)
-                        legendDict[str(group)] = val.get('legend')
+                        #legendDict[str(group)] = val.get('legend')
                         xsecDict[str(SR_File)]=[xsec, dataType]
                     else:
                         logging.warning('hadded file |{}| is absent'.format(SR_File))
                     if not issignal and os.path.exists(Fake_File):
                         resultDict['Fake'].append(Fake_File)
-                        legendDict['Fake'] = 'Fake'
+                        #legendDict['Fake'] = 'Fake'
                         
     # Re-submission
     if len(resubmitList) > 0:
-        logger.info('Resubmit the following jobs')
-        for cmd in resubmitList:
-            logger.info(' '.join(cmd)+'\n')
+        logger.info('Resubmit the following jobs or use the sh script in jobdir')
+        with open(os.path.join(jobdir,'resend.sh'), 'w') as outf:
+            outf.write('# !/bin/sh \n\n')
+            for cmd in resubmitList:
+                print(' '.join(cmd))
+                outf.write(' '.join(cmd)+'\n')
+
         logger.info('After re-running these failed jobs, do proceed again with the post-processing.')
         sys.exit()
     else:
         logger.info('All h-added files are present. So moving further --->')
      
-        
+    #Preparing legendDict
+    for key, items in groupLegendInfoDict.items():
+        group     = key
+        legend    = items.get('legend') 
+        if not group == 'data':
+            fillcolor = items.get('fill-color')
+            order     = items.get('order')
+            legendDict[str(group)] = [fillcolor, legend, order]
+        else:
+            legendDict[str(group)] = [legend]
+    if not args.nofake:
+        legendDict['Fake'] = ['#cc6666', 'Fake', 20]
+
+
     #logger.debug(resultDict)
-    yamlObj = yamlMaker(era,lumi,resultDict,xsecDict,legendDict,os.path.join(histDir,'plots.yml'),histDir,args.norm)
+    yamlObj = yamlMaker(era,lumi,resultDict,xsecDict,legendDict,histDir,args.norm)
     histograms, histTitles = yamlObj.getListOfHistograms()
     #logger.info(f'List of histograms : \n {histograms} \n')
     commonInfoDict = yamlObj.getCommonInfoDict()
-    logger.info('commonInfo >>----> plots.yml')
-    #print(yaml.dump(commonInfoDict,default_flow_style=False))
+    logger.info('saving commonInfo to plots yaml object')
     combinedDictForYaml.update(commonInfoDict)
 
     fileInfoDict = yamlObj.getFileInfoDict(lumi,nofake)
-    logger.info('fileInfo >>----> plots.yml')
+    logger.info('saving fileInfo to plots yaml object')
     combinedDictForYaml.update(fileInfoDict)
 
-    logger.info('legendInfo >>----> plots.yml')
-    #logging.info(yaml.dump(groupLegendDict,default_flow_style=False))
-    groupLegendDict = yamlObj.getLegendInfoDict(nofake)
+    logger.info('saving legendInfo to plots yaml object')
+    #groupLegendDict = yamlObj.getLegendInfoDict(nofake)
+    groupLegendDict = yamlObj.getLegendInfoDict()
     combinedDictForYaml.update(groupLegendDict)
 
-    logger.info('legendPosInfo >>----> plots.yml')
-    #logging.info(yaml.dump(legendPosDict,default_flow_style=False))
+    logger.info('saving legendPosInfo to plots yaml object')
     combinedDictForYaml.update(legendPosDict)
 
+    #logger.info('saving plotGroupInfo to plots yaml object')
+    #combinedDictForYaml.update(groupLegendInfoDict)
+
     plotInfoDict = yamlObj.getHistogramDict(histograms, histTitles)
-    logger.info('plotsInfo >>----> plots.yml')
+    logger.info('saving plotsInfo to plots yaml object')
     combinedDictForYaml.update(plotInfoDict)
 
-    #print(combinedDictForYaml)
-    #logger.info('preparing plots.json')
-    #json_object = json.dumps(combinedDictForYaml, indent = 4)
-    #with open(os.path.join(histDir,'plots.json'), 'w') as outfile:
-    #    outfile.write(json_object)
-
-    logger.info('preparing plot yml')
+    logger.info('preparing plot yml file')
     plotyaml = os.path.join(histDir, 'plots.yml') if nofake else os.path.join(histDir, 'plots_FakeExtrapolation.yml')
     with open(plotyaml, 'w') as ymlfile:
         documents = yaml.dump(combinedDictForYaml, ymlfile, default_flow_style=False)
@@ -415,6 +461,7 @@ def main():
             raise RuntimeError(f'{plotyaml} doesnt exist !!!')
         # run plotIt
         plotItCmds = ['plotIt','-y','-o',plotDir, plotyaml]
+        '''
         proc       = Popen(plotItCmds, stdout=PIPE)
         # Poll proc.stdout to show stdout live
         while True:
@@ -424,7 +471,8 @@ def main():
             if output:
                 logging.info(output.strip().decode("utf-8"))
         rc = proc.poll()
-
+        '''
+        runShellCmd(plotItCmds)
 
     # Producing yield tables
     '''

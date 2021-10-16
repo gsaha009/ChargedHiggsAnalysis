@@ -15,22 +15,27 @@ commonInfo:
   - logOption 0
   - maxEvent -1
   - nFiles -1
+  - verbose 0
 mvaInfo:
   - readMVA 0
   - MVAnetwork BDT_nT1500_D2_nC100_ns5
   - MVAxmlFile TMVAClassification_BDT_nT1500_D2_nC100_ns5.weights.xml
 skimInfo:
-  - createMVATree 1
+  - createMVATree 0
 cutLists:
-  - muonCutList eta=2.4 pt=5. dxy=0.2 dz=0.5 SIP3D=8. ptFake=10 reliso=0.15
-  - electronCutList pt=7. eta=2.5 dxy=0.05 dz=0.1 SIP3D=8. ptFake=10
+  #- muonCutList eta=2.4 pt=5. dxy=0.2 dz=0.5 SIP3D=8. ptFake=10 reliso=0.15
+  - muonCutList eta=2.4 pt=5. dxy=0.5 dz=1.0 SIP3D=4. ptFake=10 reliso=0.35
+  #- electronCutList pt=7. eta=2.5 dxy=0.05 dz=0.1 SIP3D=8. ptFake=10
+  - electronCutList pt=7. eta=2.5 dxy=0.5 dz=1.0 SIP3D=4. ptFake=10 reliso=0.35
   - jetCutList eta=2.5 pt=25. lbjetScore=0.0521 bjetScore=0.3033 deltaR=0.8
   - tauCutList eta=2.4 pt=20. dz=0.2 dxy=0.1
   - fatJetCutList eta=2.4 pt=200. subJetPt=20  subJetEta=2.4 msoftdropMin=30 msoftdropMax=210 fjetRatio=0.75 bSubJetPt=30 bSubJetScore=0.4941
+### Do not use HLT at the beginning of the HLT path name ###
 HLT_DoubleMuon:
   - Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8
 HLT_DoubleEG:
   - Ele23_Ele12_CaloIdL_TrackIdL_IsoVL
+  - DoubleEle25_CaloIdL_MW
 HLT_MuonEG:
   - Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
   - Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
@@ -41,23 +46,26 @@ HLT_SingleMuon:
 HLT_SingleElectron:
   - Ele32_WPTight_Gsf
 HLT_SingleElectronForFake:
-  - HLT_Ele8_CaloIdM_TrackIdM_PFJet30
-  - HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30
-  - HLT_Ele17_CaloIdM_TrackIdM_PFJet30
+  - Ele8_CaloIdM_TrackIdM_PFJet30
+  - Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30
+  - Ele17_CaloIdM_TrackIdM_PFJet30
 HLT_SingleMuonForFake:
-  - HLT_Mu8_TrkIsoVVL
-  - HLT_Mu17_TrkIsoVVL
+  - Mu8_TrkIsoVVL
+  - Mu17_TrkIsoVVL
 ScaleFactorsInfo:
-  - muonIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/RunBCDEF_SF_ID.root
-  - looseMuonIdSFhistName NUM_LooseID_DEN_genTracks_pt_abseta
-  - medMuonIdSFhistName NUM_MediumID_DEN_genTracks_pt_abseta
-  - tightMuonIdSFhistName NUM_TightID_DEN_genTracks_pt_abseta
-  - electronLooseIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/egammaEffi_txt_EGM2D_MVA80noIso_UL17.root
+  ### MuonID-ScaleFactors
+  - muonIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2018/Muon/RunABCD_SF_ID.root
+  - looseMuonIdSFhistName NUM_LooseID_DEN_TrackerMuons_pt_abseta_syst
+  - medMuonIdSFhistName NUM_MediumID_DEN_TrackerMuons_pt_abseta_syst
+  - tightMuonIdSFhistName NUM_TightID_DEN_TrackerMuons_pt_abseta_syst
+  ### MuonISO-ScaleFactors 
+  - muonTightIsoSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2018/Muon/RunABCD_SF_ISO.root
+  - tightMuIsoSFhistName NUM_TightRelIso_DEN_MediumID_pt_abseta_syst
+  ### EGammaID-ScaleFactors
+  - electronLooseIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2018/Electron_MVA/2018_ElectronMVA80iso.root
   - looseEleIdSFhistName EGamma_SF2D
-  - electronTightIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/egammaEffi_txt_EGM2D_MVA90iso_UL17.root
+  - electronTightIdSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2018/Electron_MVA/2018_ElectronMVA90iso.root
   - tightEleIdSFhistName EGamma_SF2D
-  - muonTightIsoSFRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/POG_SFs/2017/RunBCDEF_SF_ISO.root
-  - tightMuIsoSFhistName NUM_TightRelIso_DEN_MediumID_pt_abseta
   ### FakeRates
   - FRRootFile /afs/cern.ch/work/g/gsaha/public/ChargedHiggsAnalysis/Analysis/data/FakeRates/2018/FR_lep_ttH_mva_2018_CERN_2019Jul08.root
   - muonFRhistName FR_mva085_mu_data_comb
@@ -65,13 +73,7 @@ ScaleFactorsInfo:
 endInfo:
   - useEventList 0
   - eventId 1 895751 20
-legendPos:
-  legend:
-    position:
-    - 0.7
-    - 0.6
-    - 0.91
-    - 0.91
+
 samplesDict:
   MC:
     ### DY-Jets
@@ -82,8 +84,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 18610.0
       filesPerJob: 4
-      group: DY
-      legend: 'DY+jets'
+      group: 'Rare'
 
     DYJetsToLL_M-50:
       filedirs:
@@ -92,9 +93,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 6077.22 # pb
       filesPerJob: 4
-      group: 'DY'
-      legend: 'DY+jets'
-
+      group: 'Rare'
 
     ### ttbar
     TTTo2L2Nu:
@@ -104,7 +103,6 @@ samplesDict:
       xsec: 88.40
       filesPerJob: 2
       group: 'TT'
-      legend: 'tt+jets'
 
     TTToSemiLeptonic: 
       filedirs: 
@@ -114,16 +112,15 @@ samplesDict:
       xsec: 365.52
       filesPerJob: 2
       group: 'TT'
-      legend: 'tt+jets'
 
     TTToHadronic:
       filedirs: 
         - /eos/user/s/sbaradia3/Analysis/post_processed/TTToHadronic_TuneCP5_13TeV-powheg-pythia8
+        - /eos/user/s/sbaradia2/Analysis/TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ext2
       genEvtWtSum: 'genEventSumw'
       xsec: 377.85
       filesPerJob: 2
       group: 'TT'
-      legend: 'tt+jets'
 
     ### Single-top
     ST_s-channel_4f:
@@ -132,8 +129,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec : 3.364
       filesPerJob: 2
-      group: 'ST'
-      legend: 'Single top'
+      group: 'TT'
 
     ST_tW_top_5f:
       filedirs: 
@@ -141,8 +137,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
       filesPerJob: 4
-      group: 'ST'
-      legend: 'Single top'
+      group: 'TT'
 
     ST_tW_antitop_5f:
       filedirs: 
@@ -150,8 +145,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec : 35.85
       filesPerJob: 4
-      group: 'ST'
-      legend: 'Single top'
+      group: 'TT'
 
     ST_t-channel_top_5f:
       filedirs: 
@@ -159,8 +153,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec : 136.02
       filesPerJob: 4
-      group: 'ST'
-      legend: 'Single top'
+      group: 'TT'
 
     ST_t-channel_antitop_5f:
       filedirs: 
@@ -168,8 +161,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec : 80.95
       filesPerJob: 4
-      group: 'ST'
-      legend: 'Single top'
+      group: 'TT'
 
     ##### Single Higgs
     ttHJetToNonbb:
@@ -178,8 +170,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 0.2118
       filesPerJob: 4
-      group: SM
-      legend: 'SM higgs'
+      group: TTVX
 
     ttHJetTobb:
       filedirs: 
@@ -187,8 +178,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 0.2953
       filesPerJob: 4
-      group: SM
-      legend: 'SM higgs'
+      group: TTVX
 
     ##### VV(V)
     ZZTo2L2Q:
@@ -199,7 +189,6 @@ samplesDict:
       xsec: 5.52
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     ZZTo2L2Nu:
       filedirs: 
@@ -208,7 +197,6 @@ samplesDict:
       xsec: 0.5644
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     ZZTo4L:
       filedirs: 
@@ -216,8 +204,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 1.256
       filesPerJob: 4
-      group: V4
-      legend: 'VV(V)'
+      group: VV
 
     WWTo2L2Nu:
       filedirs: 
@@ -226,7 +213,6 @@ samplesDict:
       xsec: 12.2
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     WWTo2L2Nu_DoubleScattering:
       filedirs: 
@@ -235,7 +221,6 @@ samplesDict:
       xsec: 0.2232
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     WWToLNuQQ:
       filedirs: 
@@ -244,7 +229,6 @@ samplesDict:
       xsec: 43.53
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     WZTo3LNu:
       filedirs: 
@@ -254,7 +238,6 @@ samplesDict:
       xsec: 4.43
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     WZTo2L2Q:
       filedirs: 
@@ -263,7 +246,6 @@ samplesDict:
       xsec: 5.6
       filesPerJob: 4
       group: VV
-      legend: 'VV(V)'
 
     WWW:
       filedirs: 
@@ -272,7 +254,6 @@ samplesDict:
       xsec: 0.2086
       filesPerJob: 2
       group: VV
-      legend: 'VV(V)'
 
     WWZ:
       filedirs: 
@@ -281,7 +262,6 @@ samplesDict:
       xsec: 0.1676
       filesPerJob: 2
       group: VV
-      legend: 'VV(V)'
 
     WZZ:
       filedirs: 
@@ -290,7 +270,6 @@ samplesDict:
       xsec: 0.05701
       filesPerJob: 2
       group: VV
-      legend: 'VV(V)'
 
     ZZZ:
       filedirs: 
@@ -299,7 +278,6 @@ samplesDict:
       xsec: 0.01473
       filesPerJob: 2
       group: VV
-      legend: 'VV(V)'
 
     ##### WJets 
     ##### https://indico.cern.ch/event/673253/contributions/2756806/attachments/1541203/2416962/20171016_VJetsXsecsUpdate_PH-GEN.pdf
@@ -310,7 +288,6 @@ samplesDict:
       xsec: 49264.92
       filesPerJob: 2
       group: WJets
-      legend: 'W + jets'
 
     WJetsToLNu_1J:
       filedirs: 
@@ -319,7 +296,6 @@ samplesDict:
       xsec: 8280.36
       filesPerJob: 2
       group: WJets
-      legend: 'W + jets'
 
     WJetsToLNu_2J:
       filedirs: 
@@ -328,7 +304,6 @@ samplesDict:
       xsec: 3118.08
       filesPerJob: 2
       group: WJets
-      legend: 'W + jets'
 
     ##### TTVX
     TTZToQQ:
@@ -339,16 +314,14 @@ samplesDict:
       xsec: 0.5868
       filesPerJob: 2
       group: TTVX
-      legend: 'ttV(V) + jets'
 
-    #TTWJetsToLNu:
-    #  filedirs: 
-    #    - 
-    #  genEvtWtSum: 'genEventSumw'
-    #  xsec: 0.196
-    #  filesPerJob: 2
-    #  group: TTVX
-    #  legend: 'ttV(V) + jets'
+    TTWJetsToLNu:
+      filedirs: 
+        - /eos/user/s/sbaradia2/Analysis/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8
+      genEvtWtSum: 'genEventSumw'
+      xsec: 0.196
+      filesPerJob: 2
+      group: TTVX
 
     TTWJetsToQQ:
       filedirs: 
@@ -357,7 +330,6 @@ samplesDict:
       xsec: 0.4049
       filesPerJob: 4
       group: TTVX
-      legend: 'ttV(V) + jets'
 
     TTWW:
       filedirs: 
@@ -367,7 +339,6 @@ samplesDict:
       xsec: 0.006981
       filesPerJob: 2
       group: TTVX
-      legend: 'ttV(V) + jets'
 
     TTWH:
       filedirs: 
@@ -376,7 +347,6 @@ samplesDict:
       xsec: 0.001582
       filesPerJob: 2
       group: TTVX
-      legend: 'ttV(V) + jets'
 
     TTZH:
       filedirs: 
@@ -385,7 +355,6 @@ samplesDict:
       xsec: 0.001535
       filesPerJob: 2
       group: TTVX
-      legend: 'ttV(V) + jets'
 
     ##### Rares
     WpWpJJ:
@@ -394,8 +363,7 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 0.04926
       filesPerJob: 2
-      group: Other
-      legend: 'Rares'
+      group: Rare
 
     WZJJ:
       filedirs: 
@@ -403,99 +371,112 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       xsec: 0.4234
       filesPerJob: 2
-      group: Other
-      legend: 'Rares'
+      group: Rare
 
   DATA:  
-    ### SingleMuon
-    SingleMuon_2018A:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/SingleMuon/Run2018A-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    SingleMuon_2018B:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/SingleMuon/Run2018B-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    # -------- files missing --------- #
-    SingleMuon_2018C:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/SingleMuon/Run2018C-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    # -------- files missing --------- #
-    SingleMuon_2018D:
-      filedirs: 
-        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_02Apr2020/SingleMuon/Run2018D-02Apr2020-v1/210825_212402
-      filesPerJob: 20
-      group: 'data'
-
-    ### DoubleMuon
-    DoubleMuon_2018A:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018A-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    DoubleMuon_2018B:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018B-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    DoubleMuon_2018C:
-      filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018C-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-    DoubleMuon_2018D:
-      filedirs: 
-        - /eos/user/g/gsaha2/Exotic/Data_NanoAOD_02Apr2020/DoubleMuon/Run2018D-02Apr2020-v1
-      filesPerJob: 20
-      group: 'data'
-
     ### EGamma
     EGamma_2018A:
       filedirs: 
         - /eos/user/g/gsaha2/Exotic/Data_NanoAOD_02Apr2020/EGamma/Run2018A-02Apr2020-v1
       filesPerJob: 20
       group: 'data'
+
     EGamma_2018B:
       filedirs: 
         - /eos/user/g/gsaha2/Exotic/Data_NanoAOD_02Apr2020/EGamma/Run2018B-02Apr2020-v1
       filesPerJob: 20
       group: 'data'
+
     EGamma_2018C:
       filedirs: 
         - /eos/user/g/gsaha2/Exotic/Data_NanoAOD_02Apr2020/EGamma/Run2018C-02Apr2020-v1
       filesPerJob: 20
       group: 'data'
+
     EGamma_2018D:
       filedirs: 
         - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/EGamma/Run2018D-02Apr2020-v1 
       filesPerJob: 20
       group: 'data'
 
+
     ### MuonEG
     MuonEG_2018A:
       filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/MuonEG/Run2018A-02Apr2020-v1
+        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_ReReco_02Apr2020/MuonEG/RunA
       filesPerJob: 20
       group: 'data'
+
     MuonEG_2018B:
       filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/MuonEG/Run2018B-02Apr2020-v1
+        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_ReReco_02Apr2020/MuonEG/RunB
       filesPerJob: 20
       group: 'data'
+
     MuonEG_2018C:
       filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/MuonEG/Run2018C-02Apr2020-v1
+        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_ReReco_02Apr2020/MuonEG/RunC
       filesPerJob: 20
       group: 'data'
+
     MuonEG_2018D:
       filedirs: 
-        - /eos/user/g/gsaha5/Exotic/Data_NanoAOD_02Apr2020/MuonEG/Run2018D-02Apr2020-v1
+        - /eos/user/g/gsaha3/Exotic/Data_NanoAOD_ReReco_02Apr2020/MuonEG/RunD
       filesPerJob: 20
       group: 'data'
+
+
+    ### SingleMuon
+    SingleMuon_2018A:
+      filedirs: 
+        - /eos/user/s/sbaradia4/Analysis/crab_output_ch_SingleMuon_data2018/SingleMuon_2018A
+      filesPerJob: 20
+      group: 'data'
+
+    SingleMuon_2018B:
+      filedirs: 
+        - /eos/user/s/sbaradia4/Analysis/crab_output_ch_SingleMuon_data2018/SingleMuon_2018B
+      filesPerJob: 20
+      group: 'data'
+
+    SingleMuon_2018C:
+      filedirs: 
+        - /eos/user/s/sbaradia4/Analysis/crab_output_ch_SingleMuon_data2018/SingleMuon_2018C
+      filesPerJob: 20
+      group: 'data'
+
+    SingleMuon_2018D:
+      filedirs: 
+        - /eos/user/s/sbaradia4/Analysis/crab_output_ch_SingleMuon_data2018/SingleMuon_2018D
+      filesPerJob: 20
+      group: 'data'
+
+
+    ### DoubleMuon
+    DoubleMuon_2018A:
+      filedirs: 
+        - /eos/user/s/sarkar/Exotic/NanoAOD/DATA/2018/DoubleMuon/Run2018A-02Apr2020-v1
+      filesPerJob: 20
+      group: 'data'
+
+    DoubleMuon_2018B:
+      filedirs: 
+        - /eos/user/s/sarkar/Exotic/NanoAOD/DATA/2018/DoubleMuon/Run2018B-02Apr2020-v1
+      filesPerJob: 20
+      group: 'data'
+
+    DoubleMuon_2018C:
+      filedirs: 
+        - /eos/user/s/sarkar/Exotic/NanoAOD/DATA/2018/DoubleMuon/Run2018C-02Apr2020-v1
+      filesPerJob: 20
+      group: 'data'
+
+    DoubleMuon_2018D:
+      filedirs: 
+        - /eos/user/s/sarkar/Exotic/NanoAOD/DATA/2018/DoubleMuon/Run2018D-02Apr2020-v1
+      filesPerJob: 20
+      group: 'data'
+
 
   SIGNAL:
     Signal_PPAP_v1:
@@ -505,3 +486,41 @@ samplesDict:
       genEvtWtSum: 'genEventSumw'
       filesPerJob: 100
       group: 'Signal'
+
+groupLegendInfo:
+  Rare:
+    # lightSeaGreen
+    fill-color: '#20B2AA'
+    legend: Rare
+    order: 1
+  TT:
+    # rosyBrown
+    fill-color: '#BC8F8F'
+    legend: t(t)+jets
+    order: 6
+  TTVX:
+    # plum
+    fill-color: '#DDA0DD'
+    legend: ttV(V) + jets
+    order: 3
+  VV:
+    # salmon
+    fill-color: '#FA8072'
+    legend: VV(V)
+    order: 4
+  WJets:
+    # silver
+    fill-color: '#C0C0C0'
+    legend: W + jets
+    order: 5
+  data:
+    legend: data
+
+
+legendPos:
+  legend:
+    position:
+    - 0.33
+    - 0.73
+    - 0.95
+    - 0.88
