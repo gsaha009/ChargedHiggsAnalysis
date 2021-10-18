@@ -25,13 +25,9 @@ void HistBooker::bookHist1D(const char* hname,
 void HistBooker::bookHistograms (bool isMC) {
   // book basic histograms to be filled at different stages
   bookHist1D("evtCutFlow",          "Event CutFlow",                                    15, -0.5, 14.5);
-  bookHist1D("SR_yield",            "Yield in Signal Region",                             9, -0.5, 8.5);
-  bookHist1D("SB_yield",            "Yield in Fake Extrapolated Region",                  9, -0.5, 8.5);
   if (isMC) {
     bookHist1D("EventWtSum",        "Event Weight Sum",                                   1, -0.5, 0.5);
     bookHist1D("evtCutFlowWt",      "Event CutFlow (Weighted)",                         15, -0.5, 14.5);
-    bookHist1D("SR_yieldWt",        "Yield in Signal Region Weighted",                    9, -0.5, 8.5);
-    bookHist1D("SB_yieldWt",        "Yield in Fake Extrapolated Region Weighted",         9, -0.5, 8.5);
   }
 
   std::vector<std::string>RegionFlags_ = {"_SR_","_SB_"};
@@ -167,4 +163,46 @@ void HistBooker::bookHistograms (bool isMC) {
   bookHist1D("Ak4Jet2Pt", "Sub-leading ak4 jet p_{T} (GeV)", 50, 0, 300, ChannelFlags_, BoostedFlags_);
   bookHist1D("NoAk4JetsHas1FatJet", "No. of ak4 jets with one ak8", 10, 0, 10, ChannelFlags_, BoostedFlags_);
   bookHist1D("NoAk4JetsHas2orMoreFatJet", "No. of ak4 jets with ak8", 10, 0, 10, ChannelFlags_, BoostedFlags_);
+}
+
+void HistBooker::bookHistograms_DY (bool isMC) {
+  bookHist1D("evtCutFlow",          "Event CutFlow",                                      8, -0.5, 7.5);
+  if (isMC) {
+    bookHist1D("EventWtSum",        "Event Weight Sum",                                   1, -0.5, 0.5);
+    bookHist1D("evtCutFlowWt",      "Event CutFlow (Weighted)",                           8, -0.5, 7.5);
+  }
+
+  std::vector<std::string>RegionFlags_ = {"_SR_"};
+  std::vector<std::string>ChannelFlags_ = {"EleEle", "MuMu"};
+
+  // MET plots                
+  bookHist1D("MetPt",              "Missing E_{T} (GeV)",                                  50, 0, 300,      ChannelFlags_, RegionFlags_);
+  bookHist1D("MetPhi",             "Missing E_{T} #Phi",                                   32, -3.2, 3.2,   ChannelFlags_, RegionFlags_);
+  // Di-lepton plots 
+  bookHist1D("Lep1pt",             "Leading lepton p_{T} (GeV)",                           50, 0, 300,      ChannelFlags_, RegionFlags_);
+  bookHist1D("Lep2pt",             "Sub-leading lepton p_{T} (GeV)",                       50, 0, 300,      ChannelFlags_, RegionFlags_);
+  bookHist1D("DiLepPt",            "Di-lepton p_{T} (GeV)",                                50, 0, 300,      ChannelFlags_, RegionFlags_);
+  bookHist1D("Lep1eta",            "Leading lepton #eta",                                  25, -2.5, 2.5,   ChannelFlags_, RegionFlags_);
+  bookHist1D("Lep2eta",            "Sub-leading lepton #eta",                              25, -2.5, 2.5,   ChannelFlags_, RegionFlags_);
+  bookHist1D("Lep1phi",            "Leading lepton #Phi",                                  32, -3.2, 3.2,   ChannelFlags_, RegionFlags_);
+  bookHist1D("Lep2phi",            "Sub-leading lepton #Phi",                              50, -3.2, 3.2,   ChannelFlags_, RegionFlags_);
+  bookHist1D("InvM_l1l2",          "Invariant mass [lep1, lep2] (GeV)",                    50, 0, 200,      ChannelFlags_, RegionFlags_);
+  bookHist1D("DR_lep1lep2",        "#Delta R [lep1, lep2]",                                25, 0, 5,        ChannelFlags_, RegionFlags_);
+  bookHist1D("DPhi_lep1lep2",      "#Delta#Phi [lep1, lep2]",                              32, -3.2, 3.2,   ChannelFlags_, RegionFlags_);
+  bookHist1D("DEta_lep1lep2",      "#Delta#eta [lep1, lep2]",                              25, -2.5, 2.5,   ChannelFlags_, RegionFlags_);
+
+  //jet
+  bookHist1D("NoAk4Jets",          "Number of Ak4 jets",                                   10, 0, 10,       ChannelFlags_, RegionFlags_); 
+  bookHist1D("Ak4Jet1Pt",          "Leading Ak4 jet p_{T} (GeV)",                          20, 0, 300,      ChannelFlags_, RegionFlags_);                     
+  bookHist1D("Ak4Jet2Pt",          "2ndLeading Ak4 jet p_{T} (GeV)",                       20, 0, 300,      ChannelFlags_, RegionFlags_);     
+  bookHist1D("Ak4Jet3Pt",          "3rdLeading Ak4 jet p_{T} (GeV)",                       20, 0, 300,      ChannelFlags_, RegionFlags_);    
+  bookHist1D("Ak4Jet4Pt",          "4thLeading Ak4 jet p_{T} (GeV)",                       20, 0, 300,      ChannelFlags_, RegionFlags_);
+  bookHist1D("Ak4Jet1Eta",         "Leading Ak4 jet #eta",                                 25, -5, 5,       ChannelFlags_, RegionFlags_);
+  bookHist1D("Ak4Jet2Eta",         "2ndLeading Ak4 jet #eta",                              25, -5, 5,       ChannelFlags_, RegionFlags_);
+  bookHist1D("Ak4Jet3Eta",         "3rdLeading Ak4 jet #eta",                              25, -5, 5,       ChannelFlags_, RegionFlags_);
+  bookHist1D("Ak4Jet4Eta",         "4thLeading Ak4 jet #eta",                              25, -5, 5,       ChannelFlags_, RegionFlags_);               
+  bookHist1D("Ak4Jet1Phi",         "Leading Ak4 jet #Phi",                                 28, -3.5, 3.5,   ChannelFlags_, RegionFlags_);     
+  bookHist1D("Ak4Jet2Phi",         "2ndLeading Ak4 jet #Phi",                              28, -3.5, 3.5,   ChannelFlags_, RegionFlags_);              
+  bookHist1D("Ak4Jet3Phi",         "3rdLeading Ak4 jet #Phi",                              28, -3.5, 3.5,   ChannelFlags_, RegionFlags_);        
+  bookHist1D("Ak4Jet4Phi",         "4thLeading Ak4 jet #Phi",                              28, -3.5, 3.5,   ChannelFlags_, RegionFlags_);
 }

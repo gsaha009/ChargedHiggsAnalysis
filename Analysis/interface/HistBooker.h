@@ -18,5 +18,6 @@ public:
                   const std::vector<std::string> &Flags2);
 
   void bookHistograms(bool isMC);
+  void bookHistograms_DY(bool isMC);
 };
 #endif

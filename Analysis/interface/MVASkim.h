@@ -9,7 +9,7 @@ class TFile;
 
 typedef struct  
 {
-  float MCweight;
+  float totalWeight;
   float Channel;
   // ---------- Low level variables ---------- //
   // lep1 variables
@@ -82,7 +82,7 @@ typedef struct
 
 typedef struct  
 {
-  float MCweight;
+  float totalWeight;
   float Channel;
   float pt_lep1;    
   float pt_lep2;    

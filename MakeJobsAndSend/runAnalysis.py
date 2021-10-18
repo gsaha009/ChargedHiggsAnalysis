@@ -337,7 +337,7 @@ def main():
         start = time.time()
         Parallel(n_jobs=10)(delayed(runShellCmd)(cmd) for cmd in condorCmdList)
         stop = time.time()
-        logger.info(f'All jobs sent in {stop-start} seconds')
+        logger.info(f'{len(condorCmdList)} jobs sent in {stop-start} seconds')
     else:
         logger.info('Use --send to submit jobs in HTcondor ...')
 

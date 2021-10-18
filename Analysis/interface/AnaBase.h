@@ -77,7 +77,8 @@ public:
   virtual void closeFiles();
   virtual void closeHistFile();
 
-  int setInputFile(const std::string& fname);
+  //int setInputFile(const std::string& fname);
+  void setInputFile(const std::string& fname);
   bool branchFound(const std::string& b, const std::string& tname="Events");
   int getEntries() const;
 
@@ -111,6 +112,7 @@ public:
   bool readGenInfo() const {return readGenInfo_;}
   bool isMC() const {return isMC_;}
   bool isSignal() const {return isSignal_;}
+  bool verbosity() const {return verbose_;}
   int logOption() const {return logOption_;}
   double lumiWt(double evtWeightSum=-1, bool verbose=false) const;
   int getEra() const {return era_;}
@@ -154,7 +156,8 @@ public:
 			  bool passSingleMuonHLT, 
 			  bool passSingleEleHLT,
 			  const std::string& dataset,
-			  int era);
+			  int era,
+			  bool verb=false);
   static bool isTriggered(const std::vector<std::string>& paths, const std::vector<bool>& scores);
 
   const ScaleFactorHandler& SFHandler() const {return SFHandler_;}
@@ -175,6 +178,7 @@ private:
   bool isMC_ {false};
   bool isSignal_ {false};
   bool readGenInfo_ {false};
+  bool verbose_ {false};
   std::vector<std::string> fileList_;
   std::vector<std::string> singleMuonHltPathList_;
   std::vector<std::string> singleElectronHltPathList_;
@@ -298,6 +302,8 @@ public:
   std::unique_ptr<TTreeReaderArray<bool>> Electron_mvaFall17V1Iso_WP90;
   std::unique_ptr<TTreeReaderArray<bool>> Electron_mvaFall17V2noIso_WP80;
   std::unique_ptr<TTreeReaderArray<bool>> Electron_mvaFall17V2noIso_WP90;
+  std::unique_ptr<TTreeReaderArray<bool>> Electron_mvaSpring16GP_WP80; // for 2016 (test)
+  std::unique_ptr<TTreeReaderArray<bool>> Electron_mvaSpring16GP_WP90; // for 2016 (test)
   std::unique_ptr<TTreeReaderArray<int>> Electron_genPartIdx;
   std::unique_ptr<TTreeReaderArray<unsigned char>> Electron_genPartFlv; 
   std::unique_ptr<TTreeReaderArray<float>> Electron_dxy;

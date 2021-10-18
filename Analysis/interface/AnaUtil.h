@@ -62,7 +62,12 @@ namespace AnaUtil {
     double mt_ll = Calculate_MT(lepton1_p4, lepton2_p4);
     return std::sqrt(std::pow(mt_1, 2) + std::pow(mt_2, 2) + std::pow(mt_ll, 2));
   }
-
+  template<typename Map>
+    void printMap(Map& m) {
+    for (auto& p: m)
+      std::cout << p.first << " : " << p.second << ";" << std::endl;
+    std::cout << std::endl;
+  }
   double deltaPhi(double phia, double phib);
   double deltaPhi(const TLorentzVector& a, const TLorentzVector& b);
   double deltaR(const TLorentzVector& a, const TLorentzVector& b);

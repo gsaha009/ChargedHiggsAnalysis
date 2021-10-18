@@ -1,0 +1,67 @@
+UNAME  = $(shell uname)
+EXE    = multileptonMVA_DY
+ 
+VPATH  = .:./interface
+vpath %.h ./interface
+
+CSUF   = cc
+HSUF   = h
+DICTC  = Dict.$(CSUF)
+DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
+
+SRCS   = src/PhysicsObjects.cc \
+	 src/AnaUtil.cc \
+       	 src/AnaBase.cc \
+	 src/PhysicsObjSelector.cc \
+	 src/ScaleFactorHandler.cc \
+	 src/HistBooker.cc \
+	 src/MultiLeptonMVAna_DY.cc \
+	 src/MVASkim.cc \
+	 src/MVAnalysis.cc \
+	 src/multileptonMVAna_DY.cc
+ 
+OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
+
+DEBUG_FLAG = -g0 -O3
+#DEBUG_FLAG = -g
+CXX      = g++
+LDFLAGS  = $(DEBUG_FLAG)
+SOFLAGS  = -shared 
+CXXFLAGS = $(DEBUG_FLAG) -std=c++17 -Wall -Wextra -Wno-deprecated -pedantic -I./interface  -I./
+LIBS = 
+
+# Add names of the header files which you do not want to create dictionary of
+HDRS_DICT = interface/PhysicsObjects.h interface/LeptonCand.h interface/LinkDef.h
+
+bin: $(EXE) 
+cling: $(DICTC) 
+all: 
+	make cling
+	make bin 
+ 
+$(DICTC): $(HDRS_DICT)
+	echo "Generating dictionary $(DICTC) and $(DICTH) ..."
+	rootcling -f $@ -rmf interface/AnalysisSpaceTreeMaker_xr.rootmap -c $(CXXFLAGS) $^
+	mv $(DICTC) src/ 
+	cp Dict_rdict.pcm src/
+
+$(EXE): $(OBJS) src/Dict.o
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`  -lTMVA 
+ 
+# Create object files
+%.o : %.$(CSUF)
+	$(CXX) $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+
+# makedepend
+depend: $(SRCS:.$(CSUF)=.$(CSUF).dep)
+	@cat $(notdir $^) > Makefile.dep
+	@-rm -f $(notdir $^) $(patsubst %,%.bak,$(notdir $^))
+%.dep:
+	@touch $(notdir $@)
+	rmkdepend -f$(notdir $@) -- $(CXXFLAGS) `root-config --cflags` -- $*
+include Makefile.dep
+
+# Clean 
+.PHONY   : clean 
+clean : 
+	@-rm $(OBJS) $(EXE) src/$(DICTC) src/Dict.o

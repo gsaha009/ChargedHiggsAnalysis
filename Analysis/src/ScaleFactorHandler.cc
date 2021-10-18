@@ -99,6 +99,7 @@ bool ScaleFactorHandler::openRootFiles() {
   }
   std::unique_ptr<TFile> file_FR = std::make_unique<TFile>(fname_FR);
 
+  // Muon FakeRate hist
   file_FR -> GetObject(muonFRhistName_.c_str(), muonFRhist_);
   if (!muonFRhist_) {
     cerr << ">>> Warning: Histogram <<" << muonFRhistName_ << ">> not found!!" << endl;
@@ -106,6 +107,7 @@ bool ScaleFactorHandler::openRootFiles() {
   }
   muonFRhist_->SetDirectory(0);
 
+  // Electron FakeRate hist
   file_FR -> GetObject(electronFRhistName_.c_str(), electronFRhist_);
   if (!electronFRhist_) {
     cerr << ">>> Warning: Histogram <<" << electronFRhistName_ << ">> not found!!" << endl;
@@ -114,7 +116,6 @@ bool ScaleFactorHandler::openRootFiles() {
   electronFRhist_->SetDirectory(0);
 
   file_FR ->Close();
-  
 
   return true;
 }
@@ -122,64 +123,90 @@ double ScaleFactorHandler::getIdSF(const std::string& IdType, float pt, float et
   double SF = 0.0;
   if (Flav == "Muon") {
     if (IdType == "Loose") {
-      if (pt < looseMuonIdSFhist_->GetXaxis()->GetXmax()) {
+      if (pt >= looseMuonIdSFhist_-> GetXaxis()->GetXmax()) {
+	int binX = looseMuonIdSFhist_->GetXaxis()->GetLast();
+	int binY = looseMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = looseMuonIdSFhist_->GetBinContent(binX, binY);
+      }
+      else {
 	int binX = looseMuonIdSFhist_->GetXaxis()->FindBin(pt);
 	int binY = looseMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
 	SF = looseMuonIdSFhist_->GetBinContent(binX, binY);
       }
-      else SF = 1.0;
     }
     else if (IdType == "Medium") {
-      if (pt < medMuonIdSFhist_->GetXaxis()->GetXmax()) {
+      if (pt >= medMuonIdSFhist_->GetXaxis()->GetXmax()) {
+	int binX = medMuonIdSFhist_->GetXaxis()->GetLast();
+	int binY = medMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = medMuonIdSFhist_->GetBinContent(binX, binY);
+      }
+      else {
 	int binX = medMuonIdSFhist_->GetXaxis()->FindBin(pt);
 	int binY = medMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
 	SF = medMuonIdSFhist_->GetBinContent(binX, binY);
       }
-      else SF = 1.0;
     }
     else if (IdType == "Tight") {
-      if (pt < tightMuonIdSFhist_->GetXaxis()->GetXmax()) {
-	int binX = tightMuonIdSFhist_->GetXaxis()->FindBin(pt);
+      if (pt >= tightMuonIdSFhist_->GetXaxis()->GetXmax()) {
+	int binX = tightMuonIdSFhist_->GetXaxis()->GetLast();
 	int binY = tightMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
 	SF = tightMuonIdSFhist_->GetBinContent(binX, binY);
       }
+      else {
+	int binX = tightMuonIdSFhist_->GetXaxis()->FindBin(pt);
+	int binY = tightMuonIdSFhist_->GetYaxis()->FindBin(std::abs(eta));
+	SF = tightMuonIdSFhist_->GetBinContent(binX, binY);
+      } 
     }
   }
   else if (Flav == "Electron") {
     if (IdType == "Loose") {
-      if (pt < looseEleIdSFhist_->GetYaxis()->GetXmax()) {
-	int binX = looseEleIdSFhist_->GetXaxis()->FindBin(std::abs(eta));
+      if (pt >= looseEleIdSFhist_->GetYaxis()->GetXmax()) {
+	int binX = looseEleIdSFhist_->GetXaxis()->FindBin(eta);
+	int binY = looseEleIdSFhist_->GetYaxis()->GetLast();
+	SF = looseEleIdSFhist_->GetBinContent(binX, binY);
+      }
+      else {
+	int binX = looseEleIdSFhist_->GetXaxis()->FindBin(eta);
 	int binY = looseEleIdSFhist_->GetYaxis()->FindBin(pt);
 	SF = looseEleIdSFhist_->GetBinContent(binX, binY);
       }
-      else SF = 1.00;
     }
     else if (IdType == "Tight") {
-      if (pt < tightEleIdSFhist_->GetYaxis()->GetXmax()) {
-	int binX = tightEleIdSFhist_->GetXaxis()->FindBin(std::abs(eta));
+      if (pt >= tightEleIdSFhist_->GetYaxis()->GetXmax()) {
+	int binX = tightEleIdSFhist_->GetXaxis()->FindBin(eta);
+	int binY = tightEleIdSFhist_->GetYaxis()->GetLast();
+	SF = tightEleIdSFhist_->GetBinContent(binX, binY);
+      }
+      else {
+	int binX = tightEleIdSFhist_->GetXaxis()->FindBin(eta);
 	int binY = tightEleIdSFhist_->GetYaxis()->FindBin(pt);
 	SF = tightEleIdSFhist_->GetBinContent(binX, binY);
       }
-      else SF = 1.0;
     }
   }
-
   return SF;
 }
+
 double ScaleFactorHandler::getIsoSF(const std::string& IsoType, float pt, float eta, const std::string& Flav) const {
   double SF = 0.0;
   if (Flav == "Muon") {
     if (IsoType == "Tight") {
-      if (pt < tightMuIsoSFhist_->GetXaxis()->GetXmax()) {
+      if (pt >= tightMuIsoSFhist_->GetXaxis()->GetXmax()) {
+        int binX = tightMuIsoSFhist_->GetXaxis()->GetLast();
+        int binY = tightMuIsoSFhist_->GetYaxis()->FindBin(std::abs(eta));
+        SF = tightMuIsoSFhist_->GetBinContent(binX, binY);
+      }
+      else {
         int binX = tightMuIsoSFhist_->GetXaxis()->FindBin(pt);
         int binY = tightMuIsoSFhist_->GetYaxis()->FindBin(std::abs(eta));
         SF = tightMuIsoSFhist_->GetBinContent(binX, binY);
       }
-      else SF = 1.0;
     }
   }
   return SF;
 }
+
 double ScaleFactorHandler::getFF(float pt, float eta, const std::string& Flav) const {
   double FR = 0.0;
   if (Flav == "Muon") {

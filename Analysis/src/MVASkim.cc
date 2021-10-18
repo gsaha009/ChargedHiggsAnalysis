@@ -14,7 +14,7 @@ MVASkim::MVASkim(const string& filename) {
 
   // Branches for Resolved tree
   _treeR = std::make_unique<TTree>("Resolved", "Resolved tree");
-  _treeR->Branch("MCweight",            &_varListR.MCweight,          "MCweight/F");
+  _treeR->Branch("totalWeight",            &_varListR.totalWeight,          "totalWeight/F");
   _treeR->Branch("Channel",             &_varListR.Channel,           "Channel/F");
 
   _treeR->Branch("px_lep1",             &_varListR.px_lep1,           "px_lep1/F");    
@@ -84,7 +84,7 @@ MVASkim::MVASkim(const string& filename) {
 
   // Branches for Boosted tree
   _treeB = std::make_unique<TTree>("Boosted", "Boosted tree");
-  _treeB->Branch("MCweight", &_varListB.MCweight, "MCweight/F");
+  _treeB->Branch("totalWeight", &_varListB.totalWeight, "totalWeight/F");
   _treeB->Branch("Channel",  &_varListB.Channel,  "Channel/F");
   _treeB->Branch("pt_lep1",  &_varListB.pt_lep1,  "pt_lep1/F");    
   _treeB->Branch("pt_lep2",  &_varListB.pt_lep2,  "pt_lep2/F");    

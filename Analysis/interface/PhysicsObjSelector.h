@@ -29,7 +29,57 @@ void packLeptons(const std::vector<T>& lepList, std::vector<LeptonCand>& candLis
     candList.push_back(lc);
   }
 }
+
 // create unique lepton pair combination giving a Z and add the candidate into a vector
+template <typename T>
+void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& candList) {
+  for (unsigned int i = 0; i < lepList.size(); ++i) {
+    const auto& ip = lepList[i];    
+    if (ip.pt < 25) continue;
+    TLorentzVector lep1P4(AnaUtil::getP4(ip));
+    for (unsigned int j = i+1; j < lepList.size(); ++j) {
+      const auto& jp = lepList[j];
+      if(jp.pt < 20) continue;
+      // require opposite charges                                                                                   
+      if ((ip.charge * jp.charge) > 0) continue;
+      //if (ip.flavour !=  jp.flavour ) continue;
+      TLorentzVector lep2P4(AnaUtil::getP4(jp));
+      if (lep1P4.DeltaR(lep2P4) < 0.01) continue;
+            
+      ZSpace::ZCandidate ztmp;
+      if (typeid(jp) == typeid(vhtm::Muon)) {
+	ztmp.flavour = static_cast<int>(ZSpace::ZType::mumu);
+      }
+      else if (typeid(jp) == typeid(vhtm::Electron)) {
+	ztmp.flavour = static_cast<int>(ZSpace::ZType::ee);
+      }
+      else
+	ztmp.flavour = static_cast<int>(ZSpace::ZType::unkwn);
+      
+      ztmp.l1Index = i;
+      ztmp.l1P4 = lep1P4;
+      ztmp.l1Charge = ip.charge;
+      
+      ztmp.l2Index = j;
+      ztmp.l2P4 = lep2P4;
+      ztmp.l2Charge = jp.charge;
+      
+      TLorentzVector p4 = lep1P4 + lep2P4;
+      double Zmass = p4.M();
+      ztmp.p4 = p4;
+      ztmp.mass = Zmass;
+      ztmp.massDiff = std::fabs(Zmass - ZSpace::MZnominal);
+      ztmp.dEtall = ztmp.l1P4.Eta() - ztmp.l2P4.Eta();
+      ztmp.dPhill = TVector2::Phi_mpi_pi(ztmp.l1P4.Phi() - ztmp.l2P4.Phi());
+      ztmp.dRll   = ztmp.l1P4.DeltaR(ztmp.l2P4);
+      
+      candList.push_back(ztmp);
+    }
+  }
+}
+
+
+/*
 template <typename T>
 void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& candList) {
   for (unsigned int i = 0; i < lepList.size(); ++i) {
@@ -47,14 +97,17 @@ void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& c
 
       ZSpace::ZCandidate ztmp;
       if (typeid(jp) == typeid(vhtm::Muon)) {
-	ztmp.flavour = static_cast<int>(ZSpace::ZType::mumu);
+	//ztmp.flavour = static_cast<int>(ZSpace::ZType::mumu);
+	ztmp.flavour = 0;
       }
       else if (typeid(jp) == typeid(vhtm::Electron)) {
-	ztmp.flavour = static_cast<int>(ZSpace::ZType::ee);
+	//ztmp.flavour = static_cast<int>(ZSpace::ZType::ee);
+	ztmp.flavour = 1;
       }
-      else 
-	ztmp.flavour = static_cast<int>(ZSpace::ZType::unkwn);
-	
+      else {
+	//ztmp.flavour = static_cast<int>(ZSpace::ZType::unkwn);
+	ztmp.flavour = -1;
+      }
       ztmp.l1Index = i;
       ztmp.l1P4 = lep1P4;
       ztmp.l1Charge = ip.charge;
@@ -76,7 +129,7 @@ void ZSelector(const std::vector<T>& lepList, std::vector<ZSpace::ZCandidate>& c
     }
   }
 }
-
+*/
 class PhysicsObjSelector: public AnaBase {
  public:
   PhysicsObjSelector();
@@ -91,7 +144,8 @@ class PhysicsObjSelector: public AnaBase {
   bool jetLeptonCleaning(const vhtm::Jet& jet, double minDR=0.4) const;
   bool fatJetLeptonCleaning(const vhtm::FatJet& jet, double minDR=0.8) const;
   bool tauLeptonCleaning(const vhtm::Tau& tau, double minDR=0.3) const;
-  bool thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons, bool VsTightMuons, double minDR=0.3) const;  
+  //  bool thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons, bool VsTightMuons, double minDR=0.3) const;  
+  bool thisElectronIsMuon(const vhtm::Electron& ele, std::vector<vhtm::Muon> muonList, double minDR=0.4) const;  
 
   //-----Inline functions to get the object collections-----
   const std::vector<vhtm::Event>& getEventList() const {return eventList_;}

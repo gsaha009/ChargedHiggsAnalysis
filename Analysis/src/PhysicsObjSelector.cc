@@ -41,7 +41,7 @@ void PhysicsObjSelector::bookHistograms() {
   histf()->cd("ObjectSelection");
 
   new TH1D("muCutFlow", "Muon CutFlow", 10, -0.5, 9.5);
-  new TH1D("eleCutFlow", "Electron CutFlow", 11, -0.5, 10.5);
+  new TH1D("eleCutFlow", "Electron CutFlow", 13, -0.5, 12.5);
   new TH1D("jetCutFlow", "Jet CutFlow", 6, -0.5, 5.5);
   new TH1D("tauCutFlow", "Tau CutFlow", 9, -0.5, 8.5);
   new TH1D("fatJetCutFlow", "FatJet CutFlow", 9, -0.5, 8.5);
@@ -117,6 +117,9 @@ void PhysicsObjSelector::objectEfficiency() {
     ostringstream ptFakeCutTag;
     ptFakeCutTag << "pTFake >= " << AnaUtil::cutValue(electronCutMap(), "ptFake") << " GeV";
 
+    ostringstream isoCutTag;
+    isoCutTag << "pfRelIso <  " << AnaUtil::cutValue(electronCutMap(), "reliso");
+
     vector<string> eleLabels {
       "nElectronCand",
       ptCutTag.str(),
@@ -124,10 +127,12 @@ void PhysicsObjSelector::objectEfficiency() {
       dxyCutTag.str(),
       dzCutTag.str(),
       sipCutTag.str(),
+      "mvaFall17V2Iso_WP80",
       "cleaned against tight muons",
       ptFakeCutTag.str(),
       "ConvVeto",
       "no LostHits",
+      isoCutTag.str(),
       "mvaFall17V2Iso_WP90"
     };
     AnaUtil::showEfficiency("eleCutFlow", eleLabels, "Electron Selection", "Electrons");  
@@ -299,6 +304,7 @@ bool PhysicsObjSelector::findGenPartInfo() {
   }
   return true;
 }
+
 bool PhysicsObjSelector::findLHEPartInfo() {
   for (size_t j = 0; j < *nLHEPart->Get(); ++j) {
     vhtm::LHEParticle gp;
@@ -340,16 +346,18 @@ void PhysicsObjSelector::muonSelector() {
   for (size_t j = 0; j < *nMuon->Get(); ++j) {
     AnaUtil::fillHist1D("muCutFlow", 0);
   
-    if (Muon_corrpt->At(j) <= ptMin) continue;
+    if (getEra() == 2018 && Muon_corrpt->At(j) <= ptMin) continue;
     AnaUtil::fillHist1D("muCutFlow", 1);
 
     if (fabs(Muon_eta->At(j)) >= etaMax) continue;
     AnaUtil::fillHist1D("muCutFlow", 2);
 
-    if (fabs(Muon_dxy->At(j)) >= dxyMax) continue;
+    if (getEra() == 2018 && fabs(Muon_dxy->At(j)) >= dxyMax) continue;
+    if (getEra() == 2016 && fabs(Muon_dxy->At(j)) >= 0.05) continue;
     AnaUtil::fillHist1D("muCutFlow", 3);
 
-    if (fabs(Muon_dz->At(j)) >= dzMax) continue;
+    if (getEra() == 2018 && fabs(Muon_dz->At(j)) >= dzMax) continue;
+    if (getEra() == 2016 && fabs(Muon_dz->At(j)) >= 0.1) continue;
     AnaUtil::fillHist1D("muCutFlow", 4);
 
     if (fabs(Muon_sip3d->At(j)) > sip3dMax) continue;
@@ -368,7 +376,8 @@ void PhysicsObjSelector::muonSelector() {
     mu.jetIdx  = Muon_jetIdx->At(j);
     if (isMC()) {
       mu.genIdx = Muon_genPartIdx->At(j);
-      mu.genFlv = Muon_genPartFlv->At(j); // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
+      // genFlv = 1  : promt muon, genFlv = 15 : from tau decay
+      mu.genFlv = Muon_genPartFlv->At(j); 
     }
     mu.mediumId  = Muon_MediumId->At(j);
     mu.tightId   = Muon_TightId->At(j);
@@ -381,11 +390,11 @@ void PhysicsObjSelector::muonSelector() {
 
     // Fakeable Muon Selection
     if (Muon_corrpt->At(j) < ptFakeMin) continue;
-    //if (Muon_jetIdx->At(j) != -1) continue; // cleaning against jets
     AnaUtil::fillHist1D("muCutFlow", 7);
 
     // PF Isolation
-    if (Muon_pfRelIso04_all->At(j) > relisoMax) continue;
+    if (getEra() == 2018 && Muon_pfRelIso03_all->At(j) > relisoMax) continue;
+    if (getEra() == 2016 && Muon_pfRelIso03_all->At(j) > 0.15) continue;
     AnaUtil::fillHist1D("muCutFlow", 8);
     fakeableMuList_.push_back(mu);
 
@@ -409,7 +418,8 @@ void PhysicsObjSelector::electronSelector() {
                 dxyMax    = AnaUtil::cutValue(electronCutMap(), "dxy"),
                 dzMax     = AnaUtil::cutValue(electronCutMap(), "dz"),
                 sip3dMax  = AnaUtil::cutValue(electronCutMap(), "SIP3D"),
-                ptFakeMin = AnaUtil::cutValue(electronCutMap(), "ptFake");
+                ptFakeMin = AnaUtil::cutValue(electronCutMap(), "ptFake"),
+                relisoMax = AnaUtil::cutValue(electronCutMap(), "reliso");
 
   for (size_t j = 0; j < *nElectron->Get(); ++j) {
     AnaUtil::fillHist1D("eleCutFlow", 0);
@@ -420,14 +430,28 @@ void PhysicsObjSelector::electronSelector() {
     if (fabs(Electron_eta->At(j)) > etaMax) continue;
     AnaUtil::fillHist1D("eleCutFlow", 2);
 
-    if (fabs(Electron_dxy->At(j)) > dxyMax) continue;
+    if (getEra() == 2018 && fabs(Electron_dxy->At(j)) > dxyMax) continue;
+    if (getEra() == 2016)
+      if ((std::fabs(Electron_eta->At(j)) <= 1.479
+	   && std::fabs(Electron_dxy->At(j)) >= 0.05)||
+	  ((std::fabs(Electron_eta->At(j)) > 1.479)
+	   && std::fabs(Electron_dxy->At(j)) >= 0.1)) continue;
     AnaUtil::fillHist1D("eleCutFlow", 3);
 
-    if (fabs(Electron_dz->At(j)) > dzMax) continue;
+    if (getEra() == 2018 && fabs(Electron_dz->At(j)) > dzMax) continue;
+    if (getEra() == 2016)
+      if ((std::fabs(Electron_eta->At(j)) <= 1.479
+	   && std::fabs(Electron_dz->At(j)) >= 0.1)  ||
+	  ((std::fabs(Electron_eta->At(j)) > 1.479)
+	   && std::fabs(Electron_dz->At(j)) >= 0.2)) continue;
     AnaUtil::fillHist1D("eleCutFlow", 4);
-
+    
     if (Electron_sip3d->At(j) > sip3dMax) continue;
     AnaUtil::fillHist1D("eleCutFlow", 5);
+
+    if (getEra() == 2018 && !Electron_mvaFall17V2noIso_WP80->At(j)) continue;
+    if (getEra() == 2016 && !Electron_mvaSpring16GP_WP80->At(j)) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 6);
 
     vhtm::Electron el;
     el.index   = j;
@@ -446,22 +470,28 @@ void PhysicsObjSelector::electronSelector() {
     }
     el.pdgId   = Electron_pdgId->At(j);
 
-    if (thisElectronIsMuon(el, false, true)) continue;
-    AnaUtil::fillHist1D("eleCutFlow", 6, 1.0); 
+    //    if (thisElectronIsMuon(el, false, true)) continue;
+    if (getEra() == 2018 && thisElectronIsMuon(el, tightMuList_)) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 7, 1.0); 
     preSelEleList_.push_back(el);
 
     if (Electron_pt->At(j) < ptFakeMin) continue;
-    AnaUtil::fillHist1D("eleCutFlow", 7); 
-
-    if (!Electron_convVeto->At(j)) continue;;
     AnaUtil::fillHist1D("eleCutFlow", 8); 
 
-    if (Electron_lostHits->At(j) != 0) continue;
+    //if (!Electron_convVeto->At(j)) continue;;
     AnaUtil::fillHist1D("eleCutFlow", 9); 
+
+    //if (Electron_lostHits->At(j) != 0) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 10); 
+
+    if (getEra() == 2018 && Electron_pfRelIso03_all->At(j) > relisoMax) continue;
+    if (getEra() == 2016 && Electron_pfRelIso03_all->At(j) > 0.2) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 11);     
     fakeableEleList_.push_back(el);
 
-    if (!Electron_mvaFall17V2Iso_WP90->At(j)) continue;
-    AnaUtil::fillHist1D("eleCutFlow", 10);
+    if (getEra() == 2018 && !Electron_mvaFall17V2Iso_WP90->At(j)) continue;
+    if (getEra() == 2016 && !Electron_mvaSpring16GP_WP90->At(j)) continue;
+    AnaUtil::fillHist1D("eleCutFlow", 12);
     tightEleList_.push_back(el);
   }
   searchedEle_ = true;
@@ -738,6 +768,7 @@ bool PhysicsObjSelector::tauLeptonCleaning(const vhtm::Tau& tau, double minDR) c
 
   return true;
 }
+/*
 bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLooseMuons, bool VsTightMuons, double minDR) const {
   TLorentzVector elep4(AnaUtil::getP4(ele));
   if (VsLooseMuons) {
@@ -746,6 +777,14 @@ bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, bool VsLo
   else if (VsTightMuons) {
     for (const auto& mu: tightMuList_)  if (elep4.DeltaR(AnaUtil::getP4(mu)) <= minDR) return true;
   }
+  return false;
+}
+*/
+bool PhysicsObjSelector::thisElectronIsMuon(const vhtm::Electron& ele, std::vector<vhtm::Muon> muonList, double minDR) const {
+  TLorentzVector elep4(AnaUtil::getP4(ele));
+  for (const auto& mu: muonList)  
+    if (elep4.DeltaR(AnaUtil::getP4(mu)) <= minDR) 
+      return true;
   return false;
 }
 void PhysicsObjSelector::dumpEvent(int evNo, ostream& os) const {

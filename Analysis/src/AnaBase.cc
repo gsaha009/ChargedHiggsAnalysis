@@ -62,11 +62,9 @@ AnaBase::~AnaBase()
 // -------------------------------------------------------
 bool AnaBase::beginJob() 
 { 
-  if (isMC()) {
-    if (!SFHandler_.openRootFiles()) {
-      cerr << "==> ERROR. Scale Factors are not accessible!!!" << endl;
-      return false;
-    }
+  if (!SFHandler_.openRootFiles()) {
+    cerr << "==> ERROR. Scale Factors are not accessible!!!" << endl;
+    return false;
   }
   
   // Open the output ROOT file
@@ -154,7 +152,7 @@ bool AnaBase::init() {
   if (branchFound("Muon_pdgId"))          Muon_pdgId          = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_pdgId");
   if (branchFound("Muon_sip3d"))          Muon_sip3d          = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_sip3d");
   if (branchFound("Muon_jetIdx"))         Muon_jetIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Muon_jetIdx");
-  if (branchFound("Muon_softId"))         Muon_LooseId        = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Muon_softId");
+  if (branchFound("Muon_looseId"))        Muon_LooseId        = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Muon_looseId");
   if (branchFound("Muon_mediumId"))       Muon_MediumId       = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Muon_mediumId");
   if (branchFound("Muon_tightId"))        Muon_TightId        = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Muon_tightId");
   if (branchFound("Muon_highPtId"))       Muon_highPtId       = make_unique<TTreeReaderArray<unsigned char>>(*treeReader_, "Muon_highPtId");
@@ -181,24 +179,24 @@ bool AnaBase::init() {
   if (branchFound("Muon_miniPFRelIso_all")) Muon_miniPFRelIso_all = make_unique<TTreeReaderArray<float>>(*treeReader_, "Muon_miniPFRelIso_all");
 
   // Electron
-  if (branchFound("nElectron"))                   nElectron               = make_unique<TTreeReaderValue<unsigned int>>(*treeReader_, "nElectron");
-  if (branchFound("Electron_pt"))                 Electron_pt             = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pt");
-  if (branchFound("Electron_eta"))                Electron_eta            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_eta");
-  if (branchFound("Electron_phi"))                Electron_phi            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_phi");
-  if (branchFound("Electron_charge"))             Electron_charge         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_charge");
-  if (branchFound("Electron_mass"))               Electron_mass           = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_mass");
-  if (branchFound("Electron_pdgId"))              Electron_pdgId          = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_pdgId");
-  if (branchFound("Electron_sip3d"))              Electron_sip3d          = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_sip3d");
-  if (branchFound("Electron_jetIdx"))             Electron_jetIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_jetIdx");
-  if (branchFound("Electron_photonIdx"))          Electron_phoIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_photonIdx");
-  if (branchFound("Electron_pfRelIso03_all"))     Electron_pfRelIso03_all = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pfRelIso03_all");
-  if (branchFound("Electron_pfRelIso03_chg"))     Electron_pfRelIso03_chg = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pfRelIso03_chg");
-  if (branchFound("Electron_mvaFall17V2Iso_WP80"))
-                   Electron_mvaFall17V2Iso_WP80 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2Iso_WP80");
-  if (branchFound("Electron_mvaFall17V2Iso_WP90"))
-                   Electron_mvaFall17V2Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2Iso_WP90");  
-  if (branchFound("Electron_mvaFall17V1Iso_WP90"))
-                   Electron_mvaFall17V1Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V1Iso_WP90");
+  if (branchFound("nElectron"))                    nElectron               = make_unique<TTreeReaderValue<unsigned int>>(*treeReader_, "nElectron");
+  if (branchFound("Electron_pt"))                  Electron_pt             = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pt");
+  if (branchFound("Electron_eta"))                 Electron_eta            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_eta");
+  if (branchFound("Electron_phi"))                 Electron_phi            = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_phi");
+  if (branchFound("Electron_charge"))              Electron_charge         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_charge");
+  if (branchFound("Electron_mass"))                Electron_mass           = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_mass");
+  if (branchFound("Electron_pdgId"))               Electron_pdgId          = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_pdgId");
+  if (branchFound("Electron_sip3d"))               Electron_sip3d          = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_sip3d");
+  if (branchFound("Electron_jetIdx"))              Electron_jetIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_jetIdx");
+  if (branchFound("Electron_photonIdx"))           Electron_phoIdx         = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_photonIdx");
+  if (branchFound("Electron_pfRelIso03_all"))      Electron_pfRelIso03_all = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pfRelIso03_all");
+  if (branchFound("Electron_pfRelIso03_chg"))      Electron_pfRelIso03_chg = make_unique<TTreeReaderArray<float>>(*treeReader_, "Electron_pfRelIso03_chg");
+  if (branchFound("Electron_mvaFall17V2noIso_WP80")) Electron_mvaFall17V2noIso_WP80 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2noIso_WP80");
+  if (branchFound("Electron_mvaFall17V2Iso_WP80")) Electron_mvaFall17V2Iso_WP80 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2Iso_WP80");
+  if (branchFound("Electron_mvaFall17V2Iso_WP90")) Electron_mvaFall17V2Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V2Iso_WP90");  
+  if (branchFound("Electron_mvaFall17V1Iso_WP90")) Electron_mvaFall17V1Iso_WP90 = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaFall17V1Iso_WP90");
+  if (branchFound("Electron_mvaSpring16GP_WP80"))  Electron_mvaSpring16GP_WP80  = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaSpring16GP_WP80");
+  if (branchFound("Electron_mvaSpring16GP_WP90"))  Electron_mvaSpring16GP_WP90  = make_unique<TTreeReaderArray<bool>>(*treeReader_, "Electron_mvaSpring16GP_WP90");
   /*
   if (isMC_ && readGenInfo_) {
     if (branchFound("Electron_genPartIdx"))  Electron_genPartIdx = make_unique<TTreeReaderArray<int>>(*treeReader_, "Electron_genPartIdx");
@@ -392,8 +390,13 @@ bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool pas
   return false;
 }
 */
-bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool passMuonEgHLT,
-			  bool passSingleMuonHLT, bool passSingleEleHLT, const string& dataset, int era) {
+bool AnaBase::isDuplicate(bool passDoubleMuonHLT, 
+			  bool passDoubleEgHLT, 
+			  bool passMuonEgHLT,
+			  bool passSingleMuonHLT, 
+			  bool passSingleEleHLT, 
+			  const string& dataset, 
+			  int era, bool verb) {
   std::map<std::string, bool> options = {};
   if (era == 2016 || era == 2017)
     options.insert({
@@ -404,20 +407,32 @@ bool AnaBase::isDuplicate(bool passDoubleMuonHLT, bool passDoubleEgHLT, bool pas
 	{"SingleElectron", passSingleEleHLT && !(passDoubleMuonHLT || passDoubleEgHLT || passMuonEgHLT || passSingleMuonHLT)}});
   else if (era == 2018) {
     bool passEGamma = (passDoubleEgHLT || passSingleEleHLT);
+    /*
     options.insert({
 	{"DoubleMuon", passDoubleMuonHLT},
         {"EGamma", passEGamma && !passDoubleMuonHLT},
         {"MuonEG", passMuonEgHLT && !(passDoubleMuonHLT || passEGamma)},
         {"SingleMuon", passSingleMuonHLT && !(passDoubleMuonHLT || passEGamma || passMuonEgHLT)}});
+    */
+    options.insert({
+	{"EGamma", passEGamma},
+        {"MuonEG", passMuonEgHLT && !passEGamma},
+	{"DoubleMuon", passDoubleMuonHLT && !(passEGamma || passMuonEgHLT)},
+        {"SingleMuon", passSingleMuonHLT && !(passDoubleMuonHLT || passEGamma || passMuonEgHLT)}
+      });
   }
   else {
     std::cout<<"Please mention era in jobCard ...\n";
     exit(0);
   }
+  if (verb) {
+    std::cout<<"Trigger map to avoid data event duplications ...\n";
+    AnaUtil::printMap(options);
+  }
   map<string, bool>::iterator it = options.find(dataset.c_str());
-  if (it != options.end() && it->second) return true;
+  if (it != options.end() && it->second) return false;
 
-  return false;
+  return true;
 }
 // if an event has paased HLT condition or not
 bool AnaBase::isTriggered(const vector<string>& paths, const vector<bool>& scores) {
@@ -435,10 +450,10 @@ void AnaBase::closeHistFile()
   histf_->Write();
   histf_->Close();
 }
-double AnaBase::lumiWt(double evtWeightSum, bool verbose) const 
+double AnaBase::lumiWt(double evtWeightSum, bool verb) const 
 {
   double nevt = (evtWeightSum > -1) ? evtWeightSum : AnaUtil::cutValue(lumiWtMap(), "nevents");
-  if (verbose) 
+  if (verb) 
     cout << "==> INFO. intLumi: " << AnaUtil::cutValue(lumiWtMap(), "intLumi") 
 	 << " xsec: " << AnaUtil::cutValue(lumiWtMap(), "xsec") 
 	 << " nevt: " << nevt 
@@ -448,17 +463,18 @@ double AnaBase::lumiWt(double evtWeightSum, bool verbose) const
 // ---------------------------------
 // Add input Root files to the chain
 // ---------------------------------
-int AnaBase::setInputFile(const string& fname) //Called by readJob
+//int AnaBase::setInputFile(const string& fname)
+void AnaBase::setInputFile(const string& fname)
 {
   auto found = fname.find("root:");
   if (found == string::npos && gSystem->AccessPathName(fname.c_str())) {
     cerr << "==> WARN: File <<" << fname << ">> was not found!!" << endl;
-    return static_cast<int>(chain_->GetEntries()); 
+    //return static_cast<int>(chain_->GetEntries()); 
   }
   chain_->AddFile(fname.c_str(), -1);
   chainRun_->AddFile(fname.c_str(), -1);
 
-  return static_cast<int>(chain_->GetEntries()); 
+  //return static_cast<int>(chain_->GetEntries()); 
 }
 // ---------------------------------------
 // Get total number of events in the chain
@@ -570,6 +586,8 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
       evtWtSum_ = value;
     else if (key == "dataset")
       dataset_ = value;
+    else if (key == "verbose")
+      verbose_ = stoi(value.c_str()) > 0 ? true : false;
     else if (key == "readGenInfo")
       readGenInfo_ = stoi(value.c_str()) > 0 ? true : false;
     else if (key == "logFile")
@@ -649,8 +667,9 @@ bool AnaBase::readJob(const string& jobFile, int& nFiles)
   for (const auto& fname: fileList_) {
     cout << "==> INFO. Adding input file " << fname << " to TChain " << endl;
     ++nFiles;
-    int nevt = setInputFile(fname);
-    //std::cout<<">>>Right now the chain contains :: "<<nevt<<" events\n";
+    //int nevt = setInputFile(fname);
+    setInputFile(fname);
+    //std::cout<<">>> Now the chain contains :: "<<nevt<<" events\n";
     if (nFiles_ > 0 && nFiles > nFiles_) break;
     // if (maxEvt_ > 0 && nevt >= maxEvt_) break; // -- Useful for debug -- //
   }
